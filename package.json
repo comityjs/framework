@@ -1,0 +1,68 @@
+{
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.13.1",
+  "scripts": {
+    "build": "turbo run build",
+    "build:single": "turbo run build --filter",
+    "type-check": "turbo run type-check",
+    "dev": "turbo run dev --parallel",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:single": "vitest run --run",
+    "clean": "turbo run clean",
+    "validate": "comity validate --repo .",
+    "normalize:package-json": "comity normalize package-json",
+    "normalize:package-json:check": "comity normalize package-json --check",
+    "normalize:exports": "comity normalize exports",
+    "normalize:exports:check": "comity normalize exports --check",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "changeset publish",
+    "preinstall": "npx only-allow pnpm"
+  },
+  "workspaces": [
+    "examples/**",
+    "packages/**"
+  ],
+  "devDependencies": {
+    "@changesets/cli": "^2.31.1",
+    "@comity-dev/build": "^0.1.0",
+    "@comity-dev/cli": "^0.1.0",
+    "@comity-dev/dependency-rules": "^0.1.0",
+    "@comity-dev/eslint-plugin": "^0.1.0",
+    "@comity-dev/package-tools": "^0.1.0",
+    "@comity-dev/schemas": "^0.1.0",
+    "@comity-dev/semgrep-rules": "^0.1.0",
+    "@comity-dev/validate": "^0.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.70.0",
+    "@typescript-eslint/parser": "^8.70.0",
+    "@vitest/coverage-v8": "^4.1.11",
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-boundaries": "^5.4.0",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-jsdoc": "^62.9.0",
+    "prettier": "^3.9.6",
+    "turbo": "^2.10.12",
+    "typescript": "^5.9.3",
+    "undici": "^7.29.1",
+    "vitest": "^4.1.11"
+  },
+  "pnpm": {
+    "peerDependencyRules": {
+      "ignoreMissing": [
+        "react",
+        "vue",
+        "solid-js"
+      ]
+    },
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  },
+  "overrides": {
+    "typescript": "^5.9.3"
+  }
+}

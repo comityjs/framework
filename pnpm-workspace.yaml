@@ -1,0 +1,15 @@
+packages:
+  - "examples/**"
+  - "packages/**"
+publicHoistPattern:
+  - "@types/*"
+  - "typescript"
+  - "vite"
+  - "turbo"
+  - "vitest"
+  - "@vitest/*"
+preferFrozenLockfile: true
+nodeLinker: isolated
+autoInstallPeers: true
+strictPeerDependencies: false
+storeDir: .pnpm-store

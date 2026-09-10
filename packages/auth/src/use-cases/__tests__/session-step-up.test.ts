@@ -1,0 +1,462 @@
+import type { AuthSession } from "../../contracts/session.js";
+import type { AuthSessionRepository } from "../../contracts/session-repository.js";
+import type { StepUpSessionInput } from "../session-step-up.js";
+
+import { AuthError } from "../../errors/auth.js";
+import { AuthSessionId } from "../../value-objects/auth-session-id.js";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { isFailure } from "@comity/primitives/result";
+import { StepUpSession } from "../session-step-up.js";
+
+function sessionId(value: string): AuthSessionId {
+  const result = AuthSessionId.create(value);
+
+  if (isFailure(result)) {
+    throw new Error("Unexpected failure");
+  }
+
+  return result.value;
+}
+
+describe("StepUpSession", () => {
+  let repository: {
+    getById: ReturnType<typeof vi.fn>;
+    save: ReturnType<typeof vi.fn>;
+  };
+  let evaluator: {
+    evaluate: ReturnType<typeof vi.fn>;
+  };
+  let guard: {
+    assert: ReturnType<typeof vi.fn>;
+  };
+  let emitter: {
+    onSessionCreated: ReturnType<typeof vi.fn>;
+    onSessionRevoked: ReturnType<typeof vi.fn>;
+    onSessionRefreshed: ReturnType<typeof vi.fn>;
+    onStepUpCompleted: ReturnType<typeof vi.fn>;
+  };
+  let useCase: StepUpSession;
+
+  beforeEach(() => {
+    repository = {
+      getById: vi.fn(),
+      save: vi.fn().mockResolvedValue({ success: true, value: undefined }),
+    };
+    evaluator = {
+      evaluate: vi.fn(),
+    };
+    guard = {
+      assert: vi.fn(),
+    };
+    emitter = {
+      onSessionCreated: vi.fn(),
+      onSessionRevoked: vi.fn(),
+      onSessionRefreshed: vi.fn(),
+      onStepUpCompleted: vi.fn(),
+    };
+    useCase = new StepUpSession(
+      repository as unknown as AuthSessionRepository,
+      evaluator,
+      guard,
+      emitter
+    );
+  });
+
+  it("should step up a session", async () => {
+    const parentId = sessionId("parent-session");
+    const newId = sessionId("stepped-up-session");
+    const parentSession: AuthSession = {
+      id: parentId,
+      createdAt: 1000,
+      verifiedAt: 1000,
+      assurance: {
+        methods: ["password"],
+        score: 1,
+        evaluatedAt: 1000,
+        version: 1,
+      },
+      transport: { type: "bearer" },
+    };
+
+    repository.getById.mockResolvedValue({ success: true, value: parentSession });
+
+    const newAssurance = {
+      methods: ["totp"],
+      score: 2,
+      evaluatedAt: 2000,
+      version: 1,
+    };
+
+    evaluator.evaluate.mockReturnValue(newAssurance);
+
+    const input: StepUpSessionInput = {
+      parentId,
+      id: newId,
+      methods: ["totp"],
+      version: 1,
+      transport: { type: "bearer" },
+    };
+
+    const result = await useCase.execute(input, 2000);
+
+    expect(repository.getById).toHaveBeenCalledWith(parentId);
+    expect(guard.assert).toHaveBeenCalledTimes(2); // parent and new session
+    expect(guard.assert).toHaveBeenNthCalledWith(1, parentSession, 2000);
+    expect(evaluator.evaluate).toHaveBeenCalledWith(
+      {
+        methods: ["totp"],
+        version: 1,
+      },
+      2000
+    );
+    expect(repository.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: newId,
+        assurance: newAssurance,
+        stepUp: {
+          parent: parentId,
+          at: 2000,
+        },
+      })
+    );
+    expect(emitter.onStepUpCompleted).toHaveBeenCalledWith({
+      sessionId: newId,
+      parentId,
+      assuranceScore: 2,
+      at: 2000,
+    });
+    expect(result.value.stepUp).toEqual({
+      parent: parentId,
+      at: 2000,
+    });
+  });
+
+  it("should step up with proof and context", async () => {
+    const parentSession: AuthSession = {
+      id: sessionId("parent-session"),
+      createdAt: 1000,
+      verifiedAt: 1000,
+      assurance: {
+        methods: ["password"],
+        score: 1,
+        evaluatedAt: 1000,
+        version: 1,
+      },
+      transport: { type: "bearer" },
+    };
+
+    repository.getById.mockResolvedValue({ success: true, value: parentSession });
+
+    evaluator.evaluate.mockReturnValue({
+      methods: ["totp"],
+      score: 2,
+      evaluatedAt: 2000,
+      version: 1,
+    });
+
+    const input: StepUpSessionInput = {
+      parentId: sessionId("parent-session"),
+      id: sessionId("stepped-up-session"),
+      methods: ["totp"],
+      proof: "123456",
+      context: { deviceId: "mobile" },
+      version: 1,
+      transport: { type: "bearer" },
+    };
+
+    await useCase.execute(input, 2000);
+
+    expect(evaluator.evaluate).toHaveBeenCalledWith(
+      {
+        methods: ["totp"],
+        proof: "123456",
+        context: { deviceId: "mobile" },
+        version: 1,
+      },
+      2000
+    );
+  });
+
+  it("should step up with expiration", async () => {
+    const parentSession: AuthSession = {
+      id: sessionId("parent-session"),
+      createdAt: 1000,
+      verifiedAt: 1000,
+      assurance: {
+        methods: ["password"],
+        score: 1,
+        evaluatedAt: 1000,
+        version: 1,
+      },
+      transport: { type: "bearer" },
+    };
+
+    repository.getById.mockResolvedValue({ success: true, value: parentSession });
+
+    evaluator.evaluate.mockReturnValue({
+      methods: ["totp"],
+      score: 2,
+      evaluatedAt: 2000,
+      version: 1,
+    });
+
+    const input: StepUpSessionInput = {
+      parentId: sessionId("parent-session"),
+      id: sessionId("stepped-up-session"),
+      methods: ["totp"],
+      version: 1,
+      transport: { type: "bearer" },
+      expiresAt: 10000,
+    };
+
+    const result = await useCase.execute(input, 2000);
+
+    expect(result.value.expiresAt).toBe(10000);
+  });
+
+  it("should step up with scopes", async () => {
+    const parentSession: AuthSession = {
+      id: sessionId("parent-session"),
+      createdAt: 1000,
+      verifiedAt: 1000,
+      assurance: {
+        methods: ["password"],
+        score: 1,
+        evaluatedAt: 1000,
+        version: 1,
+      },
+      transport: { type: "bearer" },
+    };
+
+    repository.getById.mockResolvedValue({ success: true, value: parentSession });
+
+    evaluator.evaluate.mockReturnValue({
+      methods: ["totp"],
+      score: 2,
+      evaluatedAt: 2000,
+      version: 1,
+    });
+
+    const input: StepUpSessionInput = {
+      parentId: sessionId("parent-session"),
+      id: sessionId("stepped-up-session"),
+      methods: ["totp"],
+      version: 1,
+      transport: { type: "bearer" },
+      scopes: ["admin", "write"],
+    };
+
+    const result = await useCase.execute(input, 2000);
+
+    expect(result.value.scopes).toEqual(["admin", "write"]);
+  });
+
+  it("should return failure if parent session not found", async () => {
+    repository.getById.mockResolvedValue({ success: true, value: null });
+
+    const input: StepUpSessionInput = {
+      parentId: sessionId("missing-session"),
+      id: sessionId("stepped-up-session"),
+      methods: ["totp"],
+      version: 1,
+      transport: { type: "bearer" },
+    };
+
+    const result = await useCase.execute(input, 2000);
+
+    expect(result.ok).toBe(false);
+    expect(result.error.meta.reason).toBe("session_not_found");
+    expect(evaluator.evaluate).not.toHaveBeenCalled();
+  });
+
+  it("should return failure if parent session is invalid", async () => {
+    const parentSession: AuthSession = {
+      id: sessionId("parent-session"),
+      createdAt: 1000,
+      verifiedAt: 1000,
+      assurance: {
+        methods: ["password"],
+        score: 1,
+        evaluatedAt: 1000,
+        version: 1,
+      },
+      transport: { type: "bearer" },
+    };
+
+    repository.getById.mockResolvedValue({ success: true, value: parentSession });
+    guard.assert.mockImplementationOnce(() => {
+      throw new AuthError("session_expired");
+    });
+
+    const input: StepUpSessionInput = {
+      parentId: sessionId("parent-session"),
+      id: sessionId("stepped-up-session"),
+      methods: ["totp"],
+      version: 1,
+      transport: { type: "bearer" },
+    };
+
+    const result = await useCase.execute(input, 2000);
+
+    expect(result.ok).toBe(false);
+    expect(evaluator.evaluate).not.toHaveBeenCalled();
+  });
+
+  it("should return failure if new assurance score is not higher", async () => {
+    const parentSession: AuthSession = {
+      id: sessionId("parent-session"),
+      createdAt: 1000,
+      verifiedAt: 1000,
+      assurance: {
+        methods: ["password"],
+        score: 2,
+        evaluatedAt: 1000,
+        version: 1,
+      },
+      transport: { type: "bearer" },
+    };
+
+    repository.getById.mockResolvedValue({ success: true, value: parentSession });
+
+    evaluator.evaluate.mockReturnValue({
+      methods: ["totp"],
+      score: 1,
+      evaluatedAt: 2000,
+      version: 1,
+    });
+
+    const input: StepUpSessionInput = {
+      parentId: sessionId("parent-session"),
+      id: sessionId("stepped-up-session"),
+      methods: ["totp"],
+      version: 1,
+      transport: { type: "bearer" },
+    };
+
+    const result = await useCase.execute(input, 2000);
+
+    expect(result.ok).toBe(false);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it("should return failure if new assurance score equals parent", async () => {
+    const parentSession: AuthSession = {
+      id: sessionId("parent-session"),
+      createdAt: 1000,
+      verifiedAt: 1000,
+      assurance: {
+        methods: ["password"],
+        score: 2,
+        evaluatedAt: 1000,
+        version: 1,
+      },
+      transport: { type: "bearer" },
+    };
+
+    repository.getById.mockResolvedValue({ success: true, value: parentSession });
+
+    evaluator.evaluate.mockReturnValue({
+      methods: ["totp"],
+      score: 2,
+      evaluatedAt: 2000,
+      version: 1,
+    });
+
+    const input: StepUpSessionInput = {
+      parentId: sessionId("parent-session"),
+      id: sessionId("stepped-up-session"),
+      methods: ["totp"],
+      version: 1,
+      transport: { type: "bearer" },
+    };
+
+    const result = await useCase.execute(input, 2000);
+
+    expect(result.ok).toBe(false);
+  });
+
+  it("should return failure if new session fails guard validation", async () => {
+    const parentSession: AuthSession = {
+      id: sessionId("parent-session"),
+      createdAt: 1000,
+      verifiedAt: 1000,
+      assurance: {
+        methods: ["password"],
+        score: 1,
+        evaluatedAt: 1000,
+        version: 1,
+      },
+      transport: { type: "bearer" },
+    };
+
+    repository.getById.mockResolvedValue({ success: true, value: parentSession });
+
+    evaluator.evaluate.mockReturnValue({
+      methods: ["totp"],
+      score: 2,
+      evaluatedAt: 2000,
+      version: 1,
+    });
+
+    guard.assert
+      .mockImplementationOnce(() => {})
+      .mockImplementationOnce(() => {
+        throw new AuthError("assurance_invalid");
+      });
+
+    const input: StepUpSessionInput = {
+      parentId: sessionId("parent-session"),
+      id: sessionId("stepped-up-session"),
+      methods: ["totp"],
+      version: 1,
+      transport: { type: "bearer" },
+    };
+
+    const result = await useCase.execute(input, 2000);
+
+    expect(result.ok).toBe(false);
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it("should return failure if repository save fails", async () => {
+    const parentSession: AuthSession = {
+      id: sessionId("parent-session"),
+      createdAt: 1000,
+      verifiedAt: 1000,
+      assurance: {
+        methods: ["password"],
+        score: 1,
+        evaluatedAt: 1000,
+        version: 1,
+      },
+      transport: { type: "bearer" },
+    };
+
+    repository.getById.mockResolvedValue({ success: true, value: parentSession });
+
+    evaluator.evaluate.mockReturnValue({
+      methods: ["totp"],
+      score: 2,
+      evaluatedAt: 2000,
+      version: 1,
+    });
+
+    repository.save.mockResolvedValue({
+      success: false,
+      error: new Error("Database error"),
+    });
+
+    const input: StepUpSessionInput = {
+      parentId: sessionId("parent-session"),
+      id: sessionId("stepped-up-session"),
+      methods: ["totp"],
+      version: 1,
+      transport: { type: "bearer" },
+    };
+
+    const result = await useCase.execute(input, 2000);
+
+    expect(result.ok).toBe(false);
+    expect(emitter.onStepUpCompleted).not.toHaveBeenCalled();
+  });
+});
