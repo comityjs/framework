@@ -1,6 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["tsconfig.json", "package.json", ".npmrc"],
+  "globalDependencies": ["tsconfig.json", "package.json"],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

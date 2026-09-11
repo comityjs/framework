@@ -28,15 +28,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
       - name: Install Semgrep
         run: |
-          pip3 install semgrep
+          pip install semgrep==1.176.0
 
       - name: Validate
         run: pnpm validate
 
       - name: Type-check
-        run: pnpm -r exec tsc -p tsconfig.json --noEmit
+        run: pnpm type-check
 
       - name: Build
         run: pnpm build
@@ -45,7 +50,7 @@ jobs:
         run: pnpm test
 
       - name: Lint
-        run: pnpm exec eslint --ext .ts packages/
+        run: pnpm exec eslint packages/
 
       - name: Normalize package-json
         run: pnpm normalize:package-json:check
