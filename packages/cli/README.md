@@ -178,6 +178,3 @@ async function main() {
 Stable
 
 _Implementation: 2026-08-31 (ADR-025)_
-
-_Review Completed: 2026-08-30_
-_Compliance Score: 100% (Green)_

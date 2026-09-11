@@ -52,7 +52,3 @@ No exhaustive reference; see docs for constraints.
 ## Status
 
 Experimental
-
-_Review Completed: 2026-08-14_
-_Reviewer: DeepSeek v4 Flash_
-_Compliance Score: N/A_
