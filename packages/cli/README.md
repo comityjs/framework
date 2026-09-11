@@ -82,7 +82,12 @@ class CommandRegistry<Context = {}> {
 }
 
 class CliExecutionFacade<Context = {}> {
-  constructor(registry: CommandRegistry<Context>, hooks: HookBus<CliLifecycle<Context>>, events: EventBus<CliEvents<Context>>, context: Context);
+  constructor(
+    registry: CommandRegistry<Context>,
+    hooks: HookBus<CliLifecycle<Context>>,
+    events: EventBus<CliEvents<Context>>,
+    context: Context
+  );
   commands(): readonly CliCommand<Context>[];
   execute(name: string, args: CliCommandArgs): Promise<Result<void, CliError>>;
 }
@@ -99,9 +104,24 @@ function createCliExecutionFacade<Context = {}>(
 
 ```typescript
 interface CliEvents<Context = {}> {
-  "cli.command.started": { name: string; args: CliCommandArgs; context: CliCommandContext<Context> };
-  "cli.command.completed": { name: string; args: CliCommandArgs; context: CliCommandContext<Context>; durationMs: number };
-  "cli.command.failed": { name: string; args: CliCommandArgs; context: CliCommandContext<Context>; error: Error; durationMs: number };
+  "cli.command.started": {
+    name: string;
+    args: CliCommandArgs;
+    context: CliCommandContext<Context>;
+  };
+  "cli.command.completed": {
+    name: string;
+    args: CliCommandArgs;
+    context: CliCommandContext<Context>;
+    durationMs: number;
+  };
+  "cli.command.failed": {
+    name: string;
+    args: CliCommandArgs;
+    context: CliCommandContext<Context>;
+    error: Error;
+    durationMs: number;
+  };
 }
 ```
 
@@ -176,5 +196,3 @@ async function main() {
 ## Status
 
 Stable
-
-_Implementation: 2026-08-31 (ADR-025)_

@@ -41,7 +41,9 @@ interface CommanderAdapterOptions<Context = {}> {
   facade: CliExecutionFacade<Context>;
 }
 
-function createCommanderAdapter<Context = {}>(options: CommanderAdapterOptions<Context>): {
+function createCommanderAdapter<Context = {}>(
+  options: CommanderAdapterOptions<Context>
+): {
   run(argv?: string[]): Promise<number>;
 };
 ```
@@ -96,5 +98,3 @@ await adapter.run(process.argv.slice(2));
 ## Status
 
 Stable
-
-_Implementation: 2026-08-31 (ADR-025)_
