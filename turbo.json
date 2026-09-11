@@ -5,12 +5,7 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**", "!dist/**/*.map", "*.d.ts"],
-      "inputs": [
-        "src/**/*.ts",
-        "src/**/*.tsx",
-        "tsconfig.json",
-        "package.json"
-      ],
+      "inputs": ["src/**/*.ts", "src/**/*.tsx", "tsconfig.json", "package.json"],
       "env": ["NODE_ENV"],
       "cache": true
     },
@@ -22,6 +17,11 @@
       "dependsOn": ["build"],
       "outputs": [],
       "cache": false
+    },
+    "type-check": {
+      "dependsOn": ["^type-check"],
+      "outputs": [],
+      "cache": true
     },
     "clean": {
       "outputs": ["dist/**", ".turbo"]
