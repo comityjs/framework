@@ -1,78 +1,119 @@
-## What Comity does not claim
-
-Comity does not claim to eliminate architectural problems automatically. It does not guarantee perfect architecture without developer discipline. It does not make unwanted imports impossible by magic.
-
-What it does provide is a set of explicit structures, contracts, and validation mechanisms that make architectural direction visible and enforceable.
-
-## Where this leads
-
-If this framing makes sense to you, the next questions are usually:
-
-- What does the mental model actually look like?
-- What are the contracts, adapters, and runtime pieces?
-- How do you start using it?
-
-Those are covered in the next pages.
-
 # Why Comity?
 
-TypeScript already has many frameworks, libraries, and runtimes. Comity exists because the hard part is rarely choosing a piece. It is what happens between the pieces.
+TypeScript already boasts an extensive ecosystem of frameworks, libraries, and runtimes. Comity exists because the primary challenge in software engineering is rarely choosing an individual piece—it is managing what happens **between** the pieces over time.
+
+---
 
 ## The problem Comity addresses
 
-Consider a common path that many applications follow:
+Most long-lived applications follow a familiar trajectory:
 
-1. An application starts small and usable.
-2. Boundaries exist, but only as conventions.
-3. A framework starts as an implementation detail.
-4. A request object, a database abstraction, or a rendering concept reaches further into the system than intended.
-5. Infrastructure starts making architectural decisions.
-6. Replacing a piece becomes harder than it should be, because the pieces are no longer separable.
+```text
+[ Small Application ] ──► (Implicit Boundaries) ──► [ Framework Leakage ] ──► [ Architectural Lock-in ]
+```
 
-None of this is exotic. It is the ordinary accumulation of architectural drift.
+1. **Clean Start:** An application begins with a lean, understandable codebase.
+2. **Implicit Rules:** Boundaries exist, but only as team conventions or documentation.
+3. **Framework Expansion:** A framework starts as an implementation detail and slowly becomes the default architecture.
+4. **Leakage:** Request objects, database ORM abstractions, or view-rendering models reach deep into domain logic.
+5. **Coupling:** Infrastructure begins dictating business rules, making individual pieces impossible to isolate, test, or replace.
 
-The issue is not that frameworks are bad. The issue is that conventional frameworks do not usually make the boundaries between their own concerns and the application's concerns explicit enough to keep them separable over time.
+This path represents the natural accumulation of **architectural drift**. Conventional frameworks excel at getting projects off the ground, but they rarely enforce explicit boundaries between their own concerns and the application's core domain.
 
-## Architectural drift
+---
 
-Architectural drift happens when the architecture described in diagrams and the architecture actually enforced by code slowly diverge.
+## Architectural drift & hidden coupling
 
-A boundary that was intended to exist may still exist in documentation, but not in the dependency graph. A concept that was meant to stay in the domain may start appearing in HTTP handlers, persistence layers, or rendering code. The system still works. It just becomes harder to explain where a decision belongs.
+Architectural drift occurs when the system architecture described in documentation slowly diverges from the reality in the codebase. A boundary meant to isolate business logic may still exist on a diagram, yet disappear from the dependency graph as developers import infrastructure utilities directly into domain services.
 
-Comity is built around the idea that if a boundary matters, it should be visible in the code and not only in a diagram.
+```text
+❌ Unintended Coupling (Drift)
+Domain Services ──► HTTP Request / ORM Models / Framework Utilities
 
-## Hidden dependencies
+✅ Explicit Direction (Comity)
+Framework / Infrastructure ──► Technology Adapter ──► Domain Contract ──► Domain Core
 
-A domain module may gradually acquire dependencies on things it should not know about: HTTP, framework APIs, persistence, rendering, or infrastructure.
+```
 
-Once that happens, the domain is no longer independent. It becomes tied to a particular runtime, a particular transport, or a particular framework. That coupling is often discovered too late, when someone tries to reuse a domain concept in a different context and finds that it cannot be separated from the infrastructure around it.
+When a domain module acquires hidden dependencies on HTTP contexts, database drivers, or rendering engines, it loses its independence. The coupling is often discovered too late: when attempting to reuse a domain concept in a background worker, a CLI command, or a new transport layer, only to find it cannot be extracted from its surrounding infrastructure.
 
-Comity addresses this by making the dependency direction a structural concern, not a convention.
+---
 
-## Framework coupling
+## Explicit composition over framework magic
 
-Framework coupling is what happens when technology choices become embedded in application logic instead of being isolated behind explicit boundaries.
+Many systems rely on framework conventions—such as global auto-discovery, magic decorators, or hidden lifecycles—to wire dependencies together. While convenient initially, implicit composition obscures what the system is assembling, when it is being initialized, and what dependencies are truly required.
 
-If the domain knows about HTTP, the domain is tied to HTTP. If the domain knows about a particular database abstraction, the domain is tied to that abstraction. If the rendering model leaks into the domain, then changing the rendering model becomes a domain change.
-
-Comity's response is to keep frameworks at the boundary. Technology adapters translate between external frameworks and Comity contracts. The domain and the core contracts do not adopt the vocabulary of every framework they integrate with.
-
-## Implicit composition
-
-In many systems, modules and dependencies exist because framework conventions make them exist. Auto-discovery, hidden lifecycles, and framework-managed wiring can all make composition feel automatic.
-
-That can be convenient, but it also means the composition is implicit. When composition is implicit, it is harder to reason about what the system is actually assembling, when it is assembling it, and what it depends on.
-
-Comity prefers explicit composition. The application decides how capabilities are assembled. Modules declare what they need and what they provide. The runtime executes that assembly through an explicit lifecycle.
-
-This avoids a common trap:
+Comity favors **explicit composition**. The application explicitly orchestrates its capabilities, modules explicitly declare what they require and export, and the runtime executes that assembly through a deterministic, step-by-step lifecycle.
 
 > **The dependency injection container is a mechanism—not the architecture.**
 
-## Technology choices become difficult to replace
+---
 
-A well-chosen framework can be a good decision. A framework that has become the architecture can be a difficult one to undo.
+## Replacing technology without rewriting architecture
 
-Comity is designed for systems where technology choices should be replaceable without rewriting the application's core reasoning. That is not because every application will change frameworks often. It is because the cost of being locked into a framework is usually paid later, when the framework is no longer the best fit and the architecture has no clean place to cut it out.
+A well-chosen framework is a valuable tool; a framework that has become the architecture is a long-term liability.
 
-When contracts are explicit and adapters are replaceable, the technology becomes an implementation detail.
+Comity is designed for systems where technology choices remain replaceable without rewriting core domain logic. While applications rarely swap frameworks on a whim, the cost of framework lock-in is paid continuously in subtle ways: difficult upgrades, restricted runtime choices, and complex testing setups.
+
+When contracts are explicit and adapters are replaceable, frameworks return to their proper role: **implementation details at the edge**.
+
+---
+
+## Architecture as an executable constraint
+
+Most architectures start as strong team decisions and eventually degrade into code-review guidelines. Comity takes the position that architecture must not rely on developer discipline alone.
+
+If an architectural boundary matters, the toolchain should actively enforce it:
+
+```text
+Architecture Decision
+         ↓
+  Package Boundary
+         ↓
+  Dependency Rule
+         ↓
+Automated Validation
+         ↓
+   CI Pipeline
+```
+
+This transforms architectural intent from a passive memory exercise into an **executable build constraint**. The repository toolchain detects violations early, preventing architectural drift before code reaches production.
+
+---
+
+## What Comity is responding to
+
+Comity is built specifically for systems where these operational realities matter:
+
+- Long-term API evolution and framework migrations.
+- Multi-runtime deployments (Node.js, Edge, Serverless, Bun).
+- Strict integration boundaries and dependency isolation.
+- Architectural governance across large engineering teams.
+
+For small, short-lived applications, Comity may introduce more structure than necessary. However, for software expected to operate for years, evolve continuously, and survive technological shifts, explicit boundaries are invaluable.
+
+---
+
+## The central question
+
+Comity does not ask:
+
+> _"Which framework should I use?"_
+
+It is built to answer a harder, more fundamental question:
+
+> **"How do I build a system where changing the framework does not require changing the architecture?"**
+
+---
+
+## What Comity does not claim
+
+Comity does not guarantee perfect code or eliminate architectural mistakes by magic. It cannot replace thoughtful domain design or engineering discipline.
+
+What Comity provides is a deterministic set of contracts, runtime primitives, and enforcement mechanisms that make architectural direction explicit, visible, and structurally enforceable.
+
+---
+
+## Next steps
+
+To see how these principles are realized in the runtime model and package structure, continue to [What is Comity?](./what-is-comity.md).

@@ -1,0 +1,123 @@
+# Canonical terminology for Comity public documentation
+
+# Derived from the seven existing public documents, AGENTS.md layering rules,
+# docs/architecture/repository.md package inventory, and current package
+# sources. Preferred forms are normative. Avoid-forms come in two classes:
+#
+# - Mechanical: capitalization, exact package names, exact generic notation.
+#   Always enforced; checkable without interpretation.
+# - Contextual: wording avoided only when the text uses the avoided meaning
+#   (for example, "driver" is avoided when it would name Comity's adapter
+#   concept, not in unrelated generic prose). Contextual avoid-forms are not
+#   blanket bans.
+#
+# Concepts use category names; exact package names are used only when naming
+# packages that actually exist in the repository.
+
+terms:
+  - term: Comity
+    preferred: "Comity"
+    avoid: ["comity (lowercase in prose)", "ComityJS", "Comity.js"]
+    definition: Architecture-first TypeScript runtime for modular applications.
+  - term: primitives
+    preferred: "primitives"
+    avoid: ["Primitives package (capitalized)", "utils", "commons"]
+    definition: "@comity/primitives — Result, BaseError, DI container, event and hook buses, time."
+  - term: Kernel
+    preferred: "Kernel"
+    avoid: ["kernel object (lowercase for the runtime)"]
+    avoid_contextual: ["container (as synonym)"]
+    definition: "@comity/kernel — lifecycle states open, sealed, running, stopped; service registry; event and hook dispatch."
+  - term: composition
+    preferred: "composition"
+    avoid: []
+    avoid_contextual: ["DI framework (as synonym)", "auto-wiring", "magic discovery"]
+    definition: "@comity/composition — module loading and resolution (load, resolveOrder, ModuleMeta, ModuleSetupFn)."
+  - term: Module
+    preferred: "Module"
+    avoid: []
+    avoid_contextual: ["plugin (as synonym)", "service (as synonym)"]
+    definition: Declarative unit (ModuleMeta with name, version, dependsOn, setup) assembled by composition.
+  - term: Core Module
+    preferred: "Core Module"
+    avoid: []
+    avoid_contextual: ["core package (vague)", "contract package (generic)"]
+    definition: Framework-agnostic capability contract (e.g. @comity/http). Must not import adapters.
+  - term: Technology Adapter
+    preferred: "Technology Adapter"
+    avoid: []
+    avoid_contextual: ["driver", "plugin", "backend"]
+    definition: Binds exactly one Core Module to one external library (e.g. http-hono implements http via hono). Replaceable; no business logic.
+  - term: Integration Adapter
+    preferred: "Integration Adapter"
+    avoid: []
+    avoid_contextual: ["connector (as synonym)"]
+    definition: Platform orchestrator spanning multiple Core Modules. Replaceable as a whole.
+  - term: contract
+    preferred: "contract"
+    avoid: []
+    avoid_contextual: ["API (as synonym for the contract side)"]
+    definition: Explicit capability definition owned by a Core Module; adapters and applications implement it.
+  - term: Result
+    preferred: "`Result<T, E>`"
+    avoid: ["Result<T,E> (no space)", "result object (for the type)"]
+    definition: Discriminated union for fallible operations (@comity/primitives/result); failure carries a BaseError.
+  - term: BaseError
+    preferred: "`BaseError`"
+    avoid: ["Baseerror", "base error (naming the class)"]
+    avoid_contextual: ["Error (as synonym)"]
+    definition: Foundation for structured domain errors (@comity/primitives/errors); stable code, frozen meta, transport hints, toSafePayload.
+  - term: ErrorCode
+    preferred: "`namespace:failure_kind`"
+    avoid: []
+    avoid_contextual: ["free-form strings", "HTTP status as domain error identity"]
+    definition: Stable machine-readable code pattern (e.g. order:not_found).
+  - term: toSafePayload
+    preferred: "`toSafePayload`"
+    avoid: []
+    avoid_contextual: ["sanitize (as synonym)", "serialize (as synonym)"]
+    definition: Explicit conversion of a BaseError to a transport-safe payload; not automatic.
+  - term: Application
+    preferred: "Application"
+    avoid: []
+    avoid_contextual: ["app (in formal prose)", "consumer (as synonym)"]
+    definition: Outermost layer composing the framework; owns configuration, routing, orchestration.
+  - term: public API
+    preferred: "public API"
+    avoid: ["public api (lowercase)"]
+    avoid_contextual: ["exported internals (as synonym)"]
+    definition: Symbols reachable through a package.json exports subpath; source presence alone is not publicity.
+  - term: draft
+    preferred: "draft"
+    avoid: []
+    avoid_contextual: ["preview API (as synonym)", "upcoming (implying commitment)"]
+    definition: Exploratory code under drafts/; evidence of thinking, never public API authority.
+  - term: runtime
+    preferred: "runtime"
+    avoid: []
+    avoid_contextual: ["framework (for the whole ecosystem)", "platform (as synonym)"]
+    definition: The @comity/* packages installed into production applications.
+  - term: development tooling
+    preferred: "development tooling"
+    avoid: []
+    avoid_contextual: ["dev framework", "runtime tooling", "@comity-dev/* as runtime"]
+    definition: Repository tooling under the @comity-dev/* scope (actual packages include @comity-dev/validate and @comity-dev/build); used for validation, build, and governance, never as a production runtime dependency. Use the category name when discussing the concept; use exact package names only for packages that exist.
+  - term: HTTP
+    preferred: "HTTP"
+    avoid: ["http (lowercase in prose)", "Http (mid-sentence)"]
+    definition: "Capability contracted by @comity/http; Hono is an adapter detail."
+  - term: HTML
+    preferred: "HTML"
+    avoid: ["html (lowercase in prose)"]
+    definition: Renderer-independent contracts in @comity/html; concrete renderers plug in at the edge.
+  - term: dependency direction
+    preferred: "dependency direction"
+    avoid: []
+    avoid_contextual: ["dependency flow (as formal term)"]
+    definition: "Inward-only constraint from application down to primitives."
+  - term: pre-1.0
+    preferred: "pre-1.0"
+    avoid: []
+    avoid_contextual: ["beta", "unstable (unqualified)", "stable (for API surfaces)"]
+    definition: "Pre-1.0 maturity of all runtime packages; intent stable, surfaces refinable."
+

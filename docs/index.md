@@ -28,15 +28,15 @@ The result is not architecture for architecture's sake. It is software that is e
 Comity is organized as an ecosystem of focused packages rather than one monolithic framework. Dependencies are intended to flow toward the center:
 
 ```text
-application
-    ↓
-technology adapters
-    ↓
-core contracts
-    ↓
-kernel / composition
-    ↓
-primitives
+     application
+          ↓
+ technology adapters
+          ↓
+    core contracts
+          ↓
+ kernel / composition
+          ↓
+      primitives
 ```
 
 The exact shape of an application can change. The dependency direction is the point.
@@ -50,20 +50,47 @@ The exact shape of an application can change. The dependency direction is the po
 - **Architecture that is validated automatically** as part of the development and CI workflow.
 - **A deliberate split** between runtime packages (`@comity/*`) and development tooling (`@comity-dev/*`).
 
-## Where to start
+## Documentation
 
-### I want to understand Comity
+The documentation is structured around four paths, depending on whether you are evaluating the architecture, designing a system, or implementing code.
 
-Read [what-is-comity.md](./what-is-comity.md) for the mental model behind the architecture.
+### 1. Fundamentals
 
-### I want to understand why it exists
+Understand the mental model, philosophy, and the problems Comity is designed to solve.
 
-Read [why-comity.md](./why-comity.md) for the problem Comity is built to address.
+- [What is Comity?](./what-is-comity.md) — The core thesis and mental model.
+- [Why Comity?](./why-comity.md) — The architectural debt Comity prevents.
+- [Philosophy & Principles](./philosophy.md) — Explicit boundaries, small cores, and enforceable rules.
 
-### I want to learn the architecture
+### 2. Architectural Guides
 
-The architecture reference is part of the next phase of this documentation.
+Learn how boundaries, contracts, and dependency flow are structured in practice.
 
-### I want to try it
+- [Dependency Direction](./guides/dependency-direction.md) — Keeping the domain isolated from technology.
+- [Composition at the Edge](./guides/composition.md) — Modules, kernels, and runtime lifecycles.
+- [Errors as Domain Objects](./guides/error-handling.md) — Typed failure semantics with `Result` and structured errors.
+- [Enforcing Architecture](./guides/architectural-governance.md) — Executable constraints and CI validation.
 
-A getting-started guide is part of the next phase of this documentation.
+### 3. Packages & Ecosystem
+
+Explore the focused packages that form the Comity ecosystem.
+
+#### Runtime (`@comity/*`)
+
+- [`@comity/primitives`](./packages/primitives.md) — Core types, domain errors, and `Result` structures.
+- [`@comity/kernel`](./packages/kernel.md) — Application lifecycles, module registration, and composition.
+- [`@comity/contracts`](./packages/contracts.md) — Explicit interfaces for HTTP, storage, search, and auth.
+- [`@comity/adapters`](./packages/adapters.md) — Framework and technology translations.
+
+#### Development Tooling (`@comity-dev/*`)
+
+- [`@comity-dev/validator`](./packages/dev-validator.md) — Architectural boundary enforcement for builds and CI.
+- [`@comity-dev/toolchain`](./packages/dev-toolchain.md) — Workspace rules and monorepo management.
+
+### 4. Hands-on
+
+Build your first system or contribute to the ecosystem.
+
+- [Quickstart](./quickstart.md) — Assemble a basic application with explicit boundaries.
+- [Example Application](./examples/modular-monolith.md) — A reference implementation.
+- [Contributing](./contributing.md) — Monorepo setup, build workflow, and repository rules.

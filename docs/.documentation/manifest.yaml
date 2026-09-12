@@ -1,0 +1,71 @@
+# Comity public documentation manifest
+# Source of truth for which documents exist, what is next, and in which order.
+# Statuses use the AGENT.md lifecycle: pending | research | writing |
+# verification | repair | complete. Existing documents predate this protocol
+# and have never passed its verification loop, so they are recorded as
+# verification (written, awaiting first protocol verification), not complete.
+
+version: 1
+project: comity-public-docs
+repository_revision: a0b17529075d102797e46c36ec2681d7c7750053
+
+documents:
+  - id: index
+    path: docs/index.md
+    phase: foundations
+    status: verification
+    depends_on: []
+    purpose: Entry point; thesis, layer diagram, and navigation over the documentation paths.
+
+  - id: what-is-comity
+    path: docs/what-is-comity.md
+    phase: foundations
+    status: verification
+    depends_on: [index]
+    purpose: Core thesis and mental model; layers, contracts vs implementations, composition, kernel lifecycle, Result/error semantics, runtime vs tooling split.
+
+  - id: why-comity
+    path: docs/why-comity.md
+    phase: foundations
+    status: verification
+    depends_on: [what-is-comity]
+    purpose: Motivation; architectural drift, explicit composition, replaceability, executable constraints; what Comity does not claim.
+
+  - id: core-concepts
+    path: docs/core-concepts.md
+    phase: foundations
+    status: verification
+    depends_on: [what-is-comity]
+    purpose: Recurring principles across runtime, boundaries, composition, HTTP/SQL/HTML/hydration contracts, Result/errors, governance.
+
+  - id: architecture
+    path: docs/architecture.md
+    phase: foundations
+    status: verification
+    depends_on: [core-concepts]
+    purpose: Layered execution model, dependency constraints, adapter boundaries, composition engine, continuous enforcement and its limits.
+
+  - id: errors-and-results
+    path: docs/errors-and-results.md
+    phase: foundations
+    status: verification
+    depends_on: [core-concepts]
+    purpose: Typed failure semantics; Result factories and guards, BaseError, safe payloads, transport mapping, practices and anti-patterns.
+
+  - id: getting-started
+    path: docs/getting-started.md
+    phase: hands-on
+    status: verification
+    depends_on: [architecture, errors-and-results]
+    purpose: Install verified packages, create a Kernel, load modules via composition, prepare the Hono-based HTTP path.
+
+  - id: first-application
+    path: docs/first-application.md
+    phase: hands-on
+    status: pending
+    depends_on: [getting-started]
+    purpose: Build the first runnable HTTP application end to end (not started; next target after getting-started verifies).
+
+notes:
+  - Existing index.md links to planned paths (philosophy.md, guides/*, packages/*, quickstart.md, examples/*, contributing.md) that do not exist yet; verification must treat those links as known inconsistencies, not as manifest documents.
+  - No speculative roadmap beyond first-application is recorded; future documents are added only with repository evidence.

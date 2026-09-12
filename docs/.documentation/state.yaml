@@ -1,0 +1,35 @@
+# Resumable state for the Comity documentation agent loop.
+# Minimal by design: enough to resume safely after interruption, nothing more.
+# The repository itself remains authoritative; re-verify in-flight work on resume.
+# current.document: null is a valid initial state (nothing in progress);
+# select the next eligible document per AGENT.md section 3.
+
+project:
+  status: active
+  manifest_version: 1
+
+current:
+  document: null
+  state: pending
+
+last_completed:
+  document: null
+  timestamp: null
+
+blockers: []
+
+last_verification:
+  document: null
+  result: null
+  checked: []
+  timestamp: null
+
+last_run:
+  status: not_started
+  revision: a0b17529075d102797e46c36ec2681d7c7750053
+  working_tree: dirty
+  timestamp: 2026-09-12T13:44:26Z
+  notes:
+    - Protocol foundation created; no document has passed the AGENT.md verification loop yet.
+    - Known inconsistency to verify: index.md links to planned paths (philosophy.md, guides/*, packages/*, quickstart.md, examples/*, contributing.md) that do not exist.
+    - Phase 4.0c remediation applied to the protocol (ground-truth corrections, code-example verification levels, notes mechanism, blocker resolution, staleness and dirty-tree semantics).
