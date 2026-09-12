@@ -1,8 +1,3 @@
-import type { DiContainer } from "@comity/primitives/di";
-import type { BaseError } from "@comity/primitives/errors";
-import type { EventBus, HookBus } from "@comity/primitives/lifecycle";
-import type { Result } from "@comity/primitives/result";
-
 import type { ModuleSetupContext } from "@comity/composition/setup";
 
 import type { PaymentProvider } from "../contracts/payment-provider.js";
@@ -41,5 +36,5 @@ export interface PaymentModuleContext extends ModuleSetupContext<
 
 export type PaymentModuleOptions = {
   /** The payment provider to use. Required for production. */
-  provider?: import("../contracts/payment-provider").PaymentProvider;
+  provider?: PaymentProvider;
 };

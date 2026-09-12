@@ -2,7 +2,6 @@
 node_modules/
 .pnpm-store/
 .pnpm-debug.log
-pnpm-lock.yaml
 
 # Build outputs
 dist/
@@ -15,6 +14,7 @@ coverage/
 .env.development.local
 .env.test.local
 .env.production.local
+.npmrc
 
 # IDE
 .vscode/

@@ -62,7 +62,7 @@ export class PaymentError extends BaseError<PaymentErrorMeta> {
    * @param reason - The reason for the payment error.
    * @param meta - Additional metadata for the error.
    */
-  constructor(reason: PaymentErrorReason, meta?: Omit<import("@comity/primitives/errors").ErrorMeta, "reason">) {
+  constructor(reason: PaymentErrorReason, meta?: Omit<ErrorMeta, "reason">) {
     super(REASON_MESSAGES[reason], {
       httpStatus: REASON_HTTP_STATUS[reason],
       ...meta,

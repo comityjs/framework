@@ -68,6 +68,3 @@ No exhaustive reference; see docs for constraints.
 ## Status
 
 Stable
-
-_Review Completed: 2026-08-01_
-_Compliance Score: N/A% (Green)_
