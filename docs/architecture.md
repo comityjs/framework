@@ -145,7 +145,14 @@ Service Definition ──► [ SEAL ] ──► Service Resolution
 Modules describe their identity and operational boundaries via declarative manifests. The public contract is `ModuleMeta` from `@comity/composition/setup`:
 
 ```ts
-interface ModuleMeta {
+import type { ModuleSetupContext, ModuleSetupFn } from "@comity/composition/setup";
+import type { BaseError } from "@comity/primitives/errors";
+import type { Result } from "@comity/primitives/result";
+
+interface ModuleMeta<
+  Options extends Record<string, unknown> = Record<string, unknown>,
+  Context extends ModuleSetupContext = ModuleSetupContext,
+> {
   readonly name: string;
   readonly version: string;
   readonly priority?: number;

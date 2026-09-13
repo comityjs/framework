@@ -15,6 +15,30 @@
 # packages that actually exist in the repository.
 
 terms:
+  - term: Researcher
+    preferred: "Researcher"
+    avoid: ["research phase (as a role)", "verifier"]
+    definition: Read-only role; inspects documentation, source, and exports to identify findings. Cannot modify documents.
+  - term: Planner
+    preferred: "Planner"
+    avoid: ["plan phase (as a role)"]
+    definition: Converts findings into explicit change plans with authorized and forbidden changes. Cannot make changes.
+  - term: Writer
+    preferred: "Writer"
+    avoid: ["author (for the role)", "editor (as a synonym)"]
+    definition: Executes only changes authorized by the approved plan; smallest practical change. Cannot self-authorize.
+  - term: Reviewer
+    preferred: "Reviewer"
+    avoid: ["reviewer (lowercase for the role)", "verifier (as a synonym)"]
+    definition: Independently checks Writer output against the approved plan; returns PASS, REJECT, or BLOCKED.
+  - term: finding
+    preferred: "finding"
+    avoid: ["issue (as a synonym)", "bug (for documentation defects)"]
+    definition: A documented defect with evidence; a finding is not authorization to edit.
+  - term: plan
+    preferred: "plan"
+    avoid: ["change plan (as a synonym)", "proposal (informal)"]
+    definition: Explicit set of authorized and forbidden changes derived from findings; requires human approval.
   - term: Comity
     preferred: "Comity"
     avoid: ["comity (lowercase in prose)", "ComityJS", "Comity.js"]

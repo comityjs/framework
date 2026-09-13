@@ -3,12 +3,25 @@
 Derived from the existing public documents (`docs/index.md`,
 `docs/what-is-comity.md`, `docs/why-comity.md`, `docs/core-concepts.md`,
 `docs/architecture.md`, `docs/errors-and-results.md`, `docs/getting-started.md`).
-This file constrains how documents are written; `AGENT.md` (section 2)
-defines what verification checks. It does not retroactively rewrite existing
-ones: when an existing document enters its verification cycle, the current
-rules in this file and `terminology.yaml` are checked, but only necessary
-corrections are made — existing documents are not rewritten merely because
-this protocol was created.
+This file constrains how documents are written; `AGENT.md` (sections 2–12)
+defines the workflow authority and what the Reviewer checks.
+
+## Existing-content preservation
+
+A document that is already correct must finish without modification. Only
+necessary corrections are made — existing documents are not rewritten merely
+because this protocol was created or because the agent perceives a
+subjective improvement opportunity.
+
+The minimal-diff principle applies to every write: the smallest practical
+change satisfying the approved plan. Reject this reasoning:
+
+> "I changed this because the surrounding content could be better."
+
+Unless that change was explicitly part of the approved plan. The correct
+reasoning is:
+
+> "This exact change was authorized because this exact finding requires it."
 
 ## Voice
 
@@ -78,7 +91,7 @@ Disallow unconditionally:
 
 ## Examples
 
-- Import only from verified public subpaths (see `AGENT.md` §7). The currently
+- Import only from verified public subpaths (see `AGENT.md` §13). The currently
   attested import families in public docs are `@comity/primitives/result`,
   `@comity/primitives/errors`, `@comity/primitives/di`,
   `@comity/primitives/lifecycle`, `@comity/composition`,
@@ -86,11 +99,18 @@ Disallow unconditionally:
   `@comity/http-hono` is mentioned in prose and diagrams but not imported
   anywhere yet; treat imported API, mentioned package, and conceptual
   reference as distinct attestation levels.
-- Prefer `ts` blocks with real imports and `Result`-based handling
-  (`isSuccess`/`isFailure` narrowing) over bare `throw`/`try-catch` sketches.
-- Mark non-executable sketches honestly: `text` fence or an explicit
-  "pseudocode" label. Never put pseudocode in a `ts` block; `AGENT.md`
-  section 8 defines the verification levels executable examples must pass.
+- Every code example must be classified (`AGENT.md` §13):
+  - **executable** — valid TypeScript that could compile and run; every
+    referenced symbol must be imported or defined locally; no unused imports.
+  - **illustrative** — TypeScript-like shape demonstration; must be labeled;
+    not presented as verified executable code.
+  - **pseudocode** — conceptual; `text` fence or explicit "pseudocode" label.
+    Never in a `ts` block.
+- Every symbol referenced in an executable example must be either imported
+  in that example or defined within the example itself. Using an undefined
+  symbol in a `ts` block is a defect.
+- Never claim "verified with tsc" unless the command or reproducible
+  verification method was actually executed and its output recorded.
 - Pair each significant example with its failure branch where the API is
   fallible; Comity readers expect typed failure to be visible.
 

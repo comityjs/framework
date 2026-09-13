@@ -60,16 +60,10 @@ Understand the mental model, philosophy, and the problems Comity is designed to 
 
 - [What is Comity?](./what-is-comity.md) — The core thesis and mental model.
 - [Why Comity?](./why-comity.md) — The architectural debt Comity prevents.
-- [Philosophy & Principles](./philosophy.md) — Explicit boundaries, small cores, and enforceable rules.
 
 ### 2. Architectural Guides
 
 Learn how boundaries, contracts, and dependency flow are structured in practice.
-
-- [Dependency Direction](./guides/dependency-direction.md) — Keeping the domain isolated from technology.
-- [Composition at the Edge](./guides/composition.md) — Modules, kernels, and runtime lifecycles.
-- [Errors as Domain Objects](./guides/error-handling.md) — Typed failure semantics with `Result` and structured errors.
-- [Enforcing Architecture](./guides/architectural-governance.md) — Executable constraints and CI validation.
 
 ### 3. Packages & Ecosystem
 
@@ -77,20 +71,11 @@ Explore the focused packages that form the Comity ecosystem.
 
 #### Runtime (`@comity/*`)
 
-- [`@comity/primitives`](./packages/primitives.md) — Core types, domain errors, and `Result` structures.
-- [`@comity/kernel`](./packages/kernel.md) — Application lifecycles, module registration, and composition.
-- [`@comity/contracts`](./packages/contracts.md) — Explicit interfaces for HTTP, storage, search, and auth.
-- [`@comity/adapters`](./packages/adapters.md) — Framework and technology translations.
+- `@comity/primitives` — Core types, domain errors, and `Result` structures.
+- `@comity/kernel` — Application lifecycles, module registration, and composition.
 
 #### Development Tooling (`@comity-dev/*`)
-
-- [`@comity-dev/validator`](./packages/dev-validator.md) — Architectural boundary enforcement for builds and CI.
-- [`@comity-dev/toolchain`](./packages/dev-toolchain.md) — Workspace rules and monorepo management.
 
 ### 4. Hands-on
 
 Build your first system or contribute to the ecosystem.
-
-- [Quickstart](./quickstart.md) — Assemble a basic application with explicit boundaries.
-- [Example Application](./examples/modular-monolith.md) — A reference implementation.
-- [Contributing](./contributing.md) — Monorepo setup, build workflow, and repository rules.

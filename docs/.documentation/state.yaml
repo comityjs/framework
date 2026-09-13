@@ -2,34 +2,209 @@
 # Minimal by design: enough to resume safely after interruption, nothing more.
 # The repository itself remains authoritative; re-verify in-flight work on resume.
 # current.document: null is a valid initial state (nothing in progress);
-# select the next eligible document per AGENT.md section 3.
+# select the next eligible document per AGENT.md section 18.
+#
+# Schema (v2, hardened Phase 4.6):
+#   current: { document, phase, document_status }
+#   last_completed: { document, timestamp, result, scope }
+#   findings[]: { finding_id, document, location, problem, evidence, severity, required_outcome }
+#   plans[]: { plan_id, document, findings[], status, write_authorized, approved_at, authorized_changes[], forbidden_changes_global[] }
+#   approvals[]: { plan_id, document, decision, scope, authorized[], not_authorized, approver, timestamp, basis }
+#   reviews[]: { document, plan_id, result, reviewer, timestamp, findings[], global_check }
+#   blockers[]: { document, since, revision, summary, evidence, decision_needed }
+#   scope_violations[]: { path, phase, timestamp }
+#   last_review: { document, plan_id, result, timestamp }
+#   last_run: { status, revision, working_tree, timestamp, notes[] }
+#
+# Plan status values: pending_approval | approved | rejected | superseded
+# Review result values: PASS | REJECT | BLOCKED
 
 project:
   status: active
-  manifest_version: 1
+  manifest_version: 2
 
 current:
   document: null
-  state: pending
+  phase: null           # research | findings | planned | pending_approval | approved | writing | review | rejected
+  document_status: null
 
 last_completed:
-  document: null
-  timestamp: null
+  document: what-is-comity
+  timestamp: 2026-09-13T00:10:00Z
+  result: PASS — NO CHANGES REQUIRED
+  scope: research only (read-only verification, no write)
 
-blockers: []
+findings:
+  - finding_id: IDX-001
+    document: docs/index.md
+    location: line 63
+    problem: Markdown link [Philosophy & Principles](./philosophy.md) points to a file that does not exist.
+    evidence: "docs/philosophy.md does not exist (filesystem check); no manifest entry defines philosophy.md; manifest acceptance criterion 'every relative link resolves to an existing file' is violated."
+    severity: defect
+    required_outcome: remove the broken reference.
+  - finding_id: IDX-002
+    document: docs/index.md
+    location: lines 69-72
+    problem: Four markdown links point to non-existent files — ./guides/dependency-direction.md, ./guides/composition.md, ./guides/error-handling.md, ./guides/architectural-governance.md.
+    evidence: "None of the four targets exist (filesystem check); none are manifest entries; manifest acceptance criterion 'no links to planned-but-missing documents' is violated; AGENT.md section 21 known risk explicitly names guides/*."
+    severity: defect
+    required_outcome: remove the four broken references.
+  - finding_id: IDX-003
+    document: docs/index.md
+    location: lines 80-81
+    problem: Markdown links to ./packages/primitives.md and ./packages/kernel.md point to files that do not exist. The referenced packages (@comity/primitives, @comity/kernel) are real; only the package-doc links are broken.
+    evidence: "docs/packages/primitives.md and docs/packages/kernel.md do not exist (filesystem check); packages/primitives and packages/kernel exist (filesystem check); no manifest entry defines package doc pages."
+    severity: defect
+    required_outcome: remove the broken links; retain the real package names and their accurate descriptions.
+  - finding_id: IDX-004
+    document: docs/index.md
+    location: lines 85-86
+    problem: Two fictional package names are referenced as packages — @comity-dev/validator and @comity-dev/toolchain — each with a broken link to a non-existent package-doc page.
+    evidence: "No package named @comity-dev/validator exists (grep of packages/*/package.json: NOT FOUND); no package named @comity-dev/toolchain exists (grep: NOT FOUND). Actual @comity-dev/* tooling (root package.json devDependencies): build, cli, dependency-rules, eslint-plugin, package-tools, schemas, semgrep-rules, validate. Manifest acceptance criterion 'no fictional package names referenced' is violated."
+    severity: defect
+    required_outcome: remove both fictional package references and their broken links.
+  - finding_id: IDX-005
+    document: docs/index.md
+    location: lines 92-94
+    problem: Three markdown links point to non-existent files — ./quickstart.md, ./examples/modular-monolith.md, ./contributing.md.
+    evidence: "None of the three targets exist (filesystem check); none are manifest entries; manifest acceptance criteria 'every relative link resolves' and 'no links to planned-but-missing documents' are violated; AGENT.md section 21 known risk explicitly names quickstart.md, examples/*, contributing.md."
+    severity: defect
+    required_outcome: remove the three broken references.
 
-last_verification:
-  document: null
-  result: null
-  checked: []
-  timestamp: null
+plans:
+  - plan_id: PLAN-IDX-001
+    document: docs/index.md
+    findings: [IDX-001, IDX-002, IDX-003, IDX-004, IDX-005]
+    status: approved
+    write_authorized: true
+    approved_at: 2026-09-13T00:30:00Z
+    authorized_changes:
+      - finding_id: IDX-001
+        exact_location: line 63
+        authorized_change: remove the entire list item "- [Philosophy & Principles](./philosophy.md) — Explicit boundaries, small cores, and enforceable rules."
+        reason: Pure navigation entry to a non-existent, non-manifest document; removing the item is the smallest change that eliminates the broken link.
+        forbidden_changes: do not replace with another link (no evidence establishes a replacement target); do not alter the Fundamentals heading or its two valid entries.
+      - finding_id: IDX-002
+        exact_location: lines 69-72
+        authorized_change: remove the four list items linking to ./guides/dependency-direction.md, ./guides/composition.md, ./guides/error-handling.md, ./guides/architectural-governance.md.
+        reason: Pure navigation entries to non-existent, non-manifest documents; removing the items is the smallest change eliminating the broken links.
+        forbidden_changes: do not remove the "### 2. Architectural Guides" heading or its intro sentence (structural change without a finding); do not remove "### 3. Packages & Ecosystem"; do not add replacement links.
+      - finding_id: IDX-003
+        exact_location: lines 80-81
+        authorized_change: remove only the markdown link syntax on each line, retaining the package names and descriptions as plain text (e.g. change "- [`@comity/primitives`](./packages/primitives.md) — …" to "- `@comity/primitives` — …").
+        reason: The packages are real and descriptions accurate; removing only the link syntax is the smallest change that eliminates the broken links while preserving correct existing content.
+        forbidden_changes: do not remove the package entries; do not remove the "#### Runtime (`@comity/*`)" heading; do not add links to other packages.
+      - finding_id: IDX-004
+        exact_location: lines 85-86
+        authorized_change: remove the entire list items referencing @comity-dev/validator and @comity-dev/toolchain.
+        reason: The package names themselves are fictional (no such packages exist); no partial retention is possible because the content is factually false.
+        forbidden_changes: do not remove the "#### Development Tooling (`@comity-dev/*`)" heading (structural change without a finding); do not substitute other @comity-dev/* package names (no evidence establishes which belong in an index navigation list).
+      - finding_id: IDX-005
+        exact_location: lines 92-94
+        authorized_change: remove the three list items linking to ./quickstart.md, ./examples/modular-monolith.md, ./contributing.md.
+        reason: Pure navigation entries to non-existent, non-manifest documents; removing the items is the smallest change eliminating the broken links.
+        forbidden_changes: do not remove the "### 4. Hands-on" heading or its intro sentence; do not add links to manifest documents (getting-started.md, first-application.md) — no acceptance criterion requires them and adding them is a navigation redesign.
+    forbidden_changes_global:
+      - rewriting the introduction (lines 1-51)
+      - changing section hierarchy or heading names
+      - restructuring navigation into a different model (e.g. collapsing the four-path structure)
+      - changing the overall information architecture
+      - removing valid sections or valid entries (lines 61-62)
+      - adding new sections
+      - rewriting prose for style
+      - changing the document conceptual narrative
+      - removing now-empty section headings left by authorized removals
+      - adding links to manifest documents not currently linked (core-concepts.md, architecture.md, errors-and-results.md, getting-started.md)
+  - plan_id: PLAN-4.8-001
+    document: docs/.documentation/**
+    findings: [F-01, F-02, F-03, F-04, F-05]
+    status: approved
+    write_authorized: true
+    approved_at: 2026-09-13T05:44:09Z
+    authorized_changes:
+      - C-01: canonical post-REJECT model — one lifecycle (review → REJECT → rejected → planned → pending_approval → approved → writing → review); no autonomous post-REJECT write; no approval-free repair-to-review path.
+      - C-02: mandatory plan identity — approval.plan_id == execution.plan_id == review.plan_id; no approval without plan identity.
+      - C-03: approved-plan content integrity — explicit authorization-bearing content (plan_id, document, findings, authorized_changes, forbidden_changes, scope/target paths, acceptance_criteria); content change invalidates prior approval; status changes are not content changes.
+      - C-04: state ownership — distinguish authorization evidence from execution progress; Writer may not create/alter authorizing or completion evidence; Writer cannot convert progress into authorization.
+      - C-05: protected-document re-entry — complete → research/re-verification → complete (no findings) or → findings → planned → pending_approval (findings); no re-verification write authorization.
+      - C-06: cross-section consistency — reconcile AGENT.md / manifest.yaml / state.yaml lifecycle, transitions, role rules, approval rules, review rules, completion rules.
+    target_files:
+      - docs/.documentation/AGENT.md
+      - docs/.documentation/manifest.yaml
+      - docs/.documentation/state.yaml
+    forbidden_changes_global:
+      - F-06
+      - F-07
+      - F-08
+      - any change beyond PLAN-4.8-001 C-01 through C-06
+      - any file outside docs/.documentation/** (public docs, source, dependencies, lockfile, workflows)
+      - protocol redesign beyond the approved findings
+      - historical Phases 4.3-4.7 evidence rewriting
+
+approvals:
+  - plan_id: PLAN-IDX-001
+    document: docs/index.md
+    decision: approved
+    scope: exact plan — IDX-001 through IDX-005 only; global forbidden changes apply
+    authorized:
+      - IDX-001: remove line 63 list item (philosophy.md)
+      - IDX-002: remove lines 69-72 list items (guides/*.md)
+      - IDX-003: remove link syntax only on lines 80-81 (keep package names + descriptions)
+      - IDX-004: remove lines 85-86 list items (fictional @comity-dev/validator, @comity-dev/toolchain)
+      - IDX-005: remove lines 92-94 list items (quickstart.md, examples/modular-monolith.md, contributing.md)
+    not_authorized: global forbidden changes (no heading changes, no prose rewrites, no new links, no navigation redesign, no other documents)
+    approver: human
+    timestamp: 2026-09-13T00:30:00Z
+    basis: user instruction to execute Phase 4.5 with PLAN-IDX-001
+  - plan_id: PLAN-4.8-001
+    document: docs/.documentation/**
+    decision: approved
+    scope: exact plan — PLAN-4.8-001 as produced by Phase 4.8; C-01 through C-06 only; findings F-01 through F-05 only; target docs/.documentation/** limited to the files and changes explicitly defined by PLAN-4.8-001
+    authorized:
+      - C-01 through C-06 only (as defined by PLAN-4.8-001)
+    not_authorized:
+      - F-06
+      - F-07
+      - F-08
+      - any change outside PLAN-4.8-001
+      - any file outside the PLAN-4.8-001 target files
+    approver: human
+    timestamp: 2026-09-13T05:44:09Z
+    basis: I approve PLAN-4.8-001 exactly as produced by Phase 4.8. I authorize C-01 through C-06 only. The authorized findings are F-01 through F-05 only. F-06, F-07, and F-08 remain out of scope. The approved target is docs/.documentation/**, limited to the files and changes explicitly defined by PLAN-4.8-001. No additional interpretation, expansion, redesign, or remediation is authorized.
+
+reviews:
+  - document: index
+    plan_id: PLAN-IDX-001
+    result: PASS
+    reviewer: independent
+    timestamp: 2026-09-13T00:35:00Z
+    findings:
+      - IDX-001: PASS — philosophy.md item removed; no replacement; Fundamentals heading preserved
+      - IDX-002: PASS — 4 guides/*.md items removed; Architectural Guides heading + intro preserved
+      - IDX-003: PASS — link syntax removed only; package names + descriptions + Runtime heading preserved
+      - IDX-004: PASS — both fictional entries removed; Development Tooling heading preserved; no replacements
+      - IDX-005: PASS — 3 broken links removed; Hands-on heading + intro preserved
+    global_check: PASS — no unrelated prose/heading/architecture changes; no new/replacement links; no other documents or files touched
+
+blockers: []           # list of { document, since, revision, summary, evidence, decision_needed }
+
+scope_violations: []   # list of { path, phase, timestamp }
+
+last_review:
+  document: index
+  plan_id: PLAN-IDX-001
+  result: PASS
+  timestamp: 2026-09-13T00:35:00Z
 
 last_run:
-  status: not_started
-  revision: a0b17529075d102797e46c36ec2681d7c7750053
+  status: completed
+  revision: 6703767003f119dac043c3b0186286fd24b86f6d
   working_tree: dirty
-  timestamp: 2026-09-12T13:44:26Z
+  timestamp: 2026-09-13T00:35:00Z
   notes:
-    - Protocol foundation created; no document has passed the AGENT.md verification loop yet.
-    - Known inconsistency to verify: index.md links to planned paths (philosophy.md, guides/*, packages/*, quickstart.md, examples/*, contributing.md) that do not exist.
-    - Phase 4.0c remediation applied to the protocol (ground-truth corrections, code-example verification levels, notes mechanism, blocker resolution, staleness and dirty-tree semantics).
+    - Phase 4.5 controlled approved-plan execution pilot on docs/index.md (protected).
+    - PLAN-IDX-001 approved by human (state.yaml approvals[]), then executed by Writer (5 edits, 17 lines removed).
+    - Reviewer (independent) verified all 5 changes against plan; global check PASS; no forbidden changes; no other files touched.
+    - Full lifecycle recorded: research (4.4) → plan (4.4) → approval (4.5) → write (4.5) → review PASS (4.5).
+    - Phase 4.4 pilot findings retained (state.yaml findings[]).
+    - Phase 4.3 pilot result retained — last_completed: what-is-comity, PASS — NO CHANGES REQUIRED.

@@ -44,7 +44,7 @@ import { success, failure } from "@comity/primitives/result";
 const result = success(order);
 
 // Failure: returns a Result with a BaseError
-const result = failure(new NotFoundError("Order not found"));
+const result = failure(new OrderError("inconsistent_state"));
 ```
 
 ### Checking Results
@@ -111,8 +111,8 @@ import type { ErrorMeta } from "@comity/primitives/errors";
 import { BaseError } from "@comity/primitives/errors";
 
 interface NotFoundErrorMeta extends ErrorMeta {
-  resource: string;
-  id: string;
+  resource?: string;
+  id?: string;
 }
 
 class NotFoundError extends BaseError<NotFoundErrorMeta> {
@@ -268,18 +268,23 @@ Arbitrary errors lose typed failure semantics and force callers to catch unknown
 return failure("Something went wrong");
 
 // Prefer
-return failure(new DomainError("payment:declined", { reason: details }));
+class PaymentDeclinedError extends BaseError {
+  readonly code = "payment:declined";
+  constructor() { super("Payment declined", {}); }
+}
+return failure(new PaymentDeclinedError());
 ```
 
 Structured errors preserve identity and enable programmatic handling downstream.
 
 ### Leaking internal errors directly to clients
 
-```ts
-// Avoid
+```text
+// Framework sketch (not executable Comity code): transport-edge error mapping.
+// Avoid — leaking internal details
 res.status(500).json({ error: internalError.stack });
 
-// Prefer
+// Prefer — convert to a safe payload before serializing
 res.status(500).json(toSafePayload(internalError));
 ```
 
@@ -296,8 +301,13 @@ class OrderService {
 }
 
 // Prefer
+class OrderProcessingError extends BaseError {
+  readonly code = "order:processing_failed";
+  constructor() { super("Order processing failed", {}); }
+}
+
 class OrderService {
-  fail() { return failure(new DomainError("order:processing_failed")); }
+  fail() { return failure(new OrderProcessingError()); }
 }
 ```
 

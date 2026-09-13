@@ -1,71 +1,116 @@
 # Comity public documentation manifest
 # Source of truth for which documents exist, what is next, and in which order.
-# Statuses use the AGENT.md lifecycle: pending | research | writing |
-# verification | repair | complete. Existing documents predate this protocol
-# and have never passed its verification loop, so they are recorded as
-# verification (written, awaiting first protocol verification), not complete.
-
+# Statuses use the AGENT.md lifecycle (section 18): pending | research |
+# findings | planned | pending_approval | approved | writing | review |
+# rejected | complete. protection distinguishes existing/consolidated
+# documents (protected — writing requires finding + plan + human approval)
+# from new documents (unprotected — plan + human approval still required
+# before write). `repair` is not a lifecycle state; work after a review
+# REJECT occurs only under a newly approved reparative plan.
 version: 1
 project: comity-public-docs
-repository_revision: a0b17529075d102797e46c36ec2681d7c7750053
+repository_revision: 6703767003f119dac043c3b0186286fd24b86f6d
 
 documents:
   - id: index
     path: docs/index.md
     phase: foundations
-    status: verification
+    status: complete
+    protection: protected
     depends_on: []
     purpose: Entry point; thesis, layer diagram, and navigation over the documentation paths.
+    acceptance_criteria:
+      - every relative link resolves to an existing file
+      - no fictional package names referenced
+      - no links to planned-but-missing documents
 
   - id: what-is-comity
     path: docs/what-is-comity.md
     phase: foundations
-    status: verification
+    status: complete
+    protection: protected
     depends_on: [index]
     purpose: Core thesis and mental model; layers, contracts vs implementations, composition, kernel lifecycle, Result/error semantics, runtime vs tooling split.
+    acceptance_criteria:
+      - all package names match @comity/* or @comity-dev/* scopes
+      - all API claims verified against exports maps
+      - pre-1.0 maturity stated where APIs are described
 
   - id: why-comity
     path: docs/why-comity.md
     phase: foundations
-    status: verification
+    status: complete
+    protection: protected
     depends_on: [what-is-comity]
     purpose: Motivation; architectural drift, explicit composition, replaceability, executable constraints; what Comity does not claim.
+    acceptance_criteria:
+      - no invented APIs or guarantees
+      - pre-1.0 honesty maintained
+      - no broken links
 
   - id: core-concepts
     path: docs/core-concepts.md
     phase: foundations
-    status: verification
+    status: research
+    protection: unprotected
     depends_on: [what-is-comity]
     purpose: Recurring principles across runtime, boundaries, composition, HTTP/SQL/HTML/hydration contracts, Result/errors, governance.
+    acceptance_criteria:
+      - all package names valid
+      - all code examples use verified exports
+      - all relative links resolve
+      - terminology matches terminology.yaml
 
   - id: architecture
     path: docs/architecture.md
     phase: foundations
-    status: verification
+    status: research
+    protection: unprotected
     depends_on: [core-concepts]
     purpose: Layered execution model, dependency constraints, adapter boundaries, composition engine, continuous enforcement and its limits.
+    acceptance_criteria:
+      - all code examples use verified exports
+      - lifecycle sequences match kernel/composition implementation
+      - all relative links resolve
 
   - id: errors-and-results
     path: docs/errors-and-results.md
     phase: foundations
-    status: verification
+    status: research
+    protection: unprotected
     depends_on: [core-concepts]
     purpose: Typed failure semantics; Result factories and guards, BaseError, safe payloads, transport mapping, practices and anti-patterns.
+    acceptance_criteria:
+      - all code examples use verified exports
+      - every symbol in executable examples is imported or defined locally
+      - no invented APIs
+      - all relative links resolve
 
   - id: getting-started
     path: docs/getting-started.md
     phase: hands-on
-    status: verification
+    status: research
+    protection: unprotected
     depends_on: [architecture, errors-and-results]
     purpose: Install verified packages, create a Kernel, load modules via composition, prepare the Hono-based HTTP path.
+    acceptance_criteria:
+      - all install commands reference verified packages
+      - all code examples use verified exports
+      - all relative links resolve
 
   - id: first-application
     path: docs/first-application.md
     phase: hands-on
     status: pending
+    protection: unprotected
     depends_on: [getting-started]
     purpose: Build the first runnable HTTP application end to end (not started; next target after getting-started verifies).
+    acceptance_criteria:
+      - all code examples use verified exports
+      - no invented APIs or architecture
+      - end-to-end guide matches verified package capabilities
 
 notes:
-  - Existing index.md links to planned paths (philosophy.md, guides/*, packages/*, quickstart.md, examples/*, contributing.md) that do not exist yet; verification must treat those links as known inconsistencies, not as manifest documents.
+  - index.md still contains links to planned paths (philosophy.md, guides/*, packages/*, quickstart.md, examples/*, contributing.md) that do not exist; these are known findings requiring the new workflow to address.
   - No speculative roadmap beyond first-application is recorded; future documents are added only with repository evidence.
+  - Workflow redesigned in Phase 4.2 — see AGENT.md sections 2-12 for the Research → Plan → Human Approval → Write → Review process.

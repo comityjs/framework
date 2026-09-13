@@ -123,7 +123,7 @@ The kernel governs execution through an explicit, four-state state machine:
 - **Running:** The application is fully active, executing lifecycles, processing events, and handling workloads.
 - **Stopped:** The system gracefully releases resources and shuts down.
 
-Bluring configuration and runtime execution is strictly forbidden: registering a service after sealing, or resolving a service before sealing, triggers an immediate lifecycle violation.
+Blurring configuration and runtime execution is strictly forbidden: registering a service after sealing, or resolving a service before sealing, triggers an immediate lifecycle violation.
 
 ---
 

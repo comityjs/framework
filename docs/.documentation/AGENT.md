@@ -1,11 +1,10 @@
 # Comity Documentation Agent — Operational Contract
 
 This file is the authoritative operational contract for any agent that reads,
-researches, writes, or verifies public Comity documentation under `docs/`.
+researches, writes, or reviews public Comity documentation under `docs/`.
 
-It defines what the agent may do, what it must verify, and how it moves
-documents through a deterministic lifecycle. A future autonomous loop will
-execute this protocol; this file does not implement that loop.
+It defines what the agent may do, what authority each role has, and how
+documents move through a controlled, bounded, reviewable process.
 
 ## 1. Purpose
 
@@ -17,11 +16,18 @@ The agent maintains public Comity documentation derived from repository evidence
   implementation never conforms to documentation.
 - The agent must never invent APIs, guarantees, package names, commands,
   import paths, or runtime behavior.
-- The agent works only inside `docs/`. It does not modify source packages,
-  tooling, workflows, or dependencies (see section 12).
 
-Ground truth at protocol creation (re-verify on each run). Package `exports`
-maps are authoritative for public API claims: re-read
+**Central principle: verification is not authorization to edit.** Finding a
+problem in a document does not grant permission to fix it. Every modification
+must pass through: finding → plan → human approval → write → review.
+
+**The agent must never turn a verification task into an open-ended
+documentation rewrite.** A document that is already correct must finish
+without any modification.
+
+### Ground truth
+
+Package `exports` maps are authoritative for public API claims: re-read
 `packages/*/package.json` whenever an API claim is verified. The snapshots
 below are creation-time facts, not a registry, and never override the
 `exports` map.
@@ -31,7 +37,7 @@ below are creation-time facts, not a registry, and never override the
   e.g. `@comity-dev/validate`, `@comity-dev/build`) and must never be
   presented as runtime API. Scope alone does not classify a package's role;
   check the package itself when its role matters.
-- All workspace packages are `0.9.0` (pre-1.0; see section 10). Engines
+- All workspace packages are `0.9.0` (pre-1.0; see section 16). Engines
   require `node >= 24`. Packages expose ESM and CommonJS entry conditions
   through their `exports` maps, in a pnpm + turbo monorepo (`pnpm@10.13.1`).
 - Subpath snapshot at protocol creation (re-verify against the `exports` map
@@ -45,162 +51,396 @@ below are creation-time facts, not a registry, and never override the
   `BaseError`, `toSafePayload`, `Kernel`, `load`, `resolveOrder`,
   `ModuleMeta`, `ModuleSetupFn`, `HttpFacade`, `httpHonoAdapter`.
 
-## 2. Document lifecycle
+## 2. Roles and authority
 
-Every manifest document is in exactly one state:
+The workflow uses four logical roles with strictly different authority.
+In practice these may be executed by the same agent, but each role's
+authority is bounded by what that role may do.
 
-```text
-pending → research → writing → verification → [repair → verification]* → complete
-```
+### Researcher — read-only
 
-A document may also carry a `blocked` flag (see section 5). `blocked` is
-orthogonal to the lifecycle state: a blocked document keeps its state,
-records the blocker in `state.yaml`, and is skipped until unblocked.
+- **May:** inspect public documentation, source code, package exports, tests,
+  repository configuration, protocol files. Verify links, API claims,
+  terminology, style. Identify contradictions and incorrect examples.
+- **Must not:** modify the target document. Improve prose. Restructure
+  documentation. Fix findings.
+- **Output:** research notes under `docs/.documentation/notes/` and a
+  findings list (section 4).
 
-Initialization: documents seeded into the manifest as already written but
-never verified (for example, documents predating this protocol) enter
-directly at `verification`. This is a legitimate initialization transition,
-not a writing transition.
+### Planner — proposes, cannot execute
 
-### pending
+- **May:** convert findings into an explicit change plan with authorized and
+  forbidden changes. Propose minimal edits.
+- **Must not:** make any modification. The Planner's output is a plan, not
+  a change.
 
-Known to be needed; no work started. Entry: listed in `manifest.yaml` with
-`status: pending`. Exit: selected as next eligible document (section 4).
+### Human — authorization gate
 
-### research
+- **Must:** approve or reject the plan before any writing begins. The
+  approval authorizes the plan's specific changes, not the document as a
+  whole. May modify the plan before approving.
 
-Gather authoritative evidence before writing user-facing prose. Research output
-is notes, file references, verified facts — never draft prose committed to the
-document. Steps: read manifest entry; read completed dependencies; inspect
-sources per section 6; record exact paths, exports, signatures; resolve open
-questions by inspection.
+### Writer — executes only authorized changes
 
-Research evidence is recorded in `docs/.documentation/notes/<document-id>.md`
-(one file per document, created when research starts). Notes preserve what
-was gathered during research, let an interrupted run resume, and let another
-agent understand what was verified. Notes are working evidence, not a source
-of truth: repository contents, package `exports` maps, and the
-implementation remain authoritative, and a note never overrides them.
+- **May:** make only changes explicitly authorized by the approved plan, at
+  the explicitly authorized locations, in the explicitly authorized documents.
+- **Must not:** rewrite correct prose. Reorganize sections. Add optional
+  improvements. Modernize language. Expand scope. Fix unrelated defects.
+  Modify source code, dependencies, lockfiles, or CI. Create temporary
+  packages or workspaces.
+- If the Writer discovers another problem: record `FOUND — OUT OF SCOPE`
+  in state.yaml and stop. Do not fix it.
 
-### writing
+### Reviewer — independent check
 
-Create or update the document using only verified research evidence. Follow
-`style.md` and `terminology.yaml`: concept before package, explanation before
-reference, progressive complexity. Every import, symbol, signature, and
-behavior claim must trace to a research note. No placeholder APIs. No
-pseudocode presented as executable TypeScript (see section 8). Do not write a
-document whose dependencies are not `complete` (see section 4).
+- **May:** review the Writer's output against the approved plan and research
+  findings. Return `PASS`, `REJECT`, or `BLOCKED` (section 9).
+- **Must not:** make changes. The Reviewer approves or rejects the output;
+  it does not fix it.
+- The Reviewer must not be the same logical pass as the Writer. Even when
+  executed by the same agent, the review must re-read the output against the
+  plan independently — not from memory of what the Writer intended.
 
-### verification
+## 3. Workflow
 
-Independently check the written document against the repository and the
-existing documentation set:
-
-- Public API accuracy: package name, version, export subpath, symbol name,
-  signature, generics, required/optional parameters, return type (section 7).
-- Code examples trace Public API to verified import to verified
-  types/signature to execution verified at the level the example's claims
-  require (section 8); no `drafts/`-only API presented as public.
-- Architecture claims supported by the implementation, package metadata, or
-  governance docs (`docs/architecture/repository.md`, `AGENTS.md`) — not by
-  naming alone.
-- Terminology matches `terminology.yaml`: mechanical rules (capitalization,
-  exact package names, generic notation) always apply; contextual avoid-forms
-  apply only where the text uses the avoided meaning.
-- Style conformance: voice, structure, claims discipline, and examples follow
-  `style.md`. Violations that materially conflict with `style.md` require
-  repair; minor subjective prose preferences do not block completion.
-- Editorial correctness: no obvious typos, no malformed Markdown, no broken
-  code fences, no visibly broken formatting. Subjective prose quality is not
-  a completion gate.
-- No draft contamination: nothing sourced solely from `drafts/`, superseded
-  migrations, or internal (non-exported) modules.
-- Consistency with all `complete` public docs: no contradictory terminology,
-  architecture, lifecycle, package, API, or maturity claims.
-- Links: every relative link resolves to an existing file; never link to
-  planned-but-missing documents as if they exist.
-- Maturity honesty: pre-1.0 status stated where APIs are described; no
-  permanence guarantees (section 10).
-
-Record the result in `state.yaml` (`last_verification`). Pass means
-`complete`. Correctable failure means `repair`. Genuine blocker means record
-it, keep state, skip the document (section 5).
-
-### repair
-
-Repair only the identified problems — minimal scope, no opportunistic
-rewrites of unrelated sections or documents. After repair, return to
-`verification`. If the same verification failure remains unchanged after
-three repair attempts, stop repairing that document and record a genuine
-blocker (section 5) describing why further autonomous repair is unsafe.
-
-### complete
-
-Passed verification. A `complete` document is verified against the repository
-state at the time of its verification — the recorded revision and the
-recorded working-tree condition (section 13). Complete for now, not forever:
-if the repository changes afterward, the next run determines whether the
-changed files can affect the document's claims; if they can, or if the agent
-cannot determine that safely, the document returns to `verification`. Update
-`state.yaml` (`last_completed`, current pointer) and continue progression
-(section 3).
-
-## 3. Autonomous progression
-
-Do not stop after completing one document merely because that document is
-correct. After a document reaches `complete`: update `state.yaml`; inspect
-`manifest.yaml`; select the next eligible document — dependencies all
-`complete`, not blocked; among multiple eligible documents, the earliest in
-`manifest.yaml` order — and continue with it.
-Proceed until all planned documents are `complete` or only genuinely blocked
-documents remain. Ordinary missing information is not a stopping condition —
-if it can be discovered by inspecting the repository, discover it.
-
-## 4. Dependency-aware execution
-
-Do not write a dependent document before its dependencies are `complete`.
-Dependent prose inherits terminology, mental models, and API facts from its
-sources. Current manifest backbone:
+The process for any document runs in this order:
 
 ```text
-index → what-is-comity → core-concepts → { architecture, errors-and-results }
-→ getting-started → first-application
+RESEARCH → PLAN → [HUMAN APPROVAL] → WRITE → REVIEW → PASS/REJECT
 ```
 
-`why-comity` refines `what-is-comity` and depends on it. The manifest is
-authoritative; this diagram is a summary. If they disagree, the manifest wins
-and this file must be corrected.
+For a document with no findings (no-op path, section 10):
 
-## 5. Genuine blockers
+```text
+RESEARCH → NO FINDINGS → PASS — NO CHANGES REQUIRED
+```
 
-Normal uncertainty is not a blocker: unknown exports, import paths, module
-loading, or example compilability are investigated by reading `exports` maps,
-sources, tests, `docs/architecture/repository.md`, and existing docs, and by
-compiling or type-checking examples where practical.
+No Writer phase. No human approval (there is nothing to approve).
 
-A genuine blocker exists only when repository evidence is contradictory or
-insufficient to establish intended public behavior: incompatible public APIs
-in two authoritative sources; implementation contradicting `exports`;
-explicitly conflicting architecture rules; an indeterminable intended
-contract; or a forced choice between potentially false public claims.
+For every write operation, the plan must be human-approved before writing.
 
-When blocked: stop modifying that document; record the blocker in
-`state.yaml`; do not invent a resolution. A blocked document blocks only its
-dependents: continue with any document whose dependencies are all `complete`
-and which is neither blocked nor dependent, directly or transitively, on a
-blocked document. Stop the whole run only when every remaining document
-depends on the blocked one, directly or transitively.
+## 4. Findings
 
-A blocker record contains: document; since (date); revision
-(`git rev-parse HEAD` at recording time); summary; evidence references;
-decision needed. A blocker is cleared only when (a) a repository change
-resolves the contradiction or insufficiency, or (b) an explicit human
-decision resolves the intended contract. Clearing requires recorded evidence
-of the resolution; the agent must never silently delete a blocker. After
-clearing, the document returns to `verification`, or to `research` if no
-document content has been written yet.
+Research must produce explicit findings. Each finding must contain:
 
-## 6. Research rules and evidence hierarchy
+```text
+document:         <path>
+location:         <section, line range, or code block identifier>
+problem:          <what is wrong>
+evidence:         <repository evidence proving the problem>
+severity:         <defect | contradiction | inconsistency | improvement>
+required_outcome: <what needs to change to resolve this>
+```
+
+A finding is not permission to edit. Findings are evidence that a change may
+be worth planning; only an approved plan authorizes a change.
+
+The agent must not manufacture findings to justify a write operation.
+A document with no findings is a successful result.
+
+## 5. Planning
+
+The Planner converts findings into an explicit change plan. Every proposed
+modification must have an authorization record:
+
+```text
+plan_id:          <unique plan identity, e.g. PLAN-<scope>-NNN>
+document:         <path>
+finding:          <which finding this change resolves>
+exact_location:   <line range or code block identifier>
+proposed_change:  <the exact change, including before/after where useful>
+reason:           <why this specific change resolves the finding>
+scope:            <files and locations authorized for this change>
+```
+
+`plan_id` is mandatory and is the identity of the remediation plan. It is
+the single binding that connects the plan, its execution, and its review
+(section 6). A document name is never a substitute for `plan_id`.
+
+The plan must explicitly separate:
+
+### Authorized changes
+
+What the Writer may change. Each authorized change maps to exactly one
+finding and one proposed modification.
+
+### Forbidden changes
+
+What the Writer must not change even if it believes those changes would
+improve the document. This includes restructuring, prose rewrites, new
+sections, package name changes, heading renames, and any change not
+explicitly authorized above.
+
+## 6. Human gate
+
+The human approval boundary sits between PLAN and WRITE. The Writer has
+**zero write authority** until the plan is approved.
+
+The approval must authorize the plan's specific changes, not merely the
+document. An approval record contains:
+
+```text
+plan_id:          <must exactly equal the approved plan's plan_id>
+document:         <path>
+finding:          <which findings are being addressed>
+authorized:       <the specific changes approved>
+not_authorized:   <what remains forbidden>
+approver:         <human>
+timestamp:        <when approved>
+```
+
+`plan_id` is mandatory in every approval record. An approval record without
+`plan_id` is invalid. The binding is exact:
+
+```text
+approval.plan_id == execution.plan_id == review.plan_id
+```
+
+The document name is not a substitute for plan identity: an approval
+authorizes the specific plan identified by `plan_id`, never a generic class
+of future work on the same document.
+
+This gate is mandatory for existing/consolidated documents and for new
+documents. It may not be skipped, automated, or self-approved.
+
+## 7. Writing
+
+The Writer operates under a strict change contract:
+
+1. Only documents explicitly authorized by the approved plan may be modified.
+2. Only locations explicitly authorized may be changed.
+3. Only changes explicitly authorized may be made.
+4. All other content must be preserved byte-for-byte.
+5. The change must be the smallest practical change satisfying the plan.
+
+The Writer must not:
+
+- rewrite correct prose;
+- reorganize sections;
+- add optional improvements;
+- modernize language;
+- expand scope;
+- fix unrelated defects;
+- modify source code;
+- modify dependencies;
+- modify lockfiles;
+- create temporary packages or workspaces;
+- create temporary projects to prove an example works.
+
+If the Writer discovers another problem during writing:
+
+```text
+FOUND — OUT OF SCOPE
+```
+
+Record it in state.yaml. Do not fix it. Continue with only the authorized
+changes.
+
+## 8. Review
+
+The Reviewer is a separate logical phase. The Reviewer receives:
+
+- original document state (pre-write)
+- resulting document (post-write)
+- actual diff
+- research findings
+- approved plan
+
+The Reviewer independently checks:
+
+### Scope
+
+Did the Writer modify only authorized files and locations?
+
+### Necessity
+
+Does every substantive change correspond to an approved finding?
+
+### Minimality
+
+Could the same finding have been resolved with less change?
+
+### Correctness
+
+Does the change actually resolve the finding?
+
+### Regression
+
+Did the change introduce: broken links; incorrect API claims; invalid
+examples; unused imports; missing imports; terminology violations;
+formatting problems; architectural inaccuracies?
+
+### Preservation
+
+Was correct existing content unnecessarily rewritten?
+
+## 9. Reviewer outcomes
+
+The Reviewer must return exactly one of:
+
+```text
+PASS
+REJECT
+BLOCKED
+```
+
+### PASS
+
+All authorized changes are correct and no unauthorized changes exist.
+The document may be marked `complete`.
+
+### REJECT
+
+The Writer made an unnecessary, excessive, incorrect, or unauthorized change.
+The document transitions to `rejected` (section 18.3) and returns to
+`planned` — NOT automatically to writing. The rejected changes are
+described in the review record. The Reviewer must not silently repair the
+document; repair requires a new plan and new human approval. The Reviewer
+cannot become the Writer (section 8).
+
+### BLOCKED
+
+The Reviewer cannot determine correctness because evidence is insufficient
+or contradictory. The document must not be marked complete. Record a
+blocker (section 20).
+
+## 10. No-op verification
+
+A document that is already correct must be allowed to finish without
+modification. The normal path supports:
+
+```text
+RESEARCH → NO FINDINGS → PASS — NO CHANGES REQUIRED
+```
+
+This is a successful terminal outcome. When this path is taken:
+
+- the Planner is NOT invoked;
+- a change plan is NOT created;
+- Human Approval is NOT required;
+- the Writer is NOT invoked;
+- the Reviewer is NOT required;
+- the document is marked `complete` directly from `research`.
+
+The agent must not manufacture findings to justify a write operation.
+The Researcher must record the verification evidence (what was checked and
+what was found) and mark the document complete.
+
+## 11. Document protection
+
+### Existing/consolidated document
+
+Default authority: `READ + VERIFY`.
+
+Writing requires:
+
+```text
+FINDING + PLAN + HUMAN APPROVAL
+```
+
+A document that has passed review is `complete` and protected from
+unnecessary rewrites. Re-verification is allowed; rewriting without a
+finding is not, and no approval-free path leads from `complete` back to
+`writing`.
+
+### Protected-document re-entry
+
+A protected document in `complete` may enter deterministic read-only
+re-verification (`research`), exactly as follows:
+
+### Protected-document re-entry
+
+A protected document in `complete` may enter deterministic read-only
+re-verification (`research`), exactly as follows:
+
+```text
+complete → research (re-verification) → complete      (no findings)
+complete → research (re-verification) → findings → planned → pending_approval → approved → writing → review
+```
+
+- Re-verification is read-only: no re-verification state authorizes writing.
+- If re-verification finds nothing, the document returns to `complete`
+  directly (no-op path, section 10).
+- If re-verification finds genuine defects, the document enters `findings`
+  and follows the normal plan → human approval → write → review path.
+- Historical completion remains historical: re-entering `research` does
+  not erase the prior review evidence (section 13, section 18.6).
+
+### New document
+
+Writing authority is broader but still constrained by:
+
+- manifest purpose;
+- document scope;
+- style and terminology;
+- verified public APIs;
+- approved plan.
+
+A new document is not permission to invent APIs or architecture.
+
+## 12. Scope guard
+
+Before work begins, and after every write phase, the agent must run:
+
+```bash
+git status --short
+git diff --name-only
+```
+
+Any file outside the authorized scope is a violation. The authorized scope
+is declared in the plan (section 5). For any documentation run, the allowed
+paths must be declared before writing begins.
+
+If a forbidden path has changed:
+
+```text
+BLOCKED — SCOPE VIOLATION
+```
+
+The agent must not continue normal completion. The violation must be
+recorded in state.yaml. The agent must not revert or repair the forbidden
+change.
+
+The agent must never create arbitrary temporary projects (e.g.
+`examples/first-application/`, `tmp/`, `test-app/`) to prove an example
+works. If executable verification requires a temporary environment, that
+must become an explicit future capability with its own scope and cleanup
+policy. For now: prefer existing repository evidence and existing tooling.
+
+## 13. Code examples
+
+Every code example in documentation must be classified:
+
+```text
+executable     — valid TypeScript that could compile and run
+illustrative   — TypeScript-like, demonstrates shape but is not meant to compile
+pseudocode     — conceptual; must use a `text` fence or a "pseudocode" label
+```
+
+Never put pseudocode in a `ts` block.
+
+An `executable` example must have a defined verification method. At minimum
+verify:
+
+- imports: every import path exists in the package `exports` map;
+- exported symbols: every imported symbol is actually exported;
+- public subpaths: correct package and correct subpath;
+- local symbol definitions: every referenced symbol is either imported or
+  defined within the example itself;
+- unused imports where tooling can detect them;
+- TypeScript validity when claimed;
+- runtime behavior when claimed.
+
+Never claim "verified with tsc" unless the command or reproducible
+verification method was actually executed and its output recorded.
+
+An `illustrative` example must be labeled (comment or fence language) and
+must not be presented as verified executable code.
+
+Keep examples minimal: one concept each; elide unrelated setup with a
+comment, never invented helpers.
+
+## 14. Research rules and evidence hierarchy
 
 Inspect sources in this order; higher sources override lower ones:
 
@@ -217,14 +457,9 @@ Inspect sources in this order; higher sources override lower ones:
 
 Never infer a public subpath from a source directory alone. Never treat
 migration history or `drafts/` content as current API without independent
-verification against the `exports` map and implementation. Verify examples
-against the implementation at the recorded revision and working-tree state
-in `state.yaml`. If two sources at the same authority level contradict each
-other and repository inspection cannot establish which one represents the
-current intended contract, treat the contradiction as a genuine blocker
-(section 5) rather than choosing arbitrarily.
+verification against the `exports` map and implementation.
 
-## 7. Public API verification
+## 15. Public API verification
 
 For every package, symbol, and example presented, verify and be able to cite:
 package name and version; exact export subpath; symbol name and kind;
@@ -233,49 +468,7 @@ signature (parameters, required vs optional, generics); return type and the
 behavioral claims are made. Never write an import unless that exact path was
 verified. Correct package with wrong subpath is still an invented API.
 
-## 8. Code examples
-
-Every non-trivial example must satisfy:
-
-```text
-Public API → verified import → verified types/signature → verified execution
-```
-
-Execution is verified at the level the example's claims require:
-
-1. Import verification — the exact import path exists in the package
-   `exports` map (section 7). Required for every example.
-2. Type/signature verification — symbols, generics, parameters, and return
-   types match the implementation. Required whenever the example presents
-   API shape.
-3. Lifecycle/sequencing verification — the order of calls is valid for the
-   documented lifecycle states; check the sequence against the
-   implementation, never assume it from types alone. Required whenever the
-   example demonstrates lifecycle, ordering, or composition behavior.
-4. Runtime verification — required only when the example makes a concrete
-   runtime behavior claim. Execute when practical and record what was run;
-   never claim runtime verification for an example that was not executed.
-
-Type-checking alone never verifies a lifecycle or runtime claim. Compile or
-type-check where practical and record which levels were checked. Never copy
-`drafts/` examples without verifying each import and signature. Pseudocode
-and architecture sketches are explicitly identified as conceptual (`text`
-fences or a "pseudocode" label), never in `ts` blocks, and are never
-presented as verified executable code. Keep examples minimal: one concept
-each; elide unrelated setup with a comment, never invented helpers.
-
-## 9. Documentation style
-
-Follow `style.md` and `terminology.yaml`. Prefer: concept before package;
-explanation before reference; progressive complexity; short paragraphs;
-precise concrete language; active voice; restrained marketing; concrete
-runnable examples; explicit maturity status; architectural honesty. Avoid:
-repetition across documents (link instead); generic framework marketing;
-exaggerated or permanent guarantees; invented abstractions; implementation
-details irrelevant to the reader's task; package exposition before
-architecture.
-
-## 10. Pre-1.0 honesty
+## 16. Pre-1.0 honesty
 
 All `@comity/*` packages are pre-1.0 (`0.9.0` at protocol creation). Never
 present an unstable API as frozen — forbidden without explicit governance
@@ -286,16 +479,335 @@ dependencies, contracts-vs-adapters, `Result`/error semantics, `@comity/*`
 vs `@comity-dev/*` split) from refinable surface (exact signatures, option
 shapes, subpath additions).
 
-## 11. Documentation consistency
+## 17. State and manifest
 
-Before marking `complete`, verify against every other `complete` public
-document: terminology, architecture, package and API names, lifecycle
-sequences, maturity claims, relative links, duplicate explanations. Repair
-the smallest scope that resolves a contradiction; the repaired document
-returns to `verification` before it can be `complete` again, and no global
-re-verification of every document is required. Never rewrite unrelated
-documents for wording preferences. If two `complete` documents contradict
-each other, record a genuine blocker (section 5).
+`manifest.yaml` defines which documents exist, their lifecycle state, their
+protection level, and their acceptance criteria. It is the authoritative
+record of the documentation roadmap.
+
+`state.yaml` represents operational execution state: which document is
+currently in progress, which phase it is in, findings, plans, approvals,
+and reviews. It must not replace the manifest's per-document lifecycle
+state.
+
+### Consistency requirement
+
+The manifest is authoritative for document roadmap status (which documents
+exist, their phase, protection, and lifecycle state). `state.yaml` is
+authoritative for operational execution state (current phase, findings,
+plans, approvals, reviews). Do not duplicate operational details in the
+manifest.
+
+### State ownership and role locks
+
+`state.yaml` distinguishes two classes of entries:
+
+- **Authorization evidence** — findings used for authorization, plans,
+  approvals, `write_authorized`, `approved_at`, reviews, `last_review`,
+  completion evidence, `last_completed`, and scope-violation outcomes.
+- **Execution progress** — position fields such as `current.document`,
+  `current.phase`, and `last_run` status that record where work stands.
+
+The Writer may update only execution-progress information explicitly
+permitted by the approved plan for that write. The Writer must never
+create, alter, or overwrite authorization evidence. Updating a progress
+field is never a form of authorization: only a human-approved plan
+(section 6) grants write authority.
+
+The Reviewer may not alter approval evidence and must not become the
+Writer. The Human is the only role that records approvals. If a role
+cannot distinguish whether a field is authorization evidence or
+execution progress, it must treat the field as authorization evidence and
+leave it unchanged.
+
+After each phase transition, `state.yaml` must be updated. At the end of
+each phase, the agent must verify that:
+
+- the manifest's `status` for the current document is consistent with the
+  phase recorded in `state.yaml`;
+- a document marked `complete` in the manifest reached `complete` via a
+  valid path (no-op or approved → written → reviewed → PASS);
+- no document is marked `complete` in the manifest while `state.yaml`
+  records an unresolved failed/blocked execution.
+
+If manifest and state disagree, the manifest is authoritative for the
+document's lifecycle position, but the discrepancy must be reported and
+resolved before proceeding — do not silently normalize unrelated state.
+
+### Research notes
+
+Research notes under `docs/.documentation/notes/` are evidence records, not
+authority. They may record evidence, findings, verification commands,
+observations, rejected hypotheses, and proposed changes. They must not
+silently become a second source of truth. The approved plan is the
+authority for the Writer.
+
+## 18. Operational lifecycle
+
+Every manifest document is in exactly one lifecycle state. The canonical
+lifecycle:
+
+```text
+pending → research → findings → planned → pending_approval → approved → writing → review → complete
+```
+
+A rejected review or rejected plan enters `rejected`, which returns to
+`planned` (requiring new approval) — never directly to `writing` or
+`review`:
+
+```text
+review → rejected → planned → pending_approval → approved → writing → review
+```
+
+A no-op path is explicitly valid (section 10):
+
+```text
+research → no findings → complete
+```
+
+A document may also carry a `blocked` flag. `blocked` is orthogonal to the
+lifecycle state: a blocked document keeps its state, records the blocker in
+`state.yaml`, and is skipped until unblocked.
+
+### States
+
+#### pending
+
+Known to be needed; no work started.
+
+#### research
+
+Read-only evidence gathering and finding identification. Maps to the
+Researcher role. Output is research notes and a findings list. A document
+with no findings goes directly to `complete` (no-op path, section 10).
+
+#### findings
+
+Research identified one or more genuine defects. Findings are recorded in
+`state.yaml`. The document awaits planning.
+
+#### planned
+
+Findings have been converted into an explicit change plan with authorized
+and forbidden changes. The plan is recorded in `state.yaml`. The document
+awaits human approval. A plan may be revised while in `planned`; once
+approved, it becomes immutable (section 18.2).
+
+#### pending_approval
+
+A plan has been submitted for human approval. No writing may occur in this
+state. The human may approve, reject, or request changes.
+
+#### approved
+
+Human approval has been granted for a specific plan. The approved plan is
+immutable (section 18.2). The document awaits writing. Writing may execute
+only the approved plan.
+
+#### writing
+
+Executing approved changes only. Maps to the Writer role. Entry requires an
+approved plan (section 6). The Writer follows the minimal-diff contract
+(section 7). Before writing, capture the baseline (section 18.4).
+
+#### review
+
+Independent review of Writer output against the approved plan. Maps to the
+Reviewer role. Entry requires a completed write phase and the approved plan.
+Review returns exactly one of `PASS`, `REJECT`, or `BLOCKED` (section 9).
+
+#### rejected
+
+The document failed review (REJECT outcome) or its plan was rejected. The
+document returns to `planned` — never automatically to `writing`. There is
+no autonomous post-REJECT write authorization. Any further writing requires
+a (new or revised) plan that is human-approved again:
+
+```text
+rejected → planned → pending_approval → approved → writing → review
+```
+
+`repair` is not a lifecycle state. It may only describe work performed under
+a newly approved reparative plan; it never itself authorizes a write. If a
+review failure remains unchanged after repeated remediation under separately
+approved plans, record a genuine blocker (section 20) instead of continuing.
+
+#### complete
+
+Review passed (`PASS` outcome) or research found no defects (no-op path).
+Document is protected from unnecessary rewrites. A document reaches
+`complete` only via one of these two paths (section 22).
+
+### 18.1 Valid transitions
+
+A phase may execute only if the current state authorizes it. Valid
+transitions:
+
+```text
+pending          → research
+research         → complete            (no-op: no findings)
+research         → findings            (findings identified)
+findings         → planned
+planned          → pending_approval
+pending_approval → approved            (human approves)
+pending_approval → planned            (human rejects or requests changes)
+approved         → writing
+writing          → review
+review           → complete            (PASS)
+review           → rejected            (REJECT)
+review           → blocked             (BLOCKED)
+rejected         → planned             (return to planning; requires new approval)
+```
+
+Invalid transitions (never permitted without the required intermediate
+state):
+
+```text
+findings         → writing             (must pass through planned → approved)
+research         → writing             (must pass through findings → planned → approved)
+planned          → writing             (must pass through pending_approval → approved)
+writing          → complete            (must pass through review → PASS)
+review           → writing            (rejected returns to planned, not writing)
+review           → repair → writing   (repair is not a state; post-REJECT repair requires a newly approved plan)
+rejected         → writing            (rejected returns to planned, not writing)
+```
+
+No approval-free write is permitted: writing requires an approved plan
+bound to the plan under execution (sections 6, 18.2). No approval-free
+completion after modification is permitted: a modified document reaches
+`complete` only via review → PASS (section 22).
+
+### 18.2 Plan immutability and authorization-binding content
+
+Once a plan is approved, the following authorization-bearing content is
+immutable and must match exactly between the approved plan and the plan
+being executed:
+
+```text
+plan_id
+document
+findings
+authorized_changes
+forbidden_changes
+scope / target paths
+acceptance_criteria
+```
+
+If any authorization-bearing content changes after approval:
+
+- the previous approval is invalid for the changed content;
+- execution requires reauthorization (return to `planned` followed by a new
+  `pending_approval` and new human approval).
+
+If additional work is discovered during writing or review:
+
+- do not modify the approved plan in place;
+- do not extend Writer authorization beyond the approved plan;
+- do not silently amend the plan.
+
+Instead: create a new plan, obtain new human approval, then execute the
+new plan.
+
+A plan status update (e.g. `pending_approval` → `approved`) is not an
+authorization-bearing content mutation and does not create a new
+authorization revision.
+
+### 18.3 Approval rejection
+
+If human approval rejects a plan:
+
+```text
+pending_approval → rejected → planned
+```
+
+The Writer must never execute a rejected plan. If the human requests
+changes: preserve the previous plan as historical evidence (do not erase
+it); create or revise a plan according to the planning rules (section 5);
+require approval again before writing. Historical approval/rejection
+records are preserved in `state.yaml` (section 18.6).
+
+### 18.4 Pre-existing changes
+
+Before Writer execution, capture the baseline:
+
+```bash
+git rev-parse HEAD
+git status --short
+git diff --name-only
+git diff -- <target>
+md5 -q <target>
+```
+
+The Writer must distinguish pre-existing changes (present before the
+Write phase) from changes caused by the current execution. The Writer
+must never: reset pre-existing changes; overwrite them; stage/unstage
+them; claim them as its own; use them as authorization for additional
+changes. Review compares the Writer result against the pre-write baseline,
+not against a clean tree.
+
+### 18.5 Resume semantics
+
+`state.yaml` records workflow position; it is evidence of position, not
+proof that the underlying artifact is correct. On resume:
+
+- **After research**: resume from the recorded research result. Do not
+  repeat research unless evidence is stale or the protocol requires
+  revalidation.
+- **After planning**: resume at `pending_approval`. Do not write.
+- **After approval**: resume at `approved`. Verify the approved plan still
+  matches the stored plan before writing.
+- **During/after writing**: do not assume success from
+  `current.phase: writing`. Inspect the actual working-tree diff against
+  the pre-write baseline before continuing.
+- **During/after review**: resume from the recorded review result. Do not
+  silently skip Review.
+
+### 18.6 State history
+
+Preserve historical evidence for findings, plans, approvals, and reviews
+in `state.yaml`. Do not overwrite previous approval or review decisions.
+Each historical record retains: what happened; to which document; under
+which plan; with what result. A plan status update is not a plan-content
+mutation.
+
+## 19. Dependency-aware execution
+
+Do not write a dependent document before its dependencies are `complete`.
+Current manifest backbone:
+
+```text
+index → what-is-comity → core-concepts → { architecture, errors-and-results }
+→ getting-started → first-application
+```
+
+`why-comity` refines `what-is-comity` and depends on it. The manifest is
+authoritative; this diagram is a summary. If they disagree, the manifest
+wins and this file must be corrected.
+
+## 20. Genuine blockers
+
+A genuine blocker exists only when repository evidence is contradictory or
+insufficient to establish intended public behavior: incompatible public
+APIs in two authoritative sources; implementation contradicting `exports`;
+explicitly conflicting architecture rules; an indeterminable intended
+contract; or a forced choice between potentially false public claims.
+
+When blocked: stop modifying that document; record the blocker in
+`state.yaml`; do not invent a resolution. A blocker record contains:
+document; since (date); revision; summary; evidence references; decision
+needed. A blocker is cleared only when (a) a repository change resolves the
+contradiction, or (b) an explicit human decision resolves the intended
+contract.
+
+## 21. Documentation style
+
+Follow `style.md` and `terminology.yaml`. Prefer: concept before package;
+explanation before reference; progressive complexity; short paragraphs;
+precise concrete language; active voice; restrained marketing. Avoid:
+repetition across documents (link instead); generic framework marketing;
+exaggerated or permanent guarantees; invented abstractions; implementation
+details irrelevant to the reader's task; package exposition before
+architecture.
 
 Known risks at protocol creation (verify, do not assume): `docs/index.md`
 links to planned paths (`philosophy.md`, `guides/*`, `packages/*`,
@@ -305,76 +817,46 @@ never link to them as if they exist. Lifecycle wording must agree: kernel
 topological) → seal → initialize (forward topological). `@comity/*` vs
 `@comity-dev/*` naming must stay exact everywhere.
 
-## 12. Scope discipline
+## 22. Completion criteria
 
-The documentation agent is not a refactoring agent. Discovered source bugs,
-architectural defects, lint or test failures, dependency problems: record in
-`state.yaml` notes or the run report, continue where possible. Never modify
-anything outside `docs/` without explicit human approval for the current
-task. Never modify public docs outside the current document except the
-minimal repair scope section 11 allows.
+A document is complete when exactly one of these is true:
 
-## 13. State updates
+- **No-op completion**: research produced no findings (research → complete).
+- **Successful approved-plan completion**: a plan was approved → written → reviewed
+  → PASS. (Work performed after a review REJECT, under a newly approved
+  reparative plan, reaches completion only through this same approved-plan
+  path — there is no separate completion path.)
 
-After each lifecycle transition and each document, update `state.yaml`:
-`current.document` / `current.state`; `last_completed`; `blockers[]`
-(document, since, revision, summary, evidence, decision_needed); `last_run`
-(status, revision via `git rev-parse HEAD`, working tree (`clean` or `dirty`
-per `git status --porcelain`), timestamp, verification summary, resume
-notes). `last_run.status` is one of `not_started`, `running`, `completed`,
-`blocked`. HEAD revision and working-tree changes are distinct facts:
-record both. A dirty tree is not automatically a blocker, but never claim a
-document was verified against a commit alone when relevant uncommitted
-changes were present. Keep the schema minimal. Research notes under
-`docs/.documentation/notes/` (section 2) are working evidence, not state.
-The repository remains authoritative: after interruption, re-inspect
-repository and state first. Never assume an interrupted step completed —
-re-verify from the last evidenced state.
+The following are NOT complete:
 
-## 14. Failure and interruption
+- `approved` — approval alone is not completion.
+- `writing` — a document being written is not complete.
+- `review` — a document under review is not complete.
+- `review: rejected` — a rejected review is not complete.
+- `planned` / `pending_approval` / `findings` / `research` — intermediate
+  states are not completion.
 
-On start or restart: read manifest, state, style, terminology; compare
-`git rev-parse HEAD` against the recorded revision and record whether the
-working tree is clean or dirty (section 13); re-inspect any in-flight
-document if the tree moved. Repository contents are authoritative over
-recorded state. A document recorded as `writing` is re-inspected and then
-completed, returned to `writing`, or moved to `verification` according to
-its actual content; an unfinished document is not forced through repair. A
-document recorded mid-`verification` or mid-`repair` re-enters
-`verification`. If `current.document` is null — a valid initial state —
-select the next eligible document per section 3. A `complete` document is
-not trusted solely because of its recorded state: on a new run, re-verify it
-when repository or documentation changes make its previous verification
-stale, or when it cannot be determined safely that changed files do not
-affect its claims (section 2, complete).
+A documentation run is complete when every manifest document is `complete`
+or `blocked` with a genuine blocker. "All files exist" is not completion.
+Only verified completion counts.
 
-## 15. Completion criteria
+## 23. Final report
 
-Complete when: every manifest document is `complete`; no unresolved genuine
-blocker remains that prevents completion of the documentation roadmap; API
-examples verified per sections 7–8; all relative links resolve; terminology,
-style, and editorial checks pass (section 2); no draft-only or internal-only
-API presented as public; architectural claims evidenced. "All files exist"
-is not completion. Only verified completion counts.
-
-## 16. Final report contract
-
-At the end of a run, emit exactly this factual report (no extra claims):
+At the end of a phase or run, emit a factual report:
 
 ```text
-Documentation run
------------------
-Documents completed:
-Documents repaired:
-Documents skipped:
-Current document:
-Remaining documents:
-Blockers:
-Verification status:
+Documentation phase
+-------------------
+Phase:              <research | plan | write | review>
+Document:           <id>
+Findings:           <count, or "none">
+Plan status:        <not_applicable | pending_approval | approved>
+Write status:       <not_applicable | executed | rejected>
+Review outcome:     <PASS | REJECT | BLOCKED | NOT_APPLICABLE>
 Repository revision:
-Working tree:
+Working tree:       <clean | dirty>
+Scope violations:   <none | list>
 ```
 
-List document IDs, blocker summaries, and the verified revision. Do not claim
-completion without evidence.
+Do not claim completion without evidence.
 
