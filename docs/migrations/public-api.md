@@ -272,7 +272,7 @@ contracts. Search now has its own contract surface owned by `@comity/search`.
   and MUST NOT import any domain module.
 - `SearchError` (with `SearchErrorReason`) — search-owned error extending
   `BaseError`, compatible with the existing Result conventions. Exported from
-  the root and from the intentional `@comity/search/errors` subpath.
+  the intentional `@comity/search/errors` subpath.
 
 ### Before / after
 

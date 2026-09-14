@@ -51,7 +51,7 @@ documents:
   - id: core-concepts
     path: docs/core-concepts.md
     phase: foundations
-    status: research
+    status: complete
     protection: unprotected
     depends_on: [what-is-comity]
     purpose: Recurring principles across runtime, boundaries, composition, HTTP/SQL/HTML/hydration contracts, Result/errors, governance.

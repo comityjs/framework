@@ -148,6 +148,7 @@ const myModule: ModuleMeta = {
       // Initialization logic runs after kernel is sealed
       const service = ctx.services.resolve(MY_TOKEN);
       await service.initialize();
+      return success(undefined);
     });
   },
 };

@@ -171,10 +171,15 @@ improve the document. This includes restructuring, prose rewrites, new
 sections, package name changes, heading renames, and any change not
 explicitly authorized above.
 
-## 6. Human gate
+## 6. Plan identity and the human gate
 
-The human approval boundary sits between PLAN and WRITE. The Writer has
-**zero write authority** until the plan is approved.
+`plan_id` is the single mandatory identity field that connects a plan, its
+execution, and its review. It must appear in the plan, the approval record,
+and the review record. A plan or approval without an identifiable `plan_id`
+is invalid and authorizes nothing.
+
+The human gate sits between PLAN and WRITE. The Writer has **zero write
+authority** until the plan is approved.
 
 The approval must authorize the plan's specific changes, not merely the
 document. An approval record contains:
@@ -342,11 +347,6 @@ A document that has passed review is `complete` and protected from
 unnecessary rewrites. Re-verification is allowed; rewriting without a
 finding is not, and no approval-free path leads from `complete` back to
 `writing`.
-
-### Protected-document re-entry
-
-A protected document in `complete` may enter deterministic read-only
-re-verification (`research`), exactly as follows:
 
 ### Protected-document re-entry
 
@@ -553,7 +553,9 @@ pending → research → findings → planned → pending_approval → approved 
 
 A rejected review or rejected plan enters `rejected`, which returns to
 `planned` (requiring new approval) — never directly to `writing` or
-`review`:
+`review`. A `REJECT` outcome must not implicitly authorize another Writer
+execution under the same approval; any further repair after rejection
+requires a new/updated plan, new human approval, writing, and review:
 
 ```text
 review → rejected → planned → pending_approval → approved → writing → review

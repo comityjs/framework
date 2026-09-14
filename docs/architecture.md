@@ -55,7 +55,7 @@ Inward dependency flow is the foundational constraint of the Comity runtime:
 - **Kernel:** Depends exclusively on Primitives. Provides execution state, service lookup, and event mechanics.
 - **Composition:** Depends on Kernel and Primitives. Handles module dependency graphs, topological sorting, and configuration loading.
 - **Core Modules:** Depend on Primitives, Kernel, and Composition infrastructure. Define capability contracts (HTTP, Auth, SQL, HTML). **Strictly forbidden from importing Adapters.**
-- **Technology Adapters:** Implement a single Core Module contract using a concrete library. Depend on their respective Core Module and Kernel packages.
+- **Technology Adapters:** Implement a single Core Module contract using a concrete library. Depend on their respective Core Module contract and, where applicable, supporting primitives/composition infrastructure.
 - **Integration Adapters:** Platform-level orchestrators. May import multiple Core Modules to bind full external platform capabilities (e.g., Shopify storefronts).
 
 ```text
@@ -171,7 +171,7 @@ interface ModuleMeta<
 Application composition follows a deterministic pipeline:
 
 ```text
-Stage 1: Resolve Graph ──► Stage 2: Setup ──► Stage 3: Seal ──► Stage 4: Initialize
+Stage 1: Resolve Graph ──► Stage 2: Setup ──► Stage 3: Seal ──► Stage 4: Initialize ──► Stage 5: Start
 
 ```
 
@@ -179,6 +179,7 @@ Stage 1: Resolve Graph ──► Stage 2: Setup ──► Stage 3: Seal ──�
 2. **SETUP (Reverse Topological Order):** Calls `setup()` on modules from leaves to root. Modules register services, hook handlers, and event listeners into the open Kernel. `setup` returns a deferred `ModuleSetupFn`. Service resolution is forbidden.
 3. **SEAL:** The Kernel transitions state. Service registration locks down; container resolution is enabled.
 4. **INITIALIZE (Forward Topological Order):** Executes the deferred `ModuleSetupFn` returned by each module's setup, from root to leaves. Services are resolved, initial events fired, and stateful connections opened.
+5. **START:** `load()` calls `kernel.start()`, transitioning the kernel to the `running` state. The application is ready after this stage.
 
 Failure at any point in this pipeline halts boot immediately, returning a strongly typed `Result` payload.
 

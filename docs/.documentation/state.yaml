@@ -24,9 +24,9 @@ project:
   manifest_version: 2
 
 current:
-  document: null
-  phase: null           # research | findings | planned | pending_approval | approved | writing | review | rejected
-  document_status: null
+  document: docs/getting-started.md
+  phase: complete
+  document_status: complete
 
 last_completed:
   document: what-is-comity
@@ -70,6 +70,27 @@ findings:
     evidence: "None of the three targets exist (filesystem check); none are manifest entries; manifest acceptance criteria 'every relative link resolves' and 'no links to planned-but-missing documents' are violated; AGENT.md section 21 known risk explicitly names quickstart.md, examples/*, contributing.md."
     severity: defect
     required_outcome: remove the three broken references.
+  - finding_id: ARCH-001
+    document: docs/architecture.md
+    location: 'Section "Composition Engine" → "### 3. Execution Lifecycle Sequence"; stage diagram around line 174; numbered lifecycle list around lines 178-181.'
+    problem: The document describes the load() composition pipeline as four stages — Resolve Graph, Setup, Seal, Initialize — and presents this as the complete boot sequence, omitting the fifth terminal START stage.
+    evidence: "packages/composition/src/loader.ts docstring (lines 22-28) lists five stages (resolveOrder, CONFIGURE, SEAL, INITIALIZE, START); loader.ts lines 123-124 call kernel.start() and line 134 returns success(undefined). docs/getting-started.md lines 159-163 document five stages including '5. Start → Application is ready'. Manifest acceptance criterion for architecture.md: 'lifecycle sequences match kernel/composition implementation'."
+    severity: P1
+    required_outcome: Add the missing Stage 5 (Start) to the execution lifecycle diagram and numbered list in docs/architecture.md so the documented load() pipeline matches loader.ts and getting-started.md.
+  - finding_id: DOC-002
+    document: docs/architecture.md
+    location: 'Section "Dependency Direction & Constraints"; Technology Adapters bullet, line 58.'
+    problem: The document states Technology Adapters "Depend on their respective Core Module and Kernel packages", implying a direct Technology Adapter to @comity/kernel dependency that does not exist in the current package dependency graph.
+    evidence: "Dependency metadata of all 14 @comity/* adapter packages (@comity/http-hono, http-fetch, html-react, html-preact, hydration-react, hydration-preact, sql-kysely, validation-zod, auth-jose, acl-casl, cache-redis, cache-kv, router-path-to-regexp, graphql-client-fetch) was verified: none declares a direct dependency on @comity/kernel. Adapters depend on their corresponding Core Module contracts and, where applicable, supporting primitives/composition infrastructure."
+    severity: P2
+    required_outcome: Correct the Technology Adapters bullet in docs/architecture.md to remove the false direct Kernel dependency and describe the adapters' actual dependency on their Core Module contracts plus supporting primitives/composition infrastructure where applicable.
+  - finding_id: DOC-003
+    document: docs/getting-started.md
+    location: 'Section "Modules and Composition"; module setup example, lines 134-153 (deferred initialization function at lines 147-151).'
+    problem: The ModuleMeta setup example returns a deferred initialization function typed () => Promise<void>, but the current ModuleSetupFn contract requires () => Promise<Result<void, BaseError>>. As written it would fail type-checking and, if executed, the composition loader would call isFailure(undefined) and throw.
+    evidence: "packages/composition/src/setup/types.ts line 30 defines ModuleSetupFn = () => Promise<Result<void, BaseError>>; ModuleMeta.setup (line 71) returns Promise<Result<ModuleSetupFn, BaseError>>; packages/composition/src/loader.ts lines 108-111 call 'const result = await init(); if (isFailure(result))'. The authoritative @comity/http module (packages/http/src/setup/composition.ts) returns success(undefined) (line 64) and failure(...) (line 30) from its deferred initializer. The documented example's deferred function (lines 147-151) returns Promise<void>."
+    severity: P2
+    required_outcome: Make the deferred initialization function in the getting-started module setup example return a Result<void, BaseError> (successful path ends with return success(undefined);), matching the ModuleSetupFn contract and the @comity/http pattern.
 
 plans:
   - plan_id: PLAN-IDX-001
@@ -140,6 +161,126 @@ plans:
       - any file outside docs/.documentation/** (public docs, source, dependencies, lockfile, workflows)
       - protocol redesign beyond the approved findings
       - historical Phases 4.3-4.7 evidence rewriting
+  - plan_id: PLAN-ARCH-001
+    document: docs/architecture.md
+    findings: [ARCH-001]
+    finding_id: ARCH-001
+    status: approved
+    write_authorized: true
+    approved_at: 2026-09-13T23:02:46Z
+    authorized_changes:
+      - C-01: 'Extend the stage diagram in docs/architecture.md "### 3. Execution Lifecycle Sequence" (~line 174) to add "Stage 5: Start" after "Stage 4: Initialize" so the diagram represents Stage 1 Resolve Graph → Stage 2 Setup → Stage 3 Seal → Stage 4 Initialize → Stage 5 Start; preserve the existing wording and formatting style of the diagram.'
+      - C-02: 'Add a fifth numbered item to the lifecycle list (~lines 178-181) stating that load() calls kernel.start(), the kernel transitions to the "running" state, and the application is ready after this stage; use the repository existing lifecycle terminology; do not invent new lifecycle semantics and do not duplicate the broader kernel lifecycle documentation unnecessarily.'
+    acceptance_criteria:
+      - AC-01: docs/architecture.md documents the load() execution lifecycle as five stages.
+      - AC-02: the fifth stage is explicitly START / Start.
+      - AC-03: the documentation states that load() invokes kernel.start().
+      - AC-04: the documentation accurately states the kernel reaches the "running" state as part of this stage.
+      - AC-05: the sequence remains ordered Resolve Graph → Setup → Seal → Initialize → Start.
+      - AC-06: the correction is consistent with packages/composition/src/loader.ts and docs/getting-started.md.
+      - AC-07: no unrelated content is changed.
+      - AC-08: only docs/architecture.md is modified (operational state updates excluded).
+      - AC-09: the text does not imply callers must manually invoke kernel.start() after load(); it makes clear load() performs the start transition itself.
+    forbidden_changes_global:
+      - rewriting the Composition Engine section or the architecture document
+      - modifying other lifecycle descriptions outside the affected sequence
+      - modifying docs/getting-started.md, docs/core-concepts.md, docs/index.md, docs/errors-and-results.md, docs/what-is-comity.md, or docs/why-comity.md
+      - modifying protocol files (AGENT.md, style.md, terminology.yaml, manifest.yaml)
+      - modifying source code, package manifests, the lockfile, or adding dependencies
+      - changing architecture rules, introducing new APIs, changing load() behavior, or altering kernel lifecycle implementation
+      - improving surrounding prose, fixing unrelated findings/observations, restructuring headings/navigation, adding new sections, or changing the manifest acceptance criteria
+  - plan_id: PLAN-DOC-002
+    document: docs/architecture.md
+    findings: [DOC-002]
+    finding_id: DOC-002
+    status: approved
+    write_authorized: true
+    approved_at: 2026-09-13T23:23:42Z
+    authorized_changes:
+      - C-01: 'Amend the Technology Adapters bullet in docs/architecture.md "Dependency Direction & Constraints" (line 58): replace "Depend on their respective Core Module and Kernel packages." with wording stating adapters depend on their respective Core Module contract and, where applicable, supporting primitives/composition infrastructure — removing the inaccurate direct @comity/kernel dependency while preserving the intended Core Module dependency and the section structure.'
+    acceptance_criteria:
+      - AC-01: "the inaccurate statement that Technology Adapters depend on Kernel packages is removed or corrected"
+      - AC-02: "the resulting statement accurately reflects current package dependency evidence (no direct adapter to @comity/kernel)"
+      - AC-03: "the correction does not introduce an unsupported claim about all runtime interactions between adapters and the Kernel"
+      - AC-04: "the section continues to communicate the inward dependency direction of Technology Adapters toward their Core Module contracts"
+      - AC-05: "only the text necessary to remediate DOC-002 is changed"
+      - AC-06: "only docs/architecture.md is modified by the Writer"
+      - AC-07: "no Phase 5.4 observations are silently incorporated"
+      - AC-08: "the completed ARCH-001 lifecycle correction remains unchanged"
+      - AC-09: "no source files, package manifests, dependencies, lockfiles, workflows, or unrelated documentation are modified"
+    forbidden_changes_global:
+      - fixing other architecture observations
+      - modifying the Core Modules bullet (line 57)
+      - reconciling illustrative examples (Express Adapter, Shopify vs Magento storefronts)
+      - renaming architectural layers or changing terminology globally
+      - altering lifecycle documentation or the ARCH-001 lifecycle correction
+      - altering package documentation, code, package metadata, dependencies, tests, lockfiles, or workflows
+      - performing unrelated documentation cleanup
+      - modifying any public documentation other than docs/architecture.md
+      - modifying protocol files (AGENT.md, style.md, terminology.yaml, manifest.yaml)
+  - plan_id: PLAN-DOC-003
+    document: docs/getting-started.md
+    findings: [DOC-003]
+    finding_id: DOC-003
+    status: approved
+    write_authorized: true
+    approved_at: 2026-09-13T23:49:37Z
+    authorized_changes:
+      - C-01: 'In docs/getting-started.md "Modules and Composition" module setup example (lines 147-151), make the deferred initialization function return a Result<void, BaseError> by adding "return success(undefined);" as its final statement after "await service.initialize();". Preserve the example imports, comments, service registration line, surrounding prose, and educational intent. Do not add an error-handling path or invent error types or APIs (the example has no naturally implied error path).'
+    acceptance_criteria:
+      - AC-01: "the documented deferred initializer no longer returns Promise<void> where a ModuleSetupFn is expected"
+      - AC-02: "the example is type-compatible with ModuleSetupFn = () => Promise<Result<void, BaseError>>"
+      - AC-03: "the example returns a successful Result after initialization, matching the composition loader contract"
+      - AC-04: "the correction is consistent with the @comity/http/setup implementation pattern"
+      - AC-05: "educational intent preserved; no unnecessary redesign or added concepts"
+      - AC-06: "only the smallest necessary lines in the affected example are changed"
+      - AC-07: "only docs/getting-started.md is changed by the Writer"
+      - AC-08: "no Phase 5.6 observations are incorporated"
+      - AC-09: "no source, package manifest, dependency, lockfile, workflow, or unrelated documentation changes"
+    forbidden_changes_global:
+      - modifying any other docs/*.md file
+      - modifying docs/.documentation/AGENT.md, manifest.yaml, style.md, or terminology.yaml
+      - modifying source files, package manifests, lockfiles, workflows, tests, or generated files
+      - modifying docs/architecture.md (preserve the ARCH-001 and DOC-002 remediations)
+      - modifying examples outside the affected code block
+      - redesigning the example or adding new error-handling/API concepts
+      - incorporating Phase 5.6 observations
+
+  - plan_id: PLAN-DOC-004-006
+    document:
+      - docs/architecture/repository.md
+      - docs/migrations/public-api.md
+    findings: [DOC-004, DOC-005, DOC-006]
+    finding_id: DOC-004
+    scope: exact Phase 7.1 plan covering findings DOC-004, DOC-005 and DOC-006 only; documentation-only remediation of the two authorized public documents; no new findings, no reopening of previous findings, no scope expansion
+    authorized_documents:
+      - docs/architecture/repository.md
+      - docs/migrations/public-api.md
+    status: approved
+    write_authorized: true
+    approved_at: 2026-09-14T00:45:00Z
+    notes: explicitly approved by human ("PLAN-DOC-004-006 approved by human"); Writer is authorized only for the documentation changes described in this plan — remediation of DOC-004, DOC-005 and DOC-006 on docs/architecture/repository.md and docs/migrations/public-api.md only; all other scope, exclusion and forbidden-change constraints remain in force
+    authorized_changes:
+      - DOC-004: 'In docs/architecture/repository.md line 165 (ESLint Rules section), change the relative link to development/docs/architecture/rule-reconciliation.md from ../../../../development/docs/architecture/rule-reconciliation.md to ../../../development/docs/architecture/rule-reconciliation.md. Keep the link text and the referenced target unchanged; make no other link edits.'
+      - DOC-005: 'In docs/architecture/repository.md "Dependencies — Root devDependencies" table (lines 93-98), update only the four stale version cells to match the current authoritative community/package.json: turbo ^2.10.7 -> ^2.10.12; vitest ^4.1.10 -> ^4.1.11; @vitest/coverage-v8 ^4.1.10 -> ^4.1.11; @typescript-eslint/parser ^8.65.0 -> ^8.70.0. Leave all other dependency values and surrounding text unchanged; do not update versions for any other reason.'
+      - DOC-006: 'In docs/migrations/public-api.md section 14 "New @comity/search public API" (lines 273-275), correct the false root-export claim so the statement communicates that SearchError is exported from the @comity/search/errors subpath and NOT from the @comity/search root. Preferred minimal correction: remove the phrase "from the root" (e.g., reword to "Exported from the intentional `@comity/search/errors` subpath."). Preserve the existing migration explanation and do not redesign Section 14; do not modify the package implementation or the exports map.'
+    acceptance_criteria:
+      - AC-01: "DOC-004 resolved — the documented rule-reconciliation.md link resolves correctly from community/docs/architecture/repository.md to development/docs/architecture/rule-reconciliation.md; no unrelated link changes"
+      - AC-02: "DOC-005 resolved — the four documented dependency versions (turbo, vitest, @vitest/coverage-v8, @typescript-eslint/parser) exactly match community/package.json; no other dependency version changed"
+      - AC-03: "DOC-006 resolved — the documentation no longer claims SearchError is exported from the @comity/search root; it correctly identifies @comity/search/errors as the public export path"
+      - AC-04: "historical meaning of community/docs/migrations/public-api.md preserved; only the currently false public API statement corrected"
+      - AC-05: "minimal diff — smallest possible textual changes; no reformatting, prose rewrite, restructuring, or opportunistic cleanup"
+      - AC-06: "documentation-only remediation — only docs/architecture/repository.md and docs/migrations/public-api.md modified; no source, package manifest, lockfile, dependency, or workflow changes"
+      - AC-07: "previous findings preserved — ARCH-001, DOC-002, DOC-003 intact and unchanged"
+      - AC-08: "repository integrity — no unrelated tracked files changed, no untracked files introduced by the Writer, pre-remediation working-tree state preserved"
+      - AC-09: "no scope expansion — no additional stale docs, links, dependency versions, API statements, foundational-seven edits, package-internal docs, or protocol changes beyond the operational state record"
+    forbidden_changes_global:
+      - modifying any public document other than docs/architecture/repository.md and docs/migrations/public-api.md
+      - modifying source files, package manifests, dependencies, lockfiles, workflows, tests, or generated files
+      - reverting or altering the ARCH-001, DOC-002, or DOC-003 remediations
+      - redesigning section 14 or the public-api migration narrative
+      - running the Writer or Reviewer, or making any change, before explicit human approval of PLAN-DOC-004-006
+      - expanding scope, reopening previous findings, or introducing new findings
 
 approvals:
   - plan_id: PLAN-IDX-001
@@ -171,6 +312,58 @@ approvals:
     approver: human
     timestamp: 2026-09-13T05:44:09Z
     basis: I approve PLAN-4.8-001 exactly as produced by Phase 4.8. I authorize C-01 through C-06 only. The authorized findings are F-01 through F-05 only. F-06, F-07, and F-08 remain out of scope. The approved target is docs/.documentation/**, limited to the files and changes explicitly defined by PLAN-4.8-001. No additional interpretation, expansion, redesign, or remediation is authorized.
+  - plan_id: PLAN-ARCH-001
+    document: docs/architecture.md
+    decision: approved
+    scope: exact plan — PLAN-ARCH-001 as produced by Phase 5.2; C-01 and C-02 only; finding ARCH-001 only; authorized target docs/architecture.md only
+    authorized:
+      - C-01: 'add "Stage 5: Start" to the execution lifecycle diagram (~line 174) in docs/architecture.md, after "Stage 4: Initialize"'
+      - C-02: 'add a fifth numbered lifecycle list item (~lines 178-181) stating load() calls kernel.start(), the kernel reaches the "running" state, and the application is ready after this stage'
+    acceptance_criteria: AC-01 through AC-09 (as defined by PLAN-ARCH-001)
+    authorized_target: docs/architecture.md only
+    not_authorized: changes to the plan itself; new findings; additional files; protocol redesign; unrelated documentation corrections; execution of any other finding, plan, document, or protocol change; all PLAN-ARCH-001 forbidden changes remain forbidden
+    approver: human
+    timestamp: 2026-09-13T23:02:46Z
+    basis: "I approve PLAN-ARCH-001 exactly as produced by Phase 5.2. I authorize only the remediation of finding ARCH-001. I authorize C-01 and C-02 only, subject to acceptance criteria AC-01 through AC-09. The authorized target is docs/architecture.md only. No additional interpretation, expansion, redesign, cleanup, or remediation is authorized. All forbidden changes defined by PLAN-ARCH-001 remain forbidden. I authorize the Writer to execute PLAN-ARCH-001 only after verifying that the approved plan remains unchanged. I do not authorize execution of any other finding, plan, document, or protocol change."
+  - plan_id: PLAN-DOC-002
+    document: docs/architecture.md
+    decision: approved
+    scope: exact plan — PLAN-DOC-002 as produced by Phase 5.5; finding DOC-002 only; minimal wording correction to the Technology Adapters bullet in docs/architecture.md only
+    authorized:
+      - C-01: remove the inaccurate statement that Technology Adapters directly depend on @comity/kernel and replace it with wording accurately describing their dependency on their respective Core Module contract and, where applicable, supporting primitives/composition infrastructure
+    acceptance_criteria: AC-01 through AC-09 (as defined by PLAN-DOC-002)
+    authorized_target: docs/architecture.md only
+    not_authorized: modification of any other public documentation; modification of the Core Modules bullet; modification of the ARCH-001 lifecycle correction; reconciliation of illustrative examples; terminology changes; architectural redesign; source-code changes; package or dependency changes; lockfile changes; workflow changes; protocol changes; unrelated documentation cleanup; remediation of any other Phase 5.4 observation or finding; all PLAN-DOC-002 forbidden changes remain forbidden
+    approver: human
+    timestamp: 2026-09-13T23:23:42Z
+    basis: "I approve PLAN-DOC-002 exactly as produced by Phase 5.5. I authorize only the remediation of finding DOC-002. I authorize only the minimal wording correction to the Technology Adapters bullet in docs/architecture.md. I authorize the Writer to execute the plan subject to AC-01 through AC-09 exactly as defined in PLAN-DOC-002. The authorized change is limited to removing the inaccurate statement that Technology Adapters directly depend on @comity/kernel and replacing it with wording accurately describing their dependency on their respective Core Module contract and, where applicable, supporting primitives/composition infrastructure. I do not authorize modification of any other public documentation, modification of the Core Modules bullet, modification of the ARCH-001 lifecycle correction, reconciliation of illustrative examples, terminology changes, architectural redesign, source-code changes, package or dependency changes, lockfile changes, workflow changes, protocol changes, unrelated documentation cleanup, or remediation of any other Phase 5.4 observation or finding. All forbidden changes defined by PLAN-DOC-002 remain forbidden. The authorized target is docs/architecture.md only. The Writer must verify before writing that PLAN-DOC-002 remains unchanged and that the approval still corresponds exactly to the recorded plan. After execution, an independent Reviewer must inspect the actual diff and evaluate AC-01 through AC-09. This approval does not constitute approval of the Writer's implementation choices beyond the scope explicitly defined by PLAN-DOC-002."
+  - plan_id: PLAN-DOC-003
+    document: docs/getting-started.md
+    decision: approved
+    scope: exact plan — PLAN-DOC-003 as produced by Phase 5.7; finding DOC-003 only; single minimal correction to the deferred ModuleSetupFn example in docs/getting-started.md only
+    authorized:
+      - C-01: add "return success(undefined);" as the final statement of the deferred initializer in the "Modules and Composition" setup example, so it returns a Result<void, BaseError> consistent with ModuleSetupFn; no error-handling path or invented APIs
+    acceptance_criteria: AC-01 through AC-09 (as defined by PLAN-DOC-003)
+    authorized_target: docs/getting-started.md only
+    not_authorized: any other documentation change; any source-code change; package change; lockfile change; workflow change; protocol change; remediation of Phase 5.6 observations; changes to ARCH-001; changes to DOC-002; any expansion of the plan scope; all PLAN-DOC-003 forbidden changes remain forbidden
+    approver: human
+    timestamp: 2026-09-13T23:49:37Z
+    basis: "I approve PLAN-DOC-003 exactly as produced by Phase 5.7. I authorize only the remediation of finding DOC-003 — the single minimal correction to add 'return success(undefined);' at the end of the deferred initializer in the 'Modules and Composition' example in docs/getting-started.md, so the example conforms to ModuleSetupFn = () => Promise<Result<void, BaseError>>. I do not authorize any other documentation change, source-code change, package change, lockfile change, workflow change, protocol change, remediation of Phase 5.6 observations, changes to ARCH-001, changes to DOC-002, or any expansion of the plan scope. All forbidden changes defined by PLAN-DOC-003 remain forbidden. The authorized target is docs/getting-started.md only."
+  - plan_id: PLAN-DOC-004-006
+    document: [docs/architecture/repository.md, docs/migrations/public-api.md]
+    decision: approved
+    scope: exact plan — PLAN-DOC-004-006 as produced by Phase 7.1; findings DOC-004, DOC-005 and DOC-006 only; documentation-only remediation of the two authorized public documents only
+    authorized:
+      - DOC-004: 'In docs/architecture/repository.md line 165, change the relative link to development/docs/architecture/rule-reconciliation.md from ../../../../development/docs/architecture/rule-reconciliation.md to ../../../development/docs/architecture/rule-reconciliation.md; keep link text and target unchanged; no other link edits'
+      - DOC-005: 'In docs/architecture/repository.md "Dependencies — Root devDependencies" table, update only the four stale version cells to match community/package.json: turbo ^2.10.7 -> ^2.10.12; vitest ^4.1.10 -> ^4.1.11; @vitest/coverage-v8 ^4.1.10 -> ^4.1.11; @typescript-eslint/parser ^8.65.0 -> ^8.70.0'
+      - DOC-006: 'In docs/migrations/public-api.md section 14 ("New @comity/search public API"), correct the false root-export claim so the statement communicates that SearchError is exported from the @comity/search/errors subpath and NOT from the @comity/search root, by removing the phrase "from the root"; preserve the migration explanation'
+    acceptance_criteria: AC-01 through AC-09 (as defined by PLAN-DOC-004-006)
+    authorized_target: docs/architecture/repository.md and docs/migrations/public-api.md only
+    not_authorized: any other documentation change; any source-code change; package manifest change; dependency/lockfile change; workflow change; protocol change; modifications to ARCH-001/DOC-002/DOC-003 remediations; redesign of section 14 or the public-api migration narrative; any expansion of the plan scope; all PLAN-DOC-004-006 forbidden changes remain forbidden
+    approver: human
+    timestamp: 2026-09-14T00:46:00Z
+    basis: "I approve PLAN-DOC-004-006 exactly as produced by Phase 7.1. I authorize only the remediation of findings DOC-004, DOC-005 and DOC-006 — the link-depth correction and the four dependency-version corrections in docs/architecture/repository.md, and the root-export-claim correction in docs/migrations/public-api.md — as described in the plan. I do not authorize any other documentation change, source-code change, package change, lockfile change, dependency change, workflow change, protocol change, modifications to ARCH-001/DOC-002/DOC-003, or any expansion of the plan scope. All forbidden changes defined by PLAN-DOC-004-006 remain forbidden. The authorized targets are docs/architecture/repository.md and docs/migrations/public-api.md only."
+
 
 reviews:
   - document: index
@@ -185,26 +378,102 @@ reviews:
       - IDX-004: PASS — both fictional entries removed; Development Tooling heading preserved; no replacements
       - IDX-005: PASS — 3 broken links removed; Hands-on heading + intro preserved
     global_check: PASS — no unrelated prose/heading/architecture changes; no new/replacement links; no other documents or files touched
+  - document: architecture
+    plan_id: PLAN-ARCH-001
+    result: PASS
+    reviewer: independent
+    timestamp: 2026-09-13T23:06:27Z
+    findings:
+      - AC-01: PASS — architecture.md documents five execution stages (diagram Stage 1-5; list 5 items)
+      - AC-02: 'PASS — fifth stage is Start (Stage 5: Start diagram; 5. START list)'
+      - AC-03: PASS — fifth item states load() invokes kernel.start()
+      - AC-04: PASS — states kernel transitions to running
+      - AC-05: PASS — order Resolve Graph → Setup → Seal → Initialize → Start preserved
+      - AC-06: PASS — consistent with loader.ts (kernel.start() line 124) and getting-started.md (5. Start → Application is ready)
+      - AC-07: PASS — only the two authorized lines changed; surrounding content intact
+      - AC-08: PASS — only docs/architecture.md modified by Writer (AGENT.md, manifest.yaml, state.yaml pre-existing)
+      - AC-09: PASS — text attributes start to load() (no caller-side manual kernel.start() implication)
+    global_check: PASS — change limited to C-01 (diagram) and C-02 (list item); no scope violations; no other files touched by Writer
+  - document: architecture
+    plan_id: PLAN-DOC-002
+    result: PASS
+    reviewer: independent
+    timestamp: 2026-09-13T23:29:24Z
+    findings:
+      - AC-01: PASS — line 58 no longer claims Technology Adapters directly depend on Kernel packages
+      - AC-02: PASS — corrected wording matches adapter dependency evidence (no adapter to @comity/kernel across all 14 adapter packages)
+      - AC-03: PASS — no unsupported runtime claim; describes package dependency direction only
+      - AC-04: PASS — Core Module contract dependency preserved ('Implement a single Core Module contract' + 'Depend on their respective Core Module contract')
+      - AC-05: PASS — single-line wording replacement (1 added / 1 removed); no unrelated changes
+      - AC-06: PASS — only docs/architecture.md modified by Writer
+      - AC-07: PASS — no Phase 5.4 observation incorporated; Core Modules bullet (line 57) untouched
+      - AC-08: 'PASS — ARCH-001 five-stage lifecycle (Stage 5: Start) intact and unchanged'
+      - AC-09: PASS — no source/package/lockfile/workflow/unrelated documentation changes by Writer
+    global_check: PASS — Writer-caused delta limited to the Technology Adapters bullet (line 58); pre-existing ARCH-001 delta preserved; no scope violations; no other files touched by Writer
+  - document: getting-started
+    plan_id: PLAN-DOC-003
+    result: PASS
+    reviewer: independent
+    timestamp: 2026-09-13T23:54:16Z
+    findings:
+      - AC-01: PASS — deferred initializer now returns success(undefined) (a Result), no longer implicitly void
+      - AC-02: PASS — resulting function conforms to ModuleSetupFn = () => Promise<Result<void, BaseError>> (composition types.ts line 30; setup returns Promise<Result<ModuleSetupFn, BaseError>> line 71)
+      - AC-03: PASS — successful path returns success(undefined) after service.initialize(); loader.ts consumes result via isFailure(result)
+      - AC-04: PASS — consistent with @comity/http/setup composition.ts (success(undefined) line 64 / failure (...) line 30)
+      - AC-05: PASS — educational intent preserved; same deferred-init concept, one line added, no added complexity
+      - AC-06: PASS — minimal diff; numstat getting-started.md 1 added / 0 removed
+      - AC-07: PASS — Writer-caused change confined to docs/getting-started.md
+      - AC-08: PASS — no Phase 5.6 observation incorporated
+      - AC-09: PASS — no source/package/lockfile/workflow/unrelated-documentation/generated/untracked changes by Writer
+    global_check: PASS — Writer-caused delta limited to a single added line (return success(undefined);) in the Module setup example; pre-existing ARCH-001 and DOC-002 deltas preserved; no scope violations; no other files touched by Writer
+  - document: repository (architecture) + public-api migration
+    plan_id: PLAN-DOC-004-006
+    result: PASS
+    reviewer: independent
+    timestamp: 2026-09-14T01:20:00Z
+    findings:
+      - DOC-004: PASS — repository.md ESLint Rules section uses ../../../development/docs/architecture/rule-reconciliation.md; resolved from community/docs/architecture/ resolves to development/docs/architecture/rule-reconciliation.md (file exists); link text and target filename unchanged; surrounding section intact; no unrelated link altered
+      - DOC-005: PASS — four documented versions exactly match community/package.json (turbo ^2.10.12, vitest ^4.1.11, @vitest/coverage-v8 ^4.1.11, @typescript-eslint/parser ^8.70.0); the four should-remain values unchanged and correct (typescript ^5.9.3, eslint ^9.39.5, @changesets/cli ^2.31.1, prettier ^3.9.6); no unrelated dependency entry modified
+      - DOC-006: PASS — @comity/search root barrel exports only type symbols (no SearchError); SearchError is exported from the @comity/search/errors subpath (errors/index.ts exports SearchError, SEARCH_ERROR_HTTP_STATUS, SEARCH_ERROR_MESSAGES and types); package exports map exposes ".", "./errors", "./package.json"; documentation no longer claims root export and identifies @comity/search/errors as the intentional export location; migration/historical meaning preserved; section not redesigned
+      - ARCH-001: PASS — architecture.md five-stage composition lifecycle (Resolve Graph → Setup → Seal → Initialize → Start) incl. START documented and intact
+      - DOC-002: PASS — architecture.md Technology Adapters wording states dependency on respective Core Module contract and, where applicable, primitives/composition infrastructure; no universal claim that every adapter depends on @comity/kernel
+      - DOC-003: PASS — getting-started.md module setup example returns success(undefined) after initialization, consistent with ModuleSetupFn
+    global_check: PASS — Writer-caused content confined to community/docs/architecture/repository.md, community/docs/migrations/public-api.md, and state.yaml operational/plan/approval records (mtimes 08:29-08:30; architecture.md/getting-started.md/manifest.yaml predate the Writer window and are pre-existing baseline); no source/package/lockfile/workflow/protocol/foundational changes by Writer; authorization valid (plan approved, write_authorized true, human approval record scoped to DOC-004/005/006); plans=6, approvals=6, reviews=5; state record does not falsify/overwrite approval and does not self-certify the independent review
+
 
 blockers: []           # list of { document, since, revision, summary, evidence, decision_needed }
 
 scope_violations: []   # list of { path, phase, timestamp }
 
 last_review:
-  document: index
-  plan_id: PLAN-IDX-001
+  document: getting-started
+  plan_id: PLAN-DOC-003
   result: PASS
-  timestamp: 2026-09-13T00:35:00Z
+  timestamp: 2026-09-13T23:54:16Z
 
 last_run:
   status: completed
-  revision: 6703767003f119dac043c3b0186286fd24b86f6d
+  revision: b8f042ccbaf261d3852f4fbde81580bc62ac6f8a
   working_tree: dirty
-  timestamp: 2026-09-13T00:35:00Z
+  timestamp: 2026-09-14T01:00:00Z
   notes:
-    - Phase 4.5 controlled approved-plan execution pilot on docs/index.md (protected).
-    - PLAN-IDX-001 approved by human (state.yaml approvals[]), then executed by Writer (5 edits, 17 lines removed).
-    - Reviewer (independent) verified all 5 changes against plan; global check PASS; no forbidden changes; no other files touched.
-    - Full lifecycle recorded: research (4.4) → plan (4.4) → approval (4.5) → write (4.5) → review PASS (4.5).
-    - Phase 4.4 pilot findings retained (state.yaml findings[]).
-    - Phase 4.3 pilot result retained — last_completed: what-is-comity, PASS — NO CHANGES REQUIRED.
+    - "Phase 5.8 fresh independent public-documentation discovery (read-only) across the seven-document corpus."
+    - "Baseline verified: ARCH-001 (five-stage lifecycle), DOC-002 (Technology Adapters wording), and DOC-003 (ModuleSetupFn return success(undefined)) all intact in their working-tree deltas; pre-existing AGENT.md/manifest.yaml/state.yaml changes preserved; previous history intact (5 plans, 5 approvals, 4 reviews, DOC-003 resolved, no authorized write plan)."
+    - "Discovery result: NO new actionable finding. Re-inspected all seven documents; re-verified errors-and-results.md (Result/BaseError/ErrorMeta/SafeErrorPayload/toSafePayload/HttpError semantics), getting-started.md (install commands published at 0.9.0; Kernel/ModuleMeta/ModuleSetupFn/load/HTTP-module claims; HTTP module does require an HttpHandler per packages/http/src/setup/composition.ts line 29), architecture.md, core-concepts.md, what-is-comity.md, why-comity.md, index.md; all relative links resolve."
+    - "Verdict: PASS — NO CHANGES REQUIRED. Remaining items are observations deliberately excluded (architecture line-57 layer generalization; Express Adapter illustration; HTTP request 'body' shorthand; index kernel blurb phrasing)."
+    - "No plan/approval/write-authorization/review created; no public documentation modified. Historical records preserved."
+    - "Phase 6 discovery (read-only) of the remaining public documentation surface: docs/guides/, docs/packages/, docs/reference/ (public docs root = community/docs/)."
+    - "Scoped corpus inspected: NONE. None of the three scoped directories (docs/guides, docs/packages, docs/reference) exists under the public docs root (find docs confirms only the seven foundational docs plus docs/architecture/repository.md, docs/migrations/public-api.md and an empty docs/media/); grep of the public docs found no remaining links to guides/, packages/, or reference/ paths (only pre-existing historical references remain in AGENT.md/manifest.yaml/state.yaml)."
+    - "Findings count: 0. With an empty scoped corpus there are no scoped documents making concrete claims, so no public-API/package/example/reference claim could be cross-checked against the repository (no DOC-XXX created beyond baseline ARCH-001/DOC-002/DOC-003). Protocol state verified intact: 5 plans, 5 approvals, 4 reviews, DOC-003 resolved, current remains completed docs/getting-started.md, no active write authorization."
+    - "Discovery result: PASS — NO CHANGES REQUIRED. No qualifying discrepancy; no findings manufactured; no public documentation, source, package manifests, dependencies, lockfiles, workflows, or untracked files modified (only the permitted operational last_run record updated)."
+    - "Phase 7 targeted public documentation discovery (read-only) across the ACTUAL Markdown public surface under community/docs/ (excluding community/docs/.documentation/)."
+    - "Actual public corpus enumerated (9 Markdown documents): 7 foundational (index, what-is-comity, why-comity, core-concepts, architecture, errors-and-results, getting-started) excluded from general re-audit per prior PASS; 2 non-foundational considered — docs/architecture/repository.md (Category: architecture/reference/operational) and docs/migrations/public-api.md (Category: migration/package-API). docs/media/ is empty."
+    - "High-value claims investigated against community/packages/* and root configs: repository.md Package Inventory (51 packages = 3 kernel/primitives + 31 core + 17 adapters) verified accurate; all 51 package names present under community/packages; workspace config, turbo/tsconfig/vitest/prettier tables, pnpm@10.13.1, graphql-builder zero-dependency, ESLint ruleset, subpath-exports pattern verified consistent; public-api.md SearchPort/SearchError (errors subpath), repo search() removal (catalog/content/taxonomy), http-fetch fetchHttp, graphql-client-fetch FetchGraphqlTransport, @comity/graphql-client/transports CombinedGraphqlTransport, cache-kv KvCacheStore / cache-redis RedisCacheStore, storefront DefaultSearchPageComposer consuming SearchPort all verified consistent."
+    - "Findings count: 3 (DOC-004, DOC-005, DOC-006; next DOC id confirmed from state.yaml as DOC-004 — DOC-002/DOC-003 not reused). Findings: DOC-004 repository.md line 165 broken internal link to development/docs/architecture/rule-reconciliation.md (uses ../../../../ which resolves above the repo root; correct depth is ../../../ as used by public-api.md); DOC-005 repository.md lines 93-100 stale root devDependency versions (turbo ^2.10.12 vs documented ^2.10.7; vitest/@vitest/coverage-v8 ^4.1.11 vs ^4.1.10; @typescript-eslint/parser ^8.70.0 vs ^8.65.0); DOC-006 public-api.md section 14 lines 274-275 claims SearchError is 'Exported from the root' of @comity/search but current root barrel (src/index.ts and dist/types/index.d.ts) exports only types — SearchError is exported only from the @comity/search/errors subpath (packages/search/src/errors/index.ts). Severity: all P3; Confidence: all High."
+    - "Protocol state verified intact: 5 plans, 5 approvals, 4 reviews, DOC-003 resolved, Phase 5.8 PASS and Phase 6 PASS recorded, current remains completed docs/getting-started.md, no active write authorization; ARCH-001/DOC-002/DOC-003 untouched; no public documentation, source, package manifest, dependency, lockfile, workflow, or other file modified (only the permitted operational last_run record updated)."
+    - "Discovery result: FINDINGS EXIST (3 qualifying discrepancies, highest severity P3). No remediation performed; next phase is a separate PLAN phase."
+    - "Phase 7.1 (PLAN — human approval): created PLAN-DOC-004-006 covering findings DOC-004, DOC-005 and DOC-006 (bounded, documentation-only; status pending_approval, write_authorized false). All eight pre-plan verifications passed (findings present; target docs exist; authoritative community/package.json values unchanged; @comity/search root excludes SearchError; @comity/search/errors exports SearchError; no prior remediation invalidated)."
+    - "PLAN-DOC-004-006 approved by human. Plan status updated to approved / write_authorized true (approved_at 2026-09-14T00:45:00Z); human approval record appended to approvals (plans=6, approvals=6)."
+    - "Writer execution (PLAN-DOC-004-006) COMPLETED. Changes applied: (DOC-004) docs/architecture/repository.md line 165 link depth ../../../../development/... -> ../../../development/... (resolves to development/docs/architecture/rule-reconciliation.md — verified); (DOC-005) four dependency rows updated to match community/package.json: turbo ^2.10.7 -> ^2.10.12, vitest ^4.1.10 -> ^4.1.11, @vitest/coverage-v8 ^4.1.10 -> ^4.1.11, @typescript-eslint/parser ^8.65.0 -> ^8.70.0 (all verified MATCH; other dep rows untouched); (DOC-006) docs/migrations/public-api.md section 14 root-export claim corrected — removed 'the root and from' so SearchError is identified as exported from the intentional @comity/search/errors subpath only (no false root-export claim remains)."
+    - "Accepted criteria verified: AC-01 link resolves OK; AC-02 four versions MATCH package.json and no other version changed; AC-03 no root-export claim remains and @comity/search/errors correctly identified; AC-04 historical migration narrative preserved; AC-05 minimal diff (only the 8 intended cells/lines); AC-06 documentation-only (no source/manifest/lockfile/dependency/workflow change); AC-07 ARCH-001/DOC-002/DOC-003 untouched; AC-08 repository integrity — only the two authorized docs plus state.yaml last_run/approvals/plan status operationally updated, no untracked files created; AC-09 no scope expansion."
+    - "Writer execution result: COMPLETE — DOC-004, DOC-005 and DOC-006 remediated per PLAN-DOC-004-006. No review record created (independent Reviewer is a separate phase); current working tree state preserved (whole community/ tree remains the pre-existing untracked snapshot baseline)."

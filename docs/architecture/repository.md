@@ -90,12 +90,12 @@ Package manager: **pnpm@10.13.1** (enforced via `preinstall` script)
 
 | Tool                        | Version | Purpose                                |
 | --------------------------- | ------- | -------------------------------------- |
-| `turbo`                     | ^2.10.7 | Monorepo build orchestrator            |
-| `vitest`                    | ^4.1.10 | Test runner                            |
-| `@vitest/coverage-v8`       | ^4.1.10 | Coverage reporter                      |
+| `turbo`                     | ^2.10.12 | Monorepo build orchestrator            |
+| `vitest`                    | ^4.1.11 | Test runner                            |
+| `@vitest/coverage-v8`       | ^4.1.11 | Coverage reporter                      |
 | `typescript`                | ^5.9.3  | Type system (also in `pnpm.overrides`) |
 | `eslint`                    | ^9.39.5 | Linter                                 |
-| `@typescript-eslint/parser` | ^8.65.0 | TS parser for ESLint                   |
+| `@typescript-eslint/parser` | ^8.70.0 | TS parser for ESLint                   |
 | `@changesets/cli`           | ^2.31.1 | Versioning                             |
 | `prettier`                  | ^3.9.6  | Formatter                              |
 
@@ -162,7 +162,7 @@ File: `eslint.config.js`
 
 The repository applies the shared Comity ESLint ruleset (`@comity-dev/eslint-plugin`) with `base` TypeScript/JSDoc conventions. Determinism and error-handling restrictions apply to Core/Kernel packages via the shared `@comity-dev/no-date-in-core` and `@comity-dev/no-crypto-in-core` rules (scoped by package layer), not by `domain/**` or `core/**` physical folders. Adapters are framework-bound and exempt from the Core determinism rules.
 
-For the authoritative enforcement inventory, see [`rule-reconciliation.md`](../../../../development/docs/architecture/rule-reconciliation.md) (Development-owned, permanent governance evidence mapping every standard to its enforcement mechanism).
+For the authoritative enforcement inventory, see [`rule-reconciliation.md`](../../../development/docs/architecture/rule-reconciliation.md) (Development-owned, permanent governance evidence mapping every standard to its enforcement mechanism).
 
 ### Prettier Configuration
 
