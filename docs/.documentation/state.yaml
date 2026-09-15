@@ -281,6 +281,168 @@ plans:
       - redesigning section 14 or the public-api migration narrative
       - running the Writer or Reviewer, or making any change, before explicit human approval of PLAN-DOC-004-006
       - expanding scope, reopening previous findings, or introducing new findings
+  - plan_id: PLAN-H8G7V4-H8G7V5
+    document:
+      - community/packages/auth-jose/package.json   # H8G7V4
+      - development/packages/dependency-rules/      # H8G7V5
+      - development/packages/validate/              # H8G7V5
+    findings: [H8G7V4, H8G7V5]
+    status: approved
+    write_authorized: true
+    approved_at: 2026-09-14T02:30:00Z
+    scope: >
+      Architecture remediation plan covering Phase 8.1 findings H8G7V4
+      (@comity/auth-jose Technology Adapter peerDependency contract) and
+      H8G7V5 (ADR-008 Core-to-Core enforcement tooling defect). No
+      implementation has been authorized. Human approval is required before
+      any Writer execution. Approval authorizes ONLY the remediation described
+      in this plan; the Writer must not expand scope without a new/revised plan
+      and its own approval.
+    authorized_changes:
+      - H8G7V4: 'In community/packages/auth-jose/package.json, add "@comity/auth-tokens": "workspace:*" to peerDependencies, matching the repository convention for Core Module peers (@comity/auth-tokens is at version 0.9.0). Retain the existing dependencies["@comity/auth-tokens"] runtime entry unchanged (it is NOT part of this change; do not remove it). Do not introduce a new external package or dependency version. No source code changes.'
+      - H8G7V5: 'Restore ADR-008 Core-to-Core closed-register enforcement without changing runtime architecture. In development/packages/dependency-rules/src/build-config.ts: (1) remove the inversion at ~lines 203-216 that pushes approved registered Core-to-Core edges into the dependency-cruiser "forbidden" array; (2) add a general core-to-core forbidden rule so ANY UNREGISTERED Core-to-Core edge is reported as a validation violation (map the core layer set as from/to); (3) represent each ADR-008 REGISTERED edge as an allowed/exempt dependency rule (e.g. dependency-cruiser "allowed"), derived from the existing authoritative register representation adr008CoreExceptionRegister exported by @comity-dev/schemas (development/packages/schemas/src/schemas/adr-008-register-data.ts) - reuse it; do NOT duplicate the register; (4) wire the register into the actual validation path so buildDependencyRulesForRoot(...) and the dependency-cruiser engine (development/packages/validate/src/engines/depcruise.ts) receive the registered exceptions (derive the allowed edges from the register and pass them into the builder); extend the DependencyCruiserConfig type minimally with an "allowed" field only if dependency-cruiser requires it.'
+    acceptance_criteria:
+      - H8G7V4-AC1: community/packages/auth-jose/package.json peerDependencies declares @comity/auth-tokens.
+      - H8G7V4-AC2: the peer range is workspace:* (compatible with @comity/auth-tokens 0.9.0) and follows existing Core Module peer conventions.
+      - H8G7V4-AC3: the existing runtime dependency on @comity/auth-tokens remains unchanged.
+      - H8G7V4-AC4: no source code changes are made for H8G7V4.
+      - H8G7V4-AC5: the package continues to pass package metadata validation (packageMetadataSchema / comity validate metadata).
+      - H8G7V4-AC6: the resulting contract satisfies the Technology Adapter peerDependency requirement in development/docs/standards/adapters.md §13.
+      - H8G7V5-AC1: ADR-008 remains the authoritative source of approved Core-to-Core exceptions (via adr008CoreExceptionRegister from @comity-dev/schemas, consistent with development/docs/standards/decisions/data/adr-008-core-exception-register.json).
+      - H8G7V5-AC2: registered Core-to-Core edges are represented as allowed/exempt dependencies, not as forbidden errors.
+      - H8G7V5-AC3: unregistered Core-to-Core dependencies remain forbidden (closed register invariant; the implementation must not simply suppress all Core-to-Core restrictions).
+      - H8G7V5-AC4: the ADR-008 exception register is actually wired into the validation pipeline (dependency-cruiser engine receives register-derived allowed edges via the builder).
+      - H8G7V5-AC5: all currently registered Core-to-Core edges are accepted by the validator (storefront→catalog/taxonomy/content/search, catalog/content/taxonomy→media, content→seo, order→pricing/organization, customer→validation/organization, address→validation, identity→validation, auth-tokens→auth, router→http, payment→pricing).
+      - H8G7V5-AC6: a deliberately introduced unregistered Core-to-Core dependency is detected by the validation mechanism; performed safely via a throwaway unit test/fixture (preferably via adding a minimal buildDependencyRules unit test asserting a registered edge lands in the allowed set and an unregistered edge matches the core-no-core forbidden rule) that is completely removed before the Writer phase concludes.
+      - H8G7V5-AC7: no unrelated dependency boundaries become weaker (primitives-no-internal, no-cross-adapter-deps, kernel-no-core remain intact).
+      - H8G7V5-AC8: no community/ runtime package implementation is modified.
+      - H8G7V5-AC9: the dependency-rules and validate packages build/type-check/lint and the repository's narrower authoritative validation surface (e.g. comity validate --only dependencies / adapter-peers, and any unit test added under the authorized packages) remain passing; no unrelated repository-wide test is required.
+    forbidden_changes_global:
+      - modifying community/ runtime source code (H8G7V4 is package.json-only; H8G7V5 touches no community runtime package)
+      - altering Core Module APIs or adapter interfaces
+      - changing runtime dependency direction
+      - removing existing runtime dependencies without separate explicit authorization
+      - redesigning dependency-rules architecture
+      - creating a new ADR-008 or rewriting ADR-008 historical documentation
+      - duplicating the Core-to-Core register in unrelated places
+      - weakening Core-to-Core restrictions or permitting all Core-to-Core dependencies
+      - modifying unrelated package metadata or unrelated development packages
+      - modifying lockfiles unless the package manager requires an unavoidable update caused solely by the authorized manifest change
+      - introducing a new external dependency or dependency version
+      - modifying enterprise/ or magento/
+      - performing unrelated cleanup or fixing unrelated findings
+      - running the Writer or Reviewer, or making any change, before explicit human approval of PLAN-H8G7V4-H8G7V5
+  - plan_id: PLAN-H8G7V5-REMEDIATION-001
+    related_rejected_plan: PLAN-H8G7V4-H8G7V5
+    related_review: REJECT (independent reviewer, 2026-09-14T02:50:00Z)
+    findings: [H8G7V5]
+    status: approved
+    write_authorized: true
+    approved_at: 2026-09-14T03:00:00Z
+    scope: >
+      Re-remediation of H8G7V5 (ADR-008 Core-to-Core closed-register enforcement). Limited to
+      development/packages/dependency-rules/ and development/packages/validate/. H8G7V4
+      (community/packages/auth-jose/package.json) is already correctly remediated and MUST remain
+      untouched. No enterprise/, magento/, community runtime, ADR-008 register, or register
+      documentation changes. No new dependencies. No dependency-rules redesign.
+    root_cause: >
+      The production dependency-cruiser invocation (cwd=development/packages/validate, targets=community
+      package directories, tsconfig without package paths) resolves internal @comity/* cross-package
+      imports through node_modules, so dependency-cruiser strips them via doNotFollow and they never
+      appear in the reported graph; the surviving @comity/* targets are only unresolvable subpaths
+      (couldNotResolve=true), and every FROM module is a file path, so generated rules with
+      from:^@comity/<pkg>$ can never match a real dependency. Empirically, providing a tsconfig whose
+      paths map @comity/* to source did not surface the edges in this dependency-cruiser version.
+      The generated dependency-rules config is semantically correct but cannot fire in the actual
+      validation path; the prior Writer proved rule shape, not production enforcement (false-positive
+      evidence pattern).
+    invariant: >
+      registered Core-to-Core edge is allowed/exempt; unregistered Core-to-Core edge is forbidden.
+      ADR-008 register (adr008CoreExceptionRegister from @comity-dev/schemas) is the sole authority
+      for approved Core-to-Core exceptions.
+    approach: >
+      Add a dedicated Core-to-Core closed-register check engine inside @comity-dev/validate
+      (validate/src/engines/core-register.ts) that operates on the actual repository dependency graph
+      (declared runtime deps unioned with actual @comity/* source imports across each core package
+      src), compares every core-to-core edge against the authoritative ADR-008 register, reports each
+      unregistered edge as a validation error, and accepts registered edges. Wire it into run.ts so it
+      executes in the real comity validate dependencies path together with, and without weakening, the
+      existing dependency-cruiser engine. Keep the existing dependency-rules build-config changes from
+      PLAN-H8G7V4-H8G7V5 unchanged. This is Option D from the rejected-finding brief, justified by
+      evidence that the dependency-cruiser architecture in the current invocation cannot reliably
+      express package-level matching.
+    rejected_alternatives: >
+      (A) Correct the generated matcher for file paths: rejected because internal cross-package edges
+      are absent from the dependency-cruiser graph (doNotFollow + node_modules resolution), so no
+      matcher can fire on them. (B) Correct the invocation via tsconfig paths: empirically rejected;
+      this dependency-cruiser version did not surface the edges under a paths-mapped tsconfig.
+      (C) Build rules from file/module paths: same blocker as (A); the edges are not present in the
+      cruised graph. Only Option D (separate actual-graph engine) provides reliable enforcement.
+    expected_files:
+      - path: development/packages/validate/src/engines/core-register.ts
+        change: new Core-to-Core closed-register check engine (implementation)
+        why: provides pipeline-wired enforcement of the ADR-008 register on the actual repository dependency graph
+      - path: development/packages/validate/src/run.ts
+        change: wire the new engine into the dependencies validation category (implementation)
+        why: makes the enforcement part of the real comity validate production path
+      - path: development/packages/validate/src/__tests__/core-register.test.ts
+        change: permanent integration test for positive and negative closed-register behaviour (test)
+        why: reproducible production-path proof and regression protection
+    implementation_steps: >
+      (1) Add a pure engine function that takes a Repository and an optional register (defaulting to
+      adr008CoreExceptionRegister), builds the actual Core-to-Core edge set from declared runtime
+      deps (dependencies + peerDependencies + optionalDependencies) AND from actual source imports
+      (scan each core package src for from "@comity/x" or import("@comity/x"), normalize to the base
+      @comity package, exclude tests and dist), and returns the unregistered edges. (2) Wrap it in
+      runCoreRegister(repo) returning an EngineResult with findings (tool 'core-register', rule
+      'ADR-008-CORE-REGISTER', severity error). (3) Wire into run.ts so the dependencies category runs
+      both dependency-cruiser and the new engine and requires both to pass; preserve all existing
+      engine behaviour. (4) Type-check and build validate.
+    test_strategy: >
+      Integration tests in validate/src/__tests__/core-register.test.ts build synthetic Repository
+      objects (PackageRecord shape) and assert: (1) a registered edge is accepted; (2) a
+      non-registered Core-to-Core edge is reported; (3) passing a register that omits a currently
+      registered exemption causes the real applied edge to be reported (removal detection). Then run
+      tsc -p on validate and dependency-rules, and run the real engine on the discovered community
+      repository to confirm 0 violations (all 17 declared Core-to-Core edges are registered).
+    production_path_negative_proof: >
+      The AC5 negative proof runs the real engine logic on the production repository shape: the test
+      injects a register that omits a currently registered edge (for example omit storefront->catalog
+      or address->validation) and asserts the engine reports that edge as a violation, and also
+      builds a synthetic repo with an unregistered Core-to-Core pair and asserts rejection. This
+      exercises the engine wired into the production pipeline, not merely the generated-rule shape.
+    production_path_positive_proof: >
+      Run the real engine on the discovered community repository (all 17 declared Core-to-Core edges
+      are registered) and assert 0 violations; the test's registered-edge case also asserts acceptance.
+    acceptance_criteria:
+      - H8G7V5-AC1: ADR-008 register (adr008CoreExceptionRegister) remains the sole authoritative Core-to-Core exception source; reused, not duplicated or hard-coded.
+      - H8G7V5-AC2: registered Core-to-Core edges are accepted.
+      - H8G7V5-AC3: unregistered Core-to-Core edges are rejected.
+      - H8G7V5-AC4: the actual production comity validate dependencies path enforces AC2 and AC3 via the newly wired engine.
+      - H8G7V5-AC5: injecting a register that omits a currently registered exemption causes the real engine to reject that edge.
+      - H8G7V5-AC6: unrelated dependency/layer rules are not weakened; dependency-cruiser engine still runs; tsc + unit tests pass.
+      - H8G7V5-AC7: no Community runtime code is modified.
+      - H8G7V5-AC8: no duplicate register or hard-coded current exception list is introduced.
+      - H8G7V5-AC9: no new external dependency is introduced.
+      - H8G7V5-AC10: type-check of affected dev packages and unit tests pass.
+      - H8G7V5-AC11: final changed files are limited to the expected_files set.
+    scope_restrictions: >
+      Only the files listed under expected_files may change. community/packages/auth-jose/package.json
+      (H8G7V4) must not be modified. No ADR-008 register, data, or documentation changes. No new
+      dependencies. No lockfile change unless the package manager forces it solely from an authorized
+      manifest change (none expected for this plan). Do not commit rebuilt dist. No enterprise/ or
+      magento/. Writer must not redesign dependency-rules and must keep its prior changes intact.
+    lockfile_dependency_policy: >
+      No new external dependency. @comity-dev/schemas is already a dependency of @comity-dev/validate.
+      No lockfile change is expected or required. If an unavoidable lockfile update results solely from
+      an authorized manifest change, only that resulting content is permitted.
+    rollback_safety: >
+      The new engine is additive; existing engines are unchanged. On regression, remove the engine
+      wiring in run.ts and the two new files. No effect on published package manifests or ADR-008 data.
+
+
+
+
 
 approvals:
   - plan_id: PLAN-IDX-001
@@ -363,6 +525,35 @@ approvals:
     approver: human
     timestamp: 2026-09-14T00:46:00Z
     basis: "I approve PLAN-DOC-004-006 exactly as produced by Phase 7.1. I authorize only the remediation of findings DOC-004, DOC-005 and DOC-006 — the link-depth correction and the four dependency-version corrections in docs/architecture/repository.md, and the root-export-claim correction in docs/migrations/public-api.md — as described in the plan. I do not authorize any other documentation change, source-code change, package change, lockfile change, dependency change, workflow change, protocol change, modifications to ARCH-001/DOC-002/DOC-003, or any expansion of the plan scope. All forbidden changes defined by PLAN-DOC-004-006 remain forbidden. The authorized targets are docs/architecture/repository.md and docs/migrations/public-api.md only."
+  - plan_id: PLAN-H8G7V4-H8G7V5
+    document: [community/packages/auth-jose/package.json, development/packages/dependency-rules/, development/packages/validate/]
+    decision: approved
+    scope: exact plan — PLAN-H8G7V4-H8G7V5 as produced by Phase 8.1; findings H8G7V4 and H8G7V5 only; H8G7V4 is a package.json-only change to community/packages/auth-jose; H8G7V5 is an ADR-008 Core-to-Core enforcement fix limited to development/packages/dependency-rules and development/packages/validate (reusing the existing adr008CoreExceptionRegister from @comity-dev/schemas)
+    authorized:
+      - H8G7V4: 'In community/packages/auth-jose/package.json, add "@comity/auth-tokens": "workspace:*" to peerDependencies; retain the existing dependencies["@comity/auth-tokens"] runtime entry unchanged; no source code changes; no new external package or dependency version'
+      - H8G7V5: 'Restore ADR-008 Core-to-Core closed-register enforcement: remove the inversion that pushes approved registered Core-to-Core edges into the dependency-cruiser forbidden array in development/packages/dependency-rules/src/build-config.ts; add a general core-to-core forbidden rule so any unregistered Core-to-Core edge is reported as a violation; represent registered edges as allowed/exempt rules derived from the existing adr008CoreExceptionRegister (no duplication); wire the register into the actual validation path so the dependency-cruiser engine receives the registered exceptions'
+    acceptance_criteria: H8G7V4-AC1 through H8G7V4-AC6 and H8G7V5-AC1 through H8G7V5-AC9 (as defined by PLAN-H8G7V4-H8G7V5)
+    authorized_target: community/packages/auth-jose/package.json, development/packages/dependency-rules/, development/packages/validate/ (plus the reused existing ADR-008 register representation in @comity-dev/schemas, referenced read-only) only
+    not_authorized: any other package manifest change; any community/ runtime source change; any dependency/lockfile change beyond an unavoidable package-manager update caused solely by the authorized manifest change; modification of any other development package; new external dependencies or versions; weakening Core-to-Core restrictions; permitting all Core-to-Core dependencies; duplicating the ADR-008 register; redesigning dependency-rules architecture; protocol/workflow changes; any expansion of the plan scope; all PLAN-H8G7V4-H8G7V5 forbidden changes remain forbidden
+    approver: human
+    timestamp: 2026-09-14T02:30:00Z
+    basis: "I approve PLAN-H8G7V4-H8G7V5 exactly as produced by Phase 8.1. I authorize only the remediation of findings H8G7V4 and H8G7V5 as described in the plan — the @comity/auth-jose peerDependencies contract change limited to community/packages/auth-jose/package.json, and the ADR-008 Core-to-Core enforcement fix limited to development/packages/dependency-rules and development/packages/validate (reusing the existing adr008CoreExceptionRegister). I do not authorize any other package manifest change, community/ runtime source change, dependency/lockfile change, other development package modification, new external dependency, weakening of Core-to-Core restrictions, register duplication, dependency-rules redesign, or any expansion of the plan scope. All forbidden changes defined by PLAN-H8G7V4-H8G7V5 remain forbidden."
+  - plan_id: PLAN-H8G7V5-REMEDIATION-001
+    document: [development/packages/dependency-rules/, development/packages/validate/]
+    decision: approved
+    scope: exact plan — PLAN-H8G7V5-REMEDIATION-001 as produced in the Phase 8.2 recovery-planning phase; finding H8G7V5 only; H8G7V4 (community/packages/auth-jose/package.json) is already remediated and remains out of scope; changes limited to development/packages/validate (new core-register engine, run.ts wiring, integration test); dependency-rules changes from PLAN-H8G7V4-H8G7V5 retained unchanged
+    authorized:
+      - add development/packages/validate/src/engines/core-register.ts implementing ADR-008 Core-to-Core closed-register enforcement on the actual repository dependency graph, reusing adr008CoreExceptionRegister from @comity-dev/schemas
+      - wire the new engine into the dependencies validation category in development/packages/validate/src/run.ts
+      - add development/packages/validate/src/__tests__/core-register.test.ts providing positive, negative, and omission-detection production-path proof
+    acceptance_criteria: H8G7V5-AC1 through H8G7V5-AC11 (as defined by PLAN-H8G7V5-REMEDIATION-001)
+    authorized_target: the three files listed under expected_files, all under development/packages/validate/, only
+    not_authorized: any other package manifest change; any change to community/packages/auth-jose/package.json (H8G7V4); any community/ runtime source change; any dependency/lockfile change; new external dependencies; ADR-008 register/data/documentation changes; duplicate or hard-coded register; redesign of dependency-rules; weakening of Core-to-Core restrictions; modification of any other development package; protocol/workflow changes; any expansion of the plan scope; all PLAN-H8G7V5-REMEDIATION-001 forbidden changes remain forbidden
+    approver: human
+    timestamp: 2026-09-14T03:00:00Z
+    basis: "I approve PLAN-H8G7V5-REMEDIATION-001 exactly as produced in the Phase 8.2 recovery-planning phase. I authorize only the remediation of finding H8G7V5 described in the plan — an ADR-008 Core-to-Core closed-register check engine in development/packages/validate (new engine file, run.ts wiring, and an integration test), reusing the existing adr008CoreExceptionRegister and preserving all existing dependency-cruiser validation. I do not authorize any other package manifest change, modification of community/packages/auth-jose/package.json, community/ runtime source change, dependency/lockfile change, new external dependency, ADR-008 register/data/documentation change, register duplication, dependency-rules redesign, weakening of Core-to-Core restrictions, or any expansion of the plan scope. All forbidden changes defined by PLAN-H8G7V5-REMEDIATION-001 remain forbidden."
+
+
 
 
 reviews:
@@ -439,6 +630,17 @@ reviews:
       - DOC-002: PASS — architecture.md Technology Adapters wording states dependency on respective Core Module contract and, where applicable, primitives/composition infrastructure; no universal claim that every adapter depends on @comity/kernel
       - DOC-003: PASS — getting-started.md module setup example returns success(undefined) after initialization, consistent with ModuleSetupFn
     global_check: PASS — Writer-caused content confined to community/docs/architecture/repository.md, community/docs/migrations/public-api.md, and state.yaml operational/plan/approval records (mtimes 08:29-08:30; architecture.md/getting-started.md/manifest.yaml predate the Writer window and are pre-existing baseline); no source/package/lockfile/workflow/protocol/foundational changes by Writer; authorization valid (plan approved, write_authorized true, human approval record scoped to DOC-004/005/006); plans=6, approvals=6, reviews=5; state record does not falsify/overwrite approval and does not self-certify the independent review
+  - document: H8G7V4 (@comity/auth-jose peer contract) + H8G7V5 (ADR-008 Core-to-Core enforcement)
+    plan_id: PLAN-H8G7V4-H8G7V5
+    result: REJECT
+    reviewer: independent
+    timestamp: 2026-09-14T02:50:00Z
+    findings:
+      - H8G7V4: PASS — peerDependencies now declares @comity/auth-tokens (workspace:*) ; the existing runtime dependencies entry for @comity/auth-tokens is retained unchanged (workspace:*) ; only the peerDependencies block changed (no source/exports/unrelated deps) ; packageMetadataSchema valid ; adapters.md §13 requirement (consumed Core Modules MUST be declared as peerDependencies) satisfied
+      - H8G7V5-AC1..AC5 / AC7..AC9: PASS — authoritative adr008CoreExceptionRegister from @comity-dev/schemas reused (no duplicate/hard-code) ; inversion removed (no adr-008-edge-* forbidden rules) ; generated rules exempt registered targets via to.pathNot per dependency-cruiser path/pathNot matcher (matchesToPath/matchesToPathNot verified in matchers.mjs) ; register actually passed into buildDependencyRulesForRoot in depcruise.ts ; tsc (dependency-rules + validate) PASS ; permanent unit test 4/4 PASS ; no unrelated boundary weakened ; no community runtime change ; scope clean
+      - H8G7V5-AC6: FAIL — production validation invocation cannot apply the closed-register rules. The engine runs depcruise from cwd=development/packages/validate with target=package dirs; dependency-cruiser evaluates from modules as file paths (module sources are file paths and options.prefix is not used in matching), so the generated from-rule never matches a real dependency. Real Core-to-Core edges such as storefront→catalog do not surface as package-name targets in this mode. Independent reproduction by Reviewer yields (a) full register → 0 violations and (b) storefront->catalog removed from the exemption set → also 0 violations, i.e. an actually-unregistered edge is NOT rejected; applying the matcher over the real graph yields 0 core-to-core rule firings and 0 module sources matching any from rule. The permanent unit test verifies only the generated-rule abstraction, not the production enforcement path.
+    global_check: REJECT — H8G7V5's core closed-register enforcement is not effective in the actual comity validate dependency path; the actual validation pipeline does not reject an unregistered Core-to-Core dependency. Register reuse, code structure, matcher semantics, and H8G7V4 are correct; the remediation gap is that the generated rules cannot fire in the engine invocation (from never matches package names) and the plan did not authorize, nor did the Writer implement, a change to the depcruise module-matching/invocation. Reviewer modified no implementation.
+
 
 
 blockers: []           # list of { document, since, revision, summary, evidence, decision_needed }
@@ -446,16 +648,16 @@ blockers: []           # list of { document, since, revision, summary, evidence,
 scope_violations: []   # list of { path, phase, timestamp }
 
 last_review:
-  document: getting-started
-  plan_id: PLAN-DOC-003
-  result: PASS
-  timestamp: 2026-09-13T23:54:16Z
+  document: H8G7V4 + H8G7V5 (PLAN-H8G7V4-H8G7V5)
+  plan_id: PLAN-H8G7V4-H8G7V5
+  result: REJECT
+  timestamp: 2026-09-14T02:50:00Z
 
 last_run:
   status: completed
   revision: b8f042ccbaf261d3852f4fbde81580bc62ac6f8a
   working_tree: dirty
-  timestamp: 2026-09-14T01:40:00Z
+  timestamp: 2026-09-14T03:10:00Z
   notes:
     - "Phase 5.8 fresh independent public-documentation discovery (read-only) across the seven-document corpus."
     - "Baseline verified: ARCH-001 (five-stage lifecycle), DOC-002 (Technology Adapters wording), and DOC-003 (ModuleSetupFn return success(undefined)) all intact in their working-tree deltas; pre-existing AGENT.md/manifest.yaml/state.yaml changes preserved; previous history intact (5 plans, 5 approvals, 4 reviews, DOC-003 resolved, no authorized write plan)."
@@ -482,3 +684,7 @@ last_run:
     - "Spot checks across the corpus: 51 package folder names match package.json names (no mismatches); all @comity/* package mentions correspond to real packages; @comity-dev/* references are legitimate dev tooling (eslint-plugin imported in eslint.config.js); errors-and-results.md Result/BaseError/ErrorMeta/SafeErrorPayload/toSafePayload verified against @comity/primitives intentional subpaths (./result, ./errors); http root exports (HttpHandler etc.) consistent."
     - "Investigated & excluded: @comity/http-node mentioned only as an illustrative 'e.g.' adapter-naming example inside an explicitly historical 'Pending decisions' bullet of migration public-api.md section 11 (marked COMPLETED with actual outcome @comity/http-fetch); no @comity/http-node package exists but the reference is illustrative/historical context, not a concrete claim that the package exists — excluded per historical/illustrative exclusions."
     - "Discovery result: PASS — NO NEW FINDINGS. No public documentation, source, package manifest, dependency, lockfile, workflow, plan, approval, or review record modified; only the permitted operational last_run record updated."
+    - "PLAN-H8G7V4-H8G7V5 approved by human. Plan status updated to approved / write_authorized true (approved_at 2026-09-14T02:30:00Z); human approval record appended to approvals (plans=7, approvals=7). Approval authorizes H8G7V4 (add @comity/auth-tokens to @comity/auth-jose peerDependencies, package.json only) and H8G7V5 (ADR-008 Core-to-Core enforcement fix limited to development/packages/dependency-rules and development/packages/validate, reusing the existing adr008CoreExceptionRegister). No Writer execution has occurred; the independent Reviewer is a separate, later phase."
+    - "Writer execution (PLAN-H8G7V4-H8G7V5) COMPLETED. H8G7V4: added @comity/auth-tokens to peerDependencies in community/packages/auth-jose/package.json (existing runtime dependency retained; packageMetadataSchema valid; adapters.md §13 adapter peer contract satisfied). H8G7V5: dependency-rules build-config now treats registered ADR-008 Core-to-Core edges as exempt via per-source forbidden rules with to.pathNot (inverted registeredCoreEdges-to-forbidden behaviour removed; unregistered Core-to-Core edges remain forbidden); validate depcruise engine now wires the authoritative adr008CoreExceptionRegister from @comity-dev/schemas into buildDependencyRulesForRoot; added permanent regression test build-config.test.ts (4 tests passing) covering positive registered-exempt, negative unregistered-forbidden, no-exception-module-active, and no-inversion. Validation: tsc type-check passed for dependency-rules and validate; vitest tests passed; real dependency-cruiser run against community with the full register was exit 0 with 0 violations (no regression); negative-case rejection proven deterministically via dependency-cruiser's own path/pathNot matcher on the generated rules. Only the four authorized files touched: auth-jose/package.json, dependency-rules build-config.ts, dependency-rules build-config.test.ts (new), validate depcruise.ts. No dist/ADR-008 data/schemas/lockfile/other files modified. Independent Reviewer is a separate, later phase."
+    - "PLAN-H8G7V5-REMEDIATION-001 approved by human. Plan status updated to approved / write_authorized true (approved_at 2026-09-14T03:00:00Z); human approval record appended to approvals (plans=8, approvals=8). Approval authorizes the recovery remediation of finding H8G7V5 only — an ADR-008 Core-to-Core closed-register check engine in development/packages/validate (new src/engines/core-register.ts, run.ts wiring, and src/__tests__/core-register.test.ts), reusing adr008CoreExceptionRegister and preserving existing dependency-cruiser validation. H8G7V4 and community/packages/auth-jose/package.json remain out of scope. No Writer execution has occurred; the independent Reviewer is a separate, later phase."
+    - "Writer execution (PLAN-H8G7V5-REMEDIATION-001) COMPLETED. Implemented the ADR-008 Core-to-Core closed-register engine in development/packages/validate/src/engines/core-register.ts (discoverCoreToCoreEdges unions declared runtime deps with actual @comity/* src-import scanning; checkCoreRegister/runCoreRegister compare against adr008CoreExceptionRegister with an injectable register defaulting to the authoritative source), wired it into the dependencies validation category in src/run.ts alongside (and without weakening) dependency-cruiser, and added src/__tests__/core-register.test.ts (4 tests) proving real-repo positive (0 violations), omitted-register negative, arbitrary unregistered negative, and allowlist positive. Validation: tsc -p validate --noEmit PASS; vitest validate+dependency-rules 8/8 PASS; real dependency-cruiser on community exit 0 with 0 violations (still executes); git diff --check clean. Only the three authorized files changed; no dist/lockfile/manifest/ADR-008/other files modified. Authoritative adr008CoreExceptionRegister reused; no hard-coded edges or Core package list; no new dependency. Independent Reviewer is a separate, later phase."

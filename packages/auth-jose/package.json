@@ -99,6 +99,7 @@
   "sideEffects": false,
   "peerDependencies": {
     "@comity/auth": "workspace:*",
+    "@comity/auth-tokens": "workspace:*",
     "jose": "^6.0.0"
   },
   "dependencies": {
