@@ -15,6 +15,7 @@ Defines the contracts used to talk to SQL databases without binding Comity to a 
 This package:
 
 - ✅ defines SQL client, transaction, and query contracts
+- ✅ defines atomic batch execution contract
 - ✅ defines typed SQL result and operation result contracts
 - ✅ exposes module-level error types via the `error` subpath
 - ✅ offers `observers` subpath for lifecycle observability
@@ -33,6 +34,7 @@ This package does NOT:
 - `SqlTransaction` — transaction contract
 - `SqlQuery` — query contract
 - `SqlResult`, `SqlOperationResult` — typed result contracts
+- `SqlBatchResult` — atomic batch result, positionally aligned with input statements
 - Error types (`@comity/sql/errors`)
 - Observers — SQL lifecycle observability (`@comity/sql/observers`)
 

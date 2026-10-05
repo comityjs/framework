@@ -41,7 +41,7 @@ export const DRIVER_ERROR_MAPPINGS: Record<string, Record<string, ErrorDetails>>
  */
 export function mapSqlError(
   cause: unknown,
-  operation: "connect" | "query" | "transaction",
+  operation: "connect" | "query" | "transaction" | "batch",
   adapter: string
 ): SqlError {
   // 1. Abort / cancellation

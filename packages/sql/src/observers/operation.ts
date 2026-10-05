@@ -83,4 +83,49 @@ export interface SqlOperationObserver {
     /** Transaction duration in milliseconds */
     duration: number;
   }): void;
+
+  /**
+   * Emitted when an atomic batch starts execution.
+   *
+   * @param payload Atomic batch start payload.
+   */
+  onAtomicBatchStarted(payload: {
+    /** Batch identifier */
+    id: string;
+  }): void;
+
+  /**
+   * Emitted when an atomic batch completes successfully.
+   *
+   * @param payload Atomic batch completion payload.
+   */
+  onAtomicBatchCompleted(payload: {
+    /** Batch identifier */
+    id: string;
+
+    /** Batch duration in milliseconds */
+    duration: number;
+
+    /** Number of statements submitted in the batch. */
+    statementCount: number;
+  }): void;
+
+  /**
+   * Emitted when an atomic batch fails.
+   *
+   * @param payload Atomic batch failure payload.
+   */
+  onAtomicBatchFailed(payload: {
+    /** Batch identifier */
+    id: string;
+
+    /** Reason for batch failure */
+    reason: string;
+
+    /** Batch duration in milliseconds */
+    duration: number;
+
+    /** Number of statements submitted in the batch. */
+    statementCount: number;
+  }): void;
 }

@@ -32,7 +32,7 @@ export interface SqlErrorMeta extends ErrorMeta {
   /** Additional non-canonical details for diagnostics. */
   readonly details?: Readonly<{
     /**  */
-    operation?: "connect" | "query" | "transaction";
+    operation?: "connect" | "query" | "transaction" | "batch";
 
     /** */
     adapter?: string;
