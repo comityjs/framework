@@ -76,7 +76,7 @@ describe("HydrationController", () => {
   });
 
   it("emits scheduled, started, and completed events during hydration", async () => {
-    const controller = new HydrationController({ hydrator, scheduler, observer });
+    const controller = new HydrationController({ hydrator, scheduler, observer, now: () => 0 });
 
     controller.onDiscovered(island);
 
@@ -97,7 +97,7 @@ describe("HydrationController", () => {
   it("emits not_registered failure when the hydrator does not support the contract", async () => {
     vi.mocked(hydrator.supports).mockReturnValue(false);
 
-    const controller = new HydrationController({ hydrator, scheduler, observer });
+    const controller = new HydrationController({ hydrator, scheduler, observer, now: () => 0 });
 
     controller.onDiscovered(island);
 
