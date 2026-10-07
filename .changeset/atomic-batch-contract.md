@@ -1,5 +1,6 @@
 ---
-"@comity/sql": minor
+"@comity/sql": patch
+"@comity/sql-kysely": patch
 ---
 
 Add the required `SqlClient.atomicBatch` contract for atomic, all-or-nothing multi-statement execution, plus the non-generic `SqlBatchResult` type.
