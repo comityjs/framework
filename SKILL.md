@@ -153,8 +153,9 @@ const result = Result.failure(new AuthError("session-expired"));
 **Dependency Injection** — Use tokens and lazy registration:
 
 ```typescript
-const TOKEN = createToken<MyRepository>("@comity/catalog/my-repo");
+const TOKEN = createToken<"catalog/my-repo", MyRepository>("@comity/catalog/my-repo");
 ctx.services.define(TOKEN, () => new Implementation());
+// resolve(TOKEN) returns MyRepository exactly; unknown symbols are rejected
 ```
 
 **Lifecycle Hooks** — `@comity/module:configuring` (modify config), `@comity/module:initialized` (signals ready).

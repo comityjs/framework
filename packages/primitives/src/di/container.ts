@@ -1,4 +1,4 @@
-import type { DiContainer, PropertyKey } from "./types.js";
+import type { DiContainer, PropertyKey, ServiceKey, ServiceToken } from "./types.js";
 
 import { DiContainerError } from "./error.js";
 
@@ -10,6 +10,11 @@ import { DiContainerError } from "./error.js";
  * @remarks
  * Lifecycle controls and disposal are demanded to the services themselves.
  * The container only manages instantiation and caching.
+ *
+ * Resolution follows the {@link DiContainer} contract: token keys resolve
+ * through the token's own `ServiceToken` brand, map keys (strings and
+ * `unique symbol`s) resolve through `Services[K]`, and bare `symbol` values
+ * are rejected at compile time.
  *
  * @example
  * ```ts
@@ -28,40 +33,74 @@ export class DefaultDiContainer<
   Services extends Record<PropertyKey, unknown> = {},
 > implements DiContainer<Services> {
   /** Factories map */
-  #factories = new Map<keyof Services, () => Services[keyof Services]>();
+  #factories = new Map<PropertyKey, () => unknown>();
 
   /** Instances map */
-  #instances = new Map<keyof Services, Services[keyof Services]>();
+  #instances = new Map<PropertyKey, unknown>();
 
   /**
    * @inheritdoc
    */
-  define<K extends keyof Services>(key: K, factory: () => Services[K]): void {
-    if (this.#factories.has(key)) {
+  define<K extends keyof Services, R>(token: K & ServiceToken<R>, factory: () => R): void;
+  /**
+   * @inheritdoc
+   */
+  define<K extends keyof Services>(name: K & ServiceKey<K>, factory: () => Services[K]): void;
+  /**
+   * @inheritdoc
+   */
+  define<K extends Extract<keyof Services, string | number>>(
+    name: K,
+    factory: () => Services[K]
+  ): void;
+  /**
+   * Implementation signature — callers only ever see the overloads above.
+   *
+   * @param name - Service identifier.
+   * @param factory - Service factory.
+   */
+  define(name: PropertyKey, factory: () => unknown): void {
+    if (this.#factories.has(name)) {
       throw new DiContainerError("already_registered", {
-        service: key as PropertyKey,
+        service: name,
       });
     }
 
-    this.#factories.set(key, factory);
+    this.#factories.set(name, factory);
   }
 
   /**
    * @inheritdoc
    */
-  resolve<K extends keyof Services>(key: K): Services[K] {
+  resolve<K extends keyof Services, R>(token: K & ServiceToken<R>): R;
+  /**
+   * @inheritdoc
+   */
+  resolve<K extends keyof Services>(name: K & ServiceKey<K>): Services[K];
+  /**
+   * @inheritdoc
+   */
+  resolve<K extends Extract<keyof Services, string | number>>(name: K): Services[K];
+  /**
+   * Implementation signature — callers only ever see the overloads above.
+   *
+   * @param name - Service identifier.
+   *
+   * @returns The service instance.
+   */
+  resolve(name: PropertyKey): unknown {
     // Return existing instance if available
-    if (this.#instances.has(key)) {
-      return this.#instances.get(key) as Services[K];
+    if (this.#instances.has(name)) {
+      return this.#instances.get(name);
     }
 
     // Get the factory for the service
-    const factory = this.#factories.get(key);
+    const factory = this.#factories.get(name);
 
     // Service not registered
     if (!factory) {
       throw new DiContainerError("not_registered", {
-        service: key as PropertyKey,
+        service: name,
       });
     }
 
@@ -69,9 +108,9 @@ export class DefaultDiContainer<
     const instance = factory();
 
     // Cache the instance for future use
-    this.#instances.set(key, instance);
+    this.#instances.set(name, instance);
 
-    return instance as Services[K];
+    return instance;
   }
 
   /**
