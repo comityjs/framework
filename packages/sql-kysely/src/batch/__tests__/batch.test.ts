@@ -106,174 +106,6 @@ describe("atomicBatch", () => {
   });
 
   it("defaults missing params to an empty positional list", async () => {
-    describe("atomicBatch input validation", () => {
-      it("rejects an empty batch without invoking the executor", async () => {
-        const { executor } = createExecutorDouble();
-        const { sql, db } = client(executor);
-
-        const res = await sql.atomicBatch([]);
-
-        expect(res.success).toBe(false);
-        expect(executor.execute).not.toHaveBeenCalled();
-        expect(db.executeQueryCalls).toBe(0);
-        if (!res.success) {
-          expect(res.error.meta["reason"]).toBe("invalid_query");
-          expect(res.error.meta["details"]?.["operation"]).toBe("batch");
-        }
-      });
-
-      it("rejects an empty batch identically when no executor is supplied", async () => {
-        const { sql } = client();
-
-        const res = await sql.atomicBatch([]);
-
-        expect(res.success).toBe(false);
-        if (!res.success) {
-          expect(res.error.meta["reason"]).toBe("invalid_query");
-          expect(res.error.meta["details"]?.["operation"]).toBe("batch");
-        }
-      });
-
-      it("reports invalid_configuration when no executor is supplied", async () => {
-        const { sql, db } = client();
-
-        const res = await sql.atomicBatch([{ statement: "update t set a = 1", params: [] }]);
-
-        expect(res.success).toBe(false);
-        // No sequential fallback, no transaction fallback, nothing executed.
-        expect(db.executeQueryCalls).toBe(0);
-        expect(db.transactionCalls).toBe(0);
-        if (!res.success) {
-          expect(res.error.meta["reason"]).toBe("invalid_configuration");
-          expect(res.error.meta["details"]?.["operation"]).toBe("batch");
-        }
-      });
-
-      it("rejects named parameters before invoking the executor", async () => {
-        const { executor } = createExecutorDouble();
-        const { sql, db } = client(executor);
-
-        const res = await sql.atomicBatch([
-          { statement: "update t set a = ?", params: [] },
-          // @ts-expect-error - named parameters are intentionally unsupported
-          { statement: "update t set b = ?", params: { named: 1 } },
-        ]);
-
-        expect(res.success).toBe(false);
-
-        describe("atomicBatch error mapping", () => {
-          it("surfaces an executor failure without partial results", async () => {
-            const { executor } = createExecutorDouble([], async () => {
-              throw new Error("constraint violation");
-            });
-            const { sql, db } = client(executor);
-
-            const res = await sql.atomicBatch([
-              { statement: "update t set a = 1", params: [] },
-              { statement: "update t set a = 2", params: [] },
-            ]);
-
-            expect(res.success).toBe(false);
-            // Invoked exactly once; no sequential fallback.
-            expect(executor.execute).toHaveBeenCalledTimes(1);
-            expect(db.executeQueryCalls).toBe(0);
-            expect(db.transactionCalls).toBe(0);
-            if (!res.success) {
-              expect(res.error.meta["reason"]).toBe("query_failed");
-              expect(res.error.meta["details"]?.["operation"]).toBe("batch");
-              // The contract does not define a failing-statement index.
-              expect(res.error.meta["details"]).not.toHaveProperty("failedIndex");
-            }
-          });
-
-          it("maps a cancellation to the cancelled reason", async () => {
-            const { executor } = createExecutorDouble([], async () => {
-              throw new DOMException("aborted", "AbortError");
-            });
-            const { sql } = client(executor);
-
-            const res = await sql.atomicBatch([{ statement: "update t set a = 1", params: [] }]);
-
-            expect(res.success).toBe(false);
-            if (!res.success) {
-              expect(res.error.meta["reason"]).toBe("cancelled");
-              expect(res.error.meta["details"]?.["operation"]).toBe("batch");
-            }
-          });
-
-          it("reuses the existing driver error code mapping for the batch operation", async () => {
-            const { executor } = createExecutorDouble([], async () => {
-              throw Object.assign(new Error("syntax error"), { code: "42601" });
-            });
-            const db = new FakeKysely();
-            // @ts-expect-error - structural stand-in
-            const sql = createKyselySqlClient({
-              db,
-              adapter: "postgres",
-              atomicBatchExecutor: executor,
-            });
-
-            const res = await sql.atomicBatch([{ statement: "selct 1", params: [] }]);
-
-            expect(res.success).toBe(false);
-            if (!res.success) {
-              expect(res.error.meta["reason"]).toBe("invalid_query");
-              expect(res.error.meta["details"]?.["operation"]).toBe("batch");
-              expect(res.error.meta["details"]?.["adapter"]).toBe("postgres");
-            }
-          });
-
-          it("rejects an executor that does not return one result per statement", async () => {
-            const { executor } = createExecutorDouble([{ rows: [] }]);
-            const { sql } = client(executor);
-
-            const res = await sql.atomicBatch([
-              { statement: "update t set a = 1", params: [] },
-              { statement: "update t set a = 2", params: [] },
-            ]);
-
-            expect(res.success).toBe(false);
-            if (!res.success) {
-              expect(res.error.meta["reason"]).toBe("query_failed");
-              expect(res.error.meta["details"]?.["operation"]).toBe("batch");
-            }
-          });
-        });
-
-        describe("kysely driver boundary", () => {
-          it("exposes no batch method on the database object the adapter uses", () => {
-            const db = new FakeKysely();
-            expect("batch" in db).toBe(false);
-            expect((db as unknown as Record<string, unknown>)["batch"]).toBeUndefined();
-          });
-
-          it("supports atomicBatch without any batch primitive on the database", async () => {
-            // Proves the injected executor is the only source of atomicity.
-            const { executor } = createExecutorDouble([
-              { rows: [{ id: 1 }], numAffectedRows: 1n },
-              { rows: [{ id: 2 }], numAffectedRows: 1n },
-            ]);
-            const { sql } = client(executor);
-
-            const res = await sql.atomicBatch([
-              { statement: "update t set a = 1", params: [] },
-              { statement: "update t set a = 2", params: [] },
-            ]);
-
-            expect(res.success).toBe(true);
-          });
-        });
-
-        // The whole batch is validated before execution, so nothing ran.
-        expect(executor.execute).not.toHaveBeenCalled();
-        expect(db.executeQueryCalls).toBe(0);
-        if (!res.success) {
-          expect(res.error.meta["reason"]).toBe("invalid_query");
-          expect(res.error.meta["details"]?.["operation"]).toBe("batch");
-        }
-      });
-    });
-
     const { executor, calls } = createExecutorDouble([{ rows: [] }]);
     const { sql } = client(executor);
 
@@ -281,6 +113,173 @@ describe("atomicBatch", () => {
 
     expect(res.success).toBe(true);
     expect(calls[0]![0]!.params).toEqual([]);
+  });
+
+  describe("atomicBatch input validation", () => {
+    it("rejects an empty batch without invoking the executor", async () => {
+      const { executor } = createExecutorDouble();
+      const { sql, db } = client(executor);
+
+      const res = await sql.atomicBatch([]);
+
+      expect(res.success).toBe(false);
+      expect(executor.execute).not.toHaveBeenCalled();
+      expect(db.executeQueryCalls).toBe(0);
+      if (!res.success) {
+        expect(res.error.meta["reason"]).toBe("invalid_query");
+        expect(res.error.meta["details"]?.["operation"]).toBe("batch");
+      }
+    });
+
+    it("rejects an empty batch identically when no executor is supplied", async () => {
+      const { sql } = client();
+
+      const res = await sql.atomicBatch([]);
+
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.error.meta["reason"]).toBe("invalid_query");
+        expect(res.error.meta["details"]?.["operation"]).toBe("batch");
+      }
+    });
+
+    it("reports invalid_configuration when no executor is supplied", async () => {
+      const { sql, db } = client();
+
+      const res = await sql.atomicBatch([{ statement: "update t set a = 1", params: [] }]);
+
+      expect(res.success).toBe(false);
+      // No sequential fallback, no transaction fallback, nothing executed.
+      expect(db.executeQueryCalls).toBe(0);
+      expect(db.transactionCalls).toBe(0);
+      if (!res.success) {
+        expect(res.error.meta["reason"]).toBe("invalid_configuration");
+        expect(res.error.meta["details"]?.["operation"]).toBe("batch");
+      }
+    });
+
+    it("rejects named parameters before invoking the executor", async () => {
+      const { executor } = createExecutorDouble();
+      const { sql, db } = client(executor);
+
+      const res = await sql.atomicBatch([
+        { statement: "update t set a = ?", params: [] },
+        // @ts-expect-error - named parameters are intentionally unsupported
+        { statement: "update t set b = ?", params: { named: 1 } },
+      ]);
+
+      expect(res.success).toBe(false);
+      // The whole batch is validated before execution, so nothing ran.
+      expect(executor.execute).not.toHaveBeenCalled();
+      expect(db.executeQueryCalls).toBe(0);
+      if (!res.success) {
+        expect(res.error.meta["reason"]).toBe("invalid_query");
+        expect(res.error.meta["details"]?.["operation"]).toBe("batch");
+      }
+    });
+  });
+
+  describe("atomicBatch error mapping", () => {
+    it("surfaces an executor failure without partial results", async () => {
+      const { executor } = createExecutorDouble([], async () => {
+        throw new Error("constraint violation");
+      });
+      const { sql, db } = client(executor);
+
+      const res = await sql.atomicBatch([
+        { statement: "update t set a = 1", params: [] },
+        { statement: "update t set a = 2", params: [] },
+      ]);
+
+      expect(res.success).toBe(false);
+      // Invoked exactly once; no sequential fallback.
+      expect(executor.execute).toHaveBeenCalledTimes(1);
+      expect(db.executeQueryCalls).toBe(0);
+      expect(db.transactionCalls).toBe(0);
+      if (!res.success) {
+        expect(res.error.meta["reason"]).toBe("query_failed");
+        expect(res.error.meta["details"]?.["operation"]).toBe("batch");
+        // The contract does not define a failing-statement index.
+        expect(res.error.meta["details"]).not.toHaveProperty("failedIndex");
+      }
+    });
+
+    it("maps a cancellation to the cancelled reason", async () => {
+      const { executor } = createExecutorDouble([], async () => {
+        throw new DOMException("aborted", "AbortError");
+      });
+      const { sql } = client(executor);
+
+      const res = await sql.atomicBatch([{ statement: "update t set a = 1", params: [] }]);
+
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.error.meta["reason"]).toBe("cancelled");
+        expect(res.error.meta["details"]?.["operation"]).toBe("batch");
+      }
+    });
+
+    it("reuses the existing driver error code mapping for the batch operation", async () => {
+      const { executor } = createExecutorDouble([], async () => {
+        throw Object.assign(new Error("syntax error"), { code: "42601" });
+      });
+      const db = new FakeKysely();
+      // @ts-expect-error - structural stand-in
+      const sql = createKyselySqlClient({
+        db,
+        adapter: "postgres",
+        atomicBatchExecutor: executor,
+      });
+
+      const res = await sql.atomicBatch([{ statement: "selct 1", params: [] }]);
+
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.error.meta["reason"]).toBe("invalid_query");
+        expect(res.error.meta["details"]?.["operation"]).toBe("batch");
+        expect(res.error.meta["details"]?.["adapter"]).toBe("postgres");
+      }
+    });
+
+    it("rejects an executor that does not return one result per statement", async () => {
+      const { executor } = createExecutorDouble([{ rows: [] }]);
+      const { sql } = client(executor);
+
+      const res = await sql.atomicBatch([
+        { statement: "update t set a = 1", params: [] },
+        { statement: "update t set a = 2", params: [] },
+      ]);
+
+      expect(res.success).toBe(false);
+      if (!res.success) {
+        expect(res.error.meta["reason"]).toBe("query_failed");
+        expect(res.error.meta["details"]?.["operation"]).toBe("batch");
+      }
+    });
+  });
+
+  describe("kysely driver boundary", () => {
+    it("exposes no batch method on the database object the adapter uses", () => {
+      const db = new FakeKysely();
+      expect("batch" in db).toBe(false);
+      expect((db as unknown as Record<string, unknown>)["batch"]).toBeUndefined();
+    });
+
+    it("supports atomicBatch without any batch primitive on the database", async () => {
+      // Proves the injected executor is the only source of atomicity.
+      const { executor } = createExecutorDouble([
+        { rows: [{ id: 1 }], numAffectedRows: 1n },
+        { rows: [{ id: 2 }], numAffectedRows: 1n },
+      ]);
+      const { sql } = client(executor);
+
+      const res = await sql.atomicBatch([
+        { statement: "update t set a = 1", params: [] },
+        { statement: "update t set a = 2", params: [] },
+      ]);
+
+      expect(res.success).toBe(true);
+    });
   });
 
   it("maps numAffectedRows to rowCount, including zero affected rows", async () => {
