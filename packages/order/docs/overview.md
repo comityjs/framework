@@ -52,9 +52,27 @@ Modifiers are accessed exclusively through `price.modifiers`.
 `Result<T, RepositoryError>`. Not-found is `null`, never an error, and orders are not physically deleted
 (the terminal states are `cancelled` and `fulfilled`).
 
-Domain behavior lives on the `Order` entity: item mutations (`addItem`, `removeItem`, `updateItemQuantity`)
+Domain behavior lives on the `Order` entity: item mutations (`setItems`, `addItem`, `removeItem`, `updateItemQuantity`)
 protect the order's invariants, and lifecycle transitions (`submit`, `confirm`, `fulfill`, `cancel`) go
 through the centralized transition rules in `domain/order-transitions.ts`. Cross-aggregate orchestration
 (pricing, coupons, inventory) belongs to application/domain services, not to this package.
 
+`setItems` is retained alongside the individual mutations because only full
+replacement is atomic: it validates the entire caller-decided collection
+before mutating, so a failure leaves items, price, status, metadata, and
+timestamps untouched — a sequence of `addItem`/`removeItem`/
+`updateItemQuantity` calls cannot provide equivalent failure atomicity or
+single-`updatedAt` semantics. It performs no merging or product-equivalence
+detection; the supplied collection is the complete desired collection.
+
 Orders are not created through a public command boundary: a draft order is an `Order` in `"draft"` status.
+
+## Identity
+
+Every `Order` receives its valid `OrderId` at construction from the caller
+(application service or hydration path); the entity never generates its own
+aggregate ID, and reconstruction preserves the persisted ID verbatim.
+`OrderItem` stays embedded: each occurrence carries a caller-assigned stable
+technical key (`OrderItemInput.id`) that identifies the occurrence, not the
+product. The aggregate mints no item IDs, preserves supplied occurrence IDs
+verbatim, and rejects duplicate occurrence IDs on every mutation path.

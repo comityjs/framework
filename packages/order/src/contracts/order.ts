@@ -79,7 +79,9 @@ export type OrderSnapshot = Readonly<
 /**
  * Data required to create a new order.
  *
- * The identifier and the initial status are managed by the entity: an order
+ * The identifier is supplied separately as the entity constructor's `id`
+ * argument: the caller (application service or hydration path) owns ID
+ * generation and the Order never generates its own aggregate ID. An order
  * without a supplied status starts as {@link OrderStatus."draft"}. Lifecycle
  * timestamps are optional so the same contract supports both creation and
  * hydration from persisted state (ADR-001).
@@ -100,7 +102,7 @@ export type OrderCreate = OrderData & {
  *
  * Status transitions are not part of the update contract: they must pass
  * through the entity's domain methods (`submit`, `confirm`, `fulfill`,
- * `cancel`). Items are mutated through `addItem`/`removeItem`/
+ * `cancel`). Items are mutated through `setItems`/`addItem`/`removeItem`/
  * `updateItemQuantity`, which protect the order's invariants.
  */
 export interface OrderUpdate {
@@ -120,6 +122,17 @@ export interface OrderUpdate {
  * from `ProductProjection`: the Order never depends on `@comity/catalog`.
  */
 export interface OrderItemInput {
+  /**
+   * Caller-assigned technical key for the new occurrence within the order.
+   *
+   * The ID identifies one occurrence, not a product: two occurrences may
+   * carry identical product/configuration data under distinct IDs. It must be
+   * unique within the order; the aggregate rejects duplicates. The ID is
+   * generated outside the Order (application service or caller); the Order
+   * never mints occurrence IDs itself.
+   */
+  readonly id: string;
+
   /** Product snapshot to add to the order. */
   readonly product: OrderProductSnapshot;
 

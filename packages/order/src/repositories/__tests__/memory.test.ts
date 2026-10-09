@@ -85,10 +85,10 @@ describe("MemoryOrderRepository", () => {
     const order = createOrder("draft");
     await repository.save(order, { tenant: tenantA });
 
-    const result = await repository.getById(order.id!, { tenant: tenantA });
+    const result = await repository.getById(order.id, { tenant: tenantA });
 
     expect(result.success).toBe(true);
-    expect(result.value?.id.toString()).toBe(order.id!.toString());
+    expect(result.value?.id.toString()).toBe(order.id.toString());
     expect(result.value?.status).toBe("draft");
   });
 
@@ -154,8 +154,8 @@ describe("MemoryOrderRepository", () => {
       const order = createOrder("draft", createId("order-shared"));
       await repository.save(order, { tenant: tenantA });
 
-      const resultA = await repository.getById(order.id!, { tenant: tenantA });
-      const resultB = await repository.getById(order.id!, { tenant: tenantB });
+      const resultA = await repository.getById(order.id, { tenant: tenantA });
+      const resultB = await repository.getById(order.id, { tenant: tenantB });
 
       expect(resultA.success).toBe(true);
       expect(resultA.value).not.toBeNull();
@@ -237,7 +237,7 @@ describe("MemoryOrderRepository", () => {
       const order = createOrder("draft", createId("order-channel"), channelPos);
       await repository.save(order, { tenant: tenantA });
 
-      const result = await repository.getById(order.id!, { tenant: tenantA });
+      const result = await repository.getById(order.id, { tenant: tenantA });
 
       expect(result.success).toBe(true);
       expect(result.value?.channelId.value).toBe("pos");
@@ -260,7 +260,7 @@ describe("MemoryOrderRepository", () => {
       // The order entity doesn't use meta.channel for channelId - they are independent
       await repository.save(order, { tenant: tenantA });
 
-      const result = await repository.getById(order.id!, { tenant: tenantA });
+      const result = await repository.getById(order.id, { tenant: tenantA });
 
       expect(result.success).toBe(true);
       expect(result.value?.channelId.value).toBe("web");

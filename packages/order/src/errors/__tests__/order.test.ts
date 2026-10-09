@@ -46,6 +46,15 @@ describe("OrderError", () => {
     expect(error.meta.httpStatus).toBe(409);
   });
 
+  it("creates an error with the duplicate_item_id reason", () => {
+    const error = new OrderError("duplicate_item_id");
+
+    expect(error.code).toBe("order:duplicate_item_id");
+    expect(error.message).toBe("Duplicate order item identifier");
+    expect(error.meta.reason).toBe("duplicate_item_id");
+    expect(error.meta.httpStatus).toBe(400);
+  });
+
   it("merges contextual details", () => {
     const error = new OrderError("invalid_item", {
       details: { orderId: "order-1", itemId: "item-1" },

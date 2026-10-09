@@ -74,7 +74,7 @@
     "@comity/hydration": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^24.13.4",
+    "@types/node": "^24.19.1",
     "preact": "^10.29.8",
     "typescript": "^5.9.3"
   }

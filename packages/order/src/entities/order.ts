@@ -60,6 +60,34 @@ function copyProductSnapshot(snapshot: OrderProductSnapshot): OrderProductSnapsh
 }
 
 /**
+ * Returns a defensive copy of an order item so later mutations of the input
+ * cannot leak into the order.
+ *
+ * @param item - The order item to copy.
+ *
+ * @returns A defensive copy of the item.
+ */
+function copyOrderItem(item: OrderItem): OrderItem {
+  return {
+    ...item,
+    product: copyProductSnapshot(item.product),
+    ...(item.meta !== undefined ? { meta: { ...item.meta } } : {}),
+  };
+}
+
+/**
+ * Returns whether a quantity is a valid order item quantity: an integer
+ * greater than or equal to 1.
+ *
+ * @param quantity - The quantity to validate.
+ *
+ * @returns `true` when the quantity is a positive integer, otherwise `false`.
+ */
+function isValidItemQuantity(quantity: number): boolean {
+  return Number.isInteger(quantity) && quantity >= 1;
+}
+
+/**
  * Returns a defensive copy of a contact so later mutations of the input cannot
  * leak into the order.
  *
@@ -139,7 +167,7 @@ function isSameShippingDestination(
  * to `@comity/pricing`, other Core Modules, and application/domain services.
  */
 export class Order {
-  #id: OrderId | undefined;
+  readonly #id: OrderId;
   #status: OrderStatus;
   #items: OrderItem[];
   #price: Price;
@@ -153,12 +181,14 @@ export class Order {
 
   /**
    * @param fields - The fields used to create or hydrate the order.
-   * @param id - The unique identifier of the order, if it has been assigned.
+   * @param id - The unique identifier of the order, supplied by the caller.
+   * The Order never generates its own aggregate ID; hydration preserves the
+   * persisted ID verbatim.
    */
-  constructor(fields: OrderCreate, id?: OrderId) {
+  constructor(fields: OrderCreate, id: OrderId) {
     this.#id = id;
     this.#status = fields.status ?? "draft";
-    this.#items = [...fields.items];
+    this.#items = fields.items.map(copyOrderItem);
     this.#price = fields.price;
     this.#channelId = fields.channelId;
     this.#customer = fields.customer !== undefined ? copyCustomerSnapshot(fields.customer) : undefined;
@@ -174,9 +204,9 @@ export class Order {
   }
 
   /**
-   * @returns The unique identifier of the order, if it has been assigned.
+   * @returns The unique identifier of the order.
    */
-  get id(): OrderId | undefined {
+  get id(): OrderId {
     return this.#id;
   }
 
@@ -198,7 +228,7 @@ export class Order {
    * @returns The order items.
    */
   get items(): ReadonlyArray<OrderItem> {
-    return [...this.#items];
+    return this.#items.map(copyOrderItem);
   }
 
   /**
@@ -263,7 +293,7 @@ export class Order {
    * Updates the applied pricing result and metadata.
    *
    * Status transitions are performed through the domain methods; items are
-   * mutated through `addItem`/`removeItem`/`updateItemQuantity`.
+   * mutated through `setItems`/`addItem`/`removeItem`/`updateItemQuantity`.
    *
    * @param changes - The changes to apply to the order.
    */
@@ -322,7 +352,7 @@ export class Order {
       return failure(
         new OrderError("shipping_destination_immutable", {
           details: {
-            ...(this.#id !== undefined ? { orderId: this.#id.toString() } : {}),
+            orderId: this.#id.toString(),
           },
         })
       );
@@ -336,7 +366,7 @@ export class Order {
       return failure(
         new OrderError("ambiguous_shipping_destination", {
           details: {
-            ...(this.#id !== undefined ? { orderId: this.#id.toString() } : {}),
+            orderId: this.#id.toString(),
           },
         })
       );
@@ -355,27 +385,103 @@ export class Order {
   }
 
   /**
-   * Adds an item to the order.
+   * Replaces the entire item collection with the supplied one (ADR-030).
    *
-   * @param input - The item data to add.
+   * The supplied collection is the complete desired collection: items omitted
+   * from it are removed, and no merging, appending, or quantity aggregation
+   * occurs. The supplied order is the resulting order and an empty collection
+   * is valid. Every entry is validated before any state changes — quantity
+   * (integer `>= 1`) first, then ID uniqueness against the IDs already seen —
+   * and the first violation rejects the whole operation, leaving the aggregate
+   * unchanged. Every successful replacement refreshes `updatedAt`, including
+   * identical replacements. Supplied item IDs are preserved verbatim and
+   * caller-owned data is defensively copied. Item mutation is not status-gated.
    *
-   * @returns The created item, or an `invalid_quantity` error when the
-   * quantity is not a positive integer.
+   * @param items - The complete desired item collection.
+   *
+   * @returns A result indicating the success or failure of the replacement.
+   */
+  setItems(items: ReadonlyArray<OrderItem>): Result<void, OrderError> {
+    const seen = new Set<string>();
+
+    for (const item of items) {
+      if (!isValidItemQuantity(item.quantity)) {
+        return failure(
+          new OrderError("invalid_quantity", {
+            details: {
+              orderId: this.#id.toString(),
+              itemId: item.id,
+              field: "quantity",
+            },
+          })
+        );
+      }
+
+      if (seen.has(item.id)) {
+        return failure(
+          new OrderError("duplicate_item_id", {
+            details: {
+              orderId: this.#id.toString(),
+              itemId: item.id,
+            },
+          })
+        );
+      }
+
+      seen.add(item.id);
+    }
+
+    this.#items = items.map(copyOrderItem);
+    this.#updatedAt = Instant.now();
+
+    return success(undefined);
+  }
+
+  /**
+   * Appends one item occurrence to the order.
+   *
+   * The occurrence ID is supplied by the caller in the input: the Order never
+   * mints occurrence IDs itself. The ID must be unique within the order —
+   * appending an already-used ID is rejected so the `setItems` duplicate-ID
+   * invariant cannot be bypassed through this path. Validation runs before
+   * any mutation — quantity (integer `>= 1`) first, then ID uniqueness — and
+   * failures leave the aggregate unchanged. A successful append refreshes
+   * `updatedAt`. Occurrence IDs carry no product meaning: identical
+   * product/configuration data may coexist under distinct IDs.
+   *
+   * @param input - The item data to add, including the caller-assigned
+   * occurrence ID.
+   *
+   * @returns The created item copy, an `invalid_quantity` error when the
+   * quantity is not a positive integer, or a `duplicate_item_id` error when
+   * the ID is already used within the order.
    */
   addItem(input: OrderItemInput): Result<OrderItem, OrderError> {
-    if (!Number.isInteger(input.quantity) || input.quantity < 1) {
+    if (!isValidItemQuantity(input.quantity)) {
       return failure(
         new OrderError("invalid_quantity", {
           details: {
-            ...(this.#id !== undefined ? { orderId: this.#id.toString() } : {}),
+            orderId: this.#id.toString(),
+            itemId: input.id,
             field: "quantity",
           },
         })
       );
     }
 
+    if (this.#items.some((existing) => existing.id === input.id)) {
+      return failure(
+        new OrderError("duplicate_item_id", {
+          details: {
+            orderId: this.#id.toString(),
+            itemId: input.id,
+          },
+        })
+      );
+    }
+
     const item: OrderItem = {
-      id: crypto.randomUUID(),
+      id: input.id,
       product: copyProductSnapshot(input.product),
       quantity: input.quantity,
       price: input.price,
@@ -384,7 +490,7 @@ export class Order {
     this.#items.push(item);
     this.#updatedAt = Instant.now();
 
-    return success(item);
+    return success(copyOrderItem(item));
   }
 
   /**
@@ -401,7 +507,7 @@ export class Order {
       return failure(
         new OrderError("invalid_item", {
           details: {
-            ...(this.#id !== undefined ? { orderId: this.#id.toString() } : {}),
+            orderId: this.#id.toString(),
             itemId,
           },
         })
@@ -423,11 +529,11 @@ export class Order {
    * @returns A result indicating the success or failure of the update.
    */
   updateItemQuantity(itemId: string, quantity: number): Result<void, OrderError> {
-    if (!Number.isInteger(quantity) || quantity < 1) {
+    if (!isValidItemQuantity(quantity)) {
       return failure(
         new OrderError("invalid_quantity", {
           details: {
-            ...(this.#id !== undefined ? { orderId: this.#id.toString() } : {}),
+            orderId: this.#id.toString(),
             itemId,
             field: "quantity",
           },
@@ -441,7 +547,7 @@ export class Order {
       return failure(
         new OrderError("invalid_item", {
           details: {
-            ...(this.#id !== undefined ? { orderId: this.#id.toString() } : {}),
+            orderId: this.#id.toString(),
             itemId,
           },
         })
@@ -496,15 +602,14 @@ export class Order {
 
   /**
    * Creates a snapshot of the current state of the order.
-   * Requires the order to have an assigned identifier.
    *
    * @returns A snapshot representing the current state of the order.
    */
   snapshot(): OrderSnapshot {
     return {
-      id: this.#id as OrderId,
+      id: this.#id,
       status: this.#status,
-      items: [...this.#items],
+      items: this.#items.map(copyOrderItem),
       price: this.#price,
       channelId: this.#channelId,
       ...(this.#customer !== undefined ? { customer: copyCustomerSnapshot(this.#customer) } : {}),

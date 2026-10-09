@@ -15,7 +15,8 @@ export type OrderErrorReason =
   | "invalid_item"
   | "invalid_status_transition"
   | "shipping_destination_immutable"
-  | "ambiguous_shipping_destination";
+  | "ambiguous_shipping_destination"
+  | "duplicate_item_id";
 
 /**
  * Order error metadata.
@@ -49,6 +50,7 @@ const REASON_MESSAGES: Record<OrderErrorReason, string> = {
   invalid_status_transition: "Invalid order status transition",
   shipping_destination_immutable: "Shipping destination cannot be changed in the current order status",
   ambiguous_shipping_destination: "Order must contain exactly one shipping destination",
+  duplicate_item_id: "Duplicate order item identifier",
 };
 
 const REASON_HTTP_STATUS: Record<OrderErrorReason, number> = {
@@ -57,6 +59,7 @@ const REASON_HTTP_STATUS: Record<OrderErrorReason, number> = {
   invalid_status_transition: 409,
   shipping_destination_immutable: 409,
   ambiguous_shipping_destination: 409,
+  duplicate_item_id: 400,
 };
 
 /**
