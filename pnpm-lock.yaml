@@ -15,8 +15,8 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@comity-dev/cli':
-        specifier: ^0.2.0
-        version: 0.2.0(jiti@2.7.0)(typescript@5.9.3)
+        specifier: ^0.2.1
+        version: 0.2.1(jiti@2.7.0)(typescript@5.9.3)
       '@comity-dev/dependency-rules':
         specifier: ^0.2.0
         version: 0.2.0
@@ -30,11 +30,11 @@ importers:
         specifier: ^0.2.0
         version: 0.2.0
       '@comity-dev/semgrep-rules':
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.2.1
+        version: 0.2.1
       '@comity-dev/validate':
-        specifier: ^0.2.0
-        version: 0.2.0(jiti@2.7.0)(typescript@5.9.3)
+        specifier: ^0.2.1
+        version: 0.2.1(jiti@2.7.0)(typescript@5.9.3)
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.71.1
         version: 8.71.1(@typescript-eslint/parser@8.71.1(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)
@@ -1082,8 +1082,8 @@ packages:
     engines: {node: '>=24.0.0'}
     hasBin: true
 
-  '@comity-dev/cli@0.2.0':
-    resolution: {integrity: sha512-VK0WfoJ/gy1D/l7NsgCtTnbwKlaQ1F6V+sEs4HhAEmaZ7TIMfb05wroUeSnm38br8ZyBDH5/k6FC8A7iuJPnWg==}
+  '@comity-dev/cli@0.2.1':
+    resolution: {integrity: sha512-hirmI8B2HrWQLBz85aEUDmuubz1RfYXDEMJoQlg2KYoZ/VIH9AZJlkhhFME0ufzCqC1jx85A8iVMW1Nq/E/kEw==}
     engines: {node: '>=24.0.0'}
     hasBin: true
 
@@ -1106,12 +1106,12 @@ packages:
     resolution: {integrity: sha512-tQ8WQN7IXtdMUb/H8vwBExyhiyqJSWcpBXG9bLy0VbxDOkbZAaxtoc9RKMBS0umxifcgHmVz5U8I1IBwd22xyg==}
     engines: {node: '>=24.0.0'}
 
-  '@comity-dev/semgrep-rules@0.2.0':
-    resolution: {integrity: sha512-ww7FqBEzEH9oVyAsUAfBLKeHU20SBCxAD50rUuqfFmJwMSCMW/k8t7LWoN26A+W5MA1d5UFhaqh1Nf0EhkTNOA==}
+  '@comity-dev/semgrep-rules@0.2.1':
+    resolution: {integrity: sha512-cdhPiTDVjNq415i2Bhbp3HtQllzqoASjx53xE6WjT+sq4Zd4EZOQtfIPXllJLYQIZI9SqzefAXBhZkaeQtRhrg==}
     engines: {node: '>=24.0.0'}
 
-  '@comity-dev/validate@0.2.0':
-    resolution: {integrity: sha512-xmhDEWKfStw7egsWwrbmhOlxMTKmIL7FgzkTzd5DdDOSRxKfgg67AcelQm9jWbOHss+oaCqoho7qp3fymIRFig==}
+  '@comity-dev/validate@0.2.1':
+    resolution: {integrity: sha512-OqOQkWIX/hcU5Wb7a95MouVh8cM3iNqjdRgFVzJDYsrRfnz10ewowucDUPk/k8vZkU2149mirshkp6Ug6b4pBA==}
     engines: {node: '>=24.0.0'}
     hasBin: true
 
@@ -2129,8 +2129,8 @@ packages:
       bare-abort-controller:
         optional: true
 
-  bare-fs@4.8.3:
-    resolution: {integrity: sha512-KQi9ShyPS/nOCtKpma7At8wbq4ORSNUmD67hsZrPcaWJcEmL8PHyS2xVWT308y8/LvHFOUTytTTDsD8dInx6bA==}
+  bare-fs@4.8.4:
+    resolution: {integrity: sha512-MPC2eyrpbk3A873sK4y6rk+Iv4o2enxTjHZ8zH3HO0mjrpm5XjnguY2XmfidIsDV6vnjpbMBKUAJpV0ISD2SsQ==}
     engines: {bare: '>=1.28.0'}
     peerDependencies:
       bare-buffer: '*'
@@ -4820,11 +4820,11 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
-  '@comity-dev/cli@0.2.0(jiti@2.7.0)(typescript@5.9.3)':
+  '@comity-dev/cli@0.2.1(jiti@2.7.0)(typescript@5.9.3)':
     dependencies:
       '@comity-dev/build': 0.2.0
       '@comity-dev/package-tools': 0.2.0
-      '@comity-dev/validate': 0.2.0(jiti@2.7.0)(typescript@5.9.3)
+      '@comity-dev/validate': 0.2.1(jiti@2.7.0)(typescript@5.9.3)
     transitivePeerDependencies:
       - jiti
       - supports-color
@@ -4845,14 +4845,14 @@ snapshots:
       ajv: 8.20.0
       ajv-formats: 3.0.1(ajv@8.20.0)
 
-  '@comity-dev/semgrep-rules@0.2.0': {}
+  '@comity-dev/semgrep-rules@0.2.1': {}
 
-  '@comity-dev/validate@0.2.0(jiti@2.7.0)(typescript@5.9.3)':
+  '@comity-dev/validate@0.2.1(jiti@2.7.0)(typescript@5.9.3)':
     dependencies:
       '@comity-dev/dependency-rules': 0.2.0
       '@comity-dev/eslint-plugin': 0.2.0(eslint@9.39.5(jiti@2.7.0))
       '@comity-dev/schemas': 0.2.0
-      '@comity-dev/semgrep-rules': 0.2.0
+      '@comity-dev/semgrep-rules': 0.2.1
       '@typescript-eslint/parser': 8.71.1(eslint@9.39.5(jiti@2.7.0))(typescript@5.9.3)
       dependency-cruiser: 16.10.4
       eslint: 9.39.5(jiti@2.7.0)
@@ -5927,7 +5927,7 @@ snapshots:
   bare-events@2.9.2:
     optional: true
 
-  bare-fs@4.8.3:
+  bare-fs@4.8.4:
     dependencies:
       bare-events: 2.9.2
       bare-path: 3.1.2
@@ -8293,7 +8293,7 @@ snapshots:
       pump: 3.0.4
       tar-stream: 3.2.2
     optionalDependencies:
-      bare-fs: 4.8.3
+      bare-fs: 4.8.4
       bare-path: 3.1.2
     transitivePeerDependencies:
       - bare-abort-controller
@@ -8304,7 +8304,7 @@ snapshots:
   tar-stream@3.2.2:
     dependencies:
       b4a: 1.9.0
-      bare-fs: 4.8.3
+      bare-fs: 4.8.4
       fast-fifo: 1.3.2
       streamx: 2.28.1
     transitivePeerDependencies:
