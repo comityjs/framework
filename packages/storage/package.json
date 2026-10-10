@@ -1,6 +1,6 @@
 {
   "name": "@comity/storage",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Storage module for Comity framework",
   "type": "module",
   "private": false,

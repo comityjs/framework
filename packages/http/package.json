@@ -1,6 +1,6 @@
 {
   "name": "@comity/http",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "HTTP module for Comity framework applications",
   "type": "module",
   "private": false,

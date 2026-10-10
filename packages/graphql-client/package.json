@@ -1,6 +1,6 @@
 {
   "name": "@comity/graphql-client",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "GraphQL client module for Comity framework",
   "type": "module",
   "private": false,

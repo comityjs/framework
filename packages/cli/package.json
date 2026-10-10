@@ -1,6 +1,6 @@
 {
   "name": "@comity/cli",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Runtime-agnostic CLI core contracts and composition for Comity framework applications",
   "type": "module",
   "private": false,

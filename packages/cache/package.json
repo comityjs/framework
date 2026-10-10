@@ -1,6 +1,6 @@
 {
   "name": "@comity/cache",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Cache module for Comity framework",
   "type": "module",
   "private": false,

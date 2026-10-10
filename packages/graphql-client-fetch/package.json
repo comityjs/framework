@@ -1,6 +1,6 @@
 {
   "name": "@comity/graphql-client-fetch",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Fetch GraphQL transport adapter for Comity framework",
   "type": "module",
   "private": false,
