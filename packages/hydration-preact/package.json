@@ -1,6 +1,6 @@
 {
   "name": "@comity/hydration-preact",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Hydration module for server-rendered Preact applications with Comity framework",
   "type": "module",
   "private": false,

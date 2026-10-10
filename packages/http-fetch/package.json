@@ -1,6 +1,6 @@
 {
   "name": "@comity/http-fetch",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Fetch HTTP client adapter for Comity framework applications",
   "type": "module",
   "private": false,

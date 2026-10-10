@@ -1,6 +1,6 @@
 {
   "name": "@comity/cli-commander",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Commander.js adapter for @comity/cli",
   "type": "module",
   "private": false,

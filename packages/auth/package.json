@@ -1,6 +1,6 @@
 {
   "name": "@comity/auth",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Authentication and session domain contracts for Comity.",
   "type": "module",
   "private": false,

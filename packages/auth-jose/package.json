@@ -1,6 +1,6 @@
 {
   "name": "@comity/auth-jose",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "JOSE-backed token service implementing @comity/auth token contracts.",
   "type": "module",
   "private": false,
