@@ -156,9 +156,7 @@ interface ModuleMeta<
   readonly name: string;
   readonly version: string;
   readonly priority?: number;
-  readonly dependsOn?: Readonly<
-    Record<string, { version?: string; optional?: boolean }>
-  >;
+  readonly dependsOn?: Readonly<Record<string, { version?: string; optional?: boolean }>>;
   readonly incompatibleWith?: readonly string[];
   readonly setup: (ctx: Context, options?: Options) => Promise<Result<ModuleSetupFn, BaseError>>;
 }

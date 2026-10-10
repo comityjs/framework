@@ -17,4 +17,3 @@ adapters.
 - external storage provider integrations
 - transport behavior
 - application orchestration
-

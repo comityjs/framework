@@ -13,4 +13,3 @@
 
 The package stays focused on storefront composition and leaves rendering or
 transport rendering to separate layers.
-

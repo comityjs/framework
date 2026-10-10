@@ -89,15 +89,13 @@ describe("fetchHttp", () => {
   });
 
   it("aborts the request when the timeout elapses", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockImplementation((_input: Request | URL, init?: RequestInit) => {
-        return new Promise((resolve, reject) => {
-          init?.signal?.addEventListener("abort", () => {
-            reject(new DOMException("The operation was aborted", "AbortError"));
-          });
+    const fetchMock = vi.fn().mockImplementation((_input: Request | URL, init?: RequestInit) => {
+      return new Promise((resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(new DOMException("The operation was aborted", "AbortError"));
         });
       });
+    });
     vi.stubGlobal("fetch", fetchMock);
 
     vi.useFakeTimers();
@@ -148,10 +146,7 @@ describe("fetchHttp", () => {
   });
 
   it("propagates fetch errors", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockRejectedValue(new TypeError("Failed to fetch"))
-    );
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
 
     await expect(fetchHttp(new URL("https://example.com"))).rejects.toThrow("Failed to fetch");
   });

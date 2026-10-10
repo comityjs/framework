@@ -1,5 +1,1 @@
-export type {
-  ModuleMeta,
-  ModuleSetupContext,
-  ModuleSetupFn,
-} from "./types.js";
+export type { ModuleMeta, ModuleSetupContext, ModuleSetupFn } from "./types.js";

@@ -21,4 +21,3 @@
 
 The package provides stable authentication semantics that adapters and
 applications can compose around.
-

@@ -31,4 +31,3 @@ Technology-bound transport implementations (WebSocket, fetch, HTTP-specific) bel
 - `GraphqlTransport` is the replaceable boundary; transport implementations remain replaceable
 - the client does not know about application data sources
 - the client facade is transport-independent and stays in the Core Module
-

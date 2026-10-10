@@ -121,10 +121,7 @@ describe("Order", () => {
     it("should restore persisted status and timestamps during hydration", () => {
       const createdAt = Instant.fromEpochMilliseconds(1000);
       const updatedAt = Instant.fromEpochMilliseconds(2000);
-      const order = new Order(
-        { ...fields, status: "confirmed", createdAt, updatedAt },
-        id,
-      );
+      const order = new Order({ ...fields, status: "confirmed", createdAt, updatedAt }, id);
 
       expect(order.status).toBe("confirmed");
       expect(order.createdAt).toBe(createdAt);
@@ -191,7 +188,7 @@ describe("Order", () => {
           ...fields,
           price: price(10000n, [modifier("discount-10", "discount", 1000n)]),
         },
-        id,
+        id
       );
 
       expect(order.price.modifiers).toHaveLength(1);
@@ -201,7 +198,9 @@ describe("Order", () => {
     it("should validate mutations on an order with an id", () => {
       const order = new Order({ items: [], price: price(0n) }, id);
 
-      expect(isFailure(order.addItem({ id: "item-x", product, quantity: 0, price: price(0n) }))).toBe(true);
+      expect(
+        isFailure(order.addItem({ id: "item-x", product, quantity: 0, price: price(0n) }))
+      ).toBe(true);
       expect(isFailure(order.removeItem("missing"))).toBe(true);
       expect(isFailure(order.updateItemQuantity("missing", 1))).toBe(true);
     });
@@ -214,7 +213,11 @@ describe("Order", () => {
         items: [
           {
             ...item,
-            product: { ...product, attributes, metadata: { image: "https://cdn.example.com/p-1.jpg" } },
+            product: {
+              ...product,
+              attributes,
+              metadata: { image: "https://cdn.example.com/p-1.jpg" },
+            },
             meta: { note: "original" },
           },
         ],
@@ -225,7 +228,9 @@ describe("Order", () => {
       (returned as { quantity: number }).quantity = 99;
       (returned.meta as Record<string, unknown>).note = "changed";
       (returned.product as { sku: string }).sku = "CHANGED";
-      (returned.product.attributes as Array<{ code: string; value: string | number | boolean }>).push({
+      (
+        returned.product.attributes as Array<{ code: string; value: string | number | boolean }>
+      ).push({
         code: "size",
         value: "L",
       });
@@ -375,16 +380,22 @@ describe("Order", () => {
 
     it("should never reuse a removed occurrence id on its own", () => {
       const order = createOrder();
-      expect(isSuccess(order.addItem({ id: "occ-1", product, quantity: 1, price: price(1000n) }))).toBe(true);
+      expect(
+        isSuccess(order.addItem({ id: "occ-1", product, quantity: 1, price: price(1000n) }))
+      ).toBe(true);
       expect(isSuccess(order.removeItem("occ-1"))).toBe(true);
-      expect(isSuccess(order.addItem({ id: "occ-2", product, quantity: 1, price: price(1000n) }))).toBe(true);
+      expect(
+        isSuccess(order.addItem({ id: "occ-2", product, quantity: 1, price: price(1000n) }))
+      ).toBe(true);
 
       expect(order.items.map((entry) => entry.id)).toEqual(["item-1", "occ-2"]);
     });
 
     it("should accept an explicitly re-supplied removed id without touching retained occurrences", () => {
       const order = createOrder();
-      expect(isSuccess(order.addItem({ id: "occ-1", product, quantity: 1, price: price(1000n) }))).toBe(true);
+      expect(
+        isSuccess(order.addItem({ id: "occ-1", product, quantity: 1, price: price(1000n) }))
+      ).toBe(true);
       expect(isSuccess(order.removeItem("occ-1"))).toBe(true);
       const result = order.addItem({ id: "occ-1", product, quantity: 4, price: price(4000n) });
 
@@ -580,9 +591,7 @@ describe("Order", () => {
 
     it("should reject a non-integer quantity with invalid_quantity", () => {
       const order = createOrder();
-      const result = order.setItems([
-        { id: "bad-2", product, quantity: 1.5, price: price(100n) },
-      ]);
+      const result = order.setItems([{ id: "bad-2", product, quantity: 1.5, price: price(100n) }]);
 
       expect(isFailure(result)).toBe(true);
       if (isFailure(result)) {

@@ -3,7 +3,7 @@ import type { BaseError } from "@comity/primitives/errors";
 
 /**
  * Parsed command arguments.
- * 
+ *
  * @remarks
  * Opaque record of values parsed by a runtime adapter. Positional arguments
  * are exposed under their declared argument name; options are exposed under
@@ -14,7 +14,7 @@ export type CliCommandArgs = Record<string, unknown>;
 
 /**
  * Positional argument declaration.
- * 
+ *
  * @remarks
  * Represents a single positional argument of a command in a
  * technology-neutral way. `required` defaults to `false`.
@@ -27,7 +27,7 @@ export interface CliArgument {
 
 /**
  * Command-line option declaration.
- * 
+ *
  * @remarks
  * Describes an option/flag without any framework-specific syntax. The option
  * `name` is the long flag name without dashes (e.g. `"dry-run"`); single
@@ -46,10 +46,10 @@ export interface CliOption {
 
 /**
  * Read-only execution context passed to command actions.
- * 
+ *
  * @typeParam Context - Application-defined context shape supplied at
  *   composition time through the CLI kernel.
- * 
+ *
  * @remarks
  * The Core passes the application-provided execution context through
  * unchanged. The context is the explicit vehicle for application
@@ -59,10 +59,10 @@ export type CliCommandContext<Context = {}> = Readonly<Context>;
 
 /**
  * CLI command definition.
- * 
+ *
  * @typeParam Context - Application-defined context shape supplied at
  *   composition time through the CLI kernel.
- * 
+ *
  * @remarks
  * Defines a command declaratively: name, description, declared arguments and
  * options, and the action invoked at execution time. The action receives the

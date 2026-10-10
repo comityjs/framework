@@ -32,4 +32,3 @@ It MUST remain framework-agnostic.
 
 - content errors are not defined here in the current package shape
 - failures are expected to be normalized by higher layers or adapters
-

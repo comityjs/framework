@@ -37,10 +37,7 @@ describe("DomIslandDiscoveryAdapter", () => {
     const root = {
       querySelectorAll: vi.fn().mockReturnValue([]),
     };
-    const adapter = new DomIslandDiscoveryAdapter(
-      root as unknown as ParentNode,
-      () => {}
-    );
+    const adapter = new DomIslandDiscoveryAdapter(root as unknown as ParentNode, () => {});
 
     expect(() => adapter.detach()).not.toThrow();
   });

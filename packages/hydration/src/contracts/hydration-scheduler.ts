@@ -148,7 +148,10 @@ export function createNoopHydrationCapabilities(): HydrationPlatformCapabilities
      *
      * @returns Always null.
      */
-    observeVisibility(_element: IslandElement, _onVisible: () => void): HydrationVisibilityObserver | null {
+    observeVisibility(
+      _element: IslandElement,
+      _onVisible: () => void
+    ): HydrationVisibilityObserver | null {
       return null;
     },
   };

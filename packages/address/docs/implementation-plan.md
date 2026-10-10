@@ -3,6 +3,7 @@
 ## Current Implementation State
 
 ### Completed
+
 - [x] Phase 0 — Package foundation (package.json, tsconfig.json, vitest.config.ts)
 - [x] Phase 1 — Public Contracts (address-repository.ts, address-validator.ts, address.ts)
 - [x] Phase 3 — Value Objects (AddressId, AddressLine)
@@ -12,6 +13,7 @@
 - [x] Phase 8 — Documentation (overview, conventions, architecture, design, api, ADRs)
 
 ### Not Implemented (by design)
+
 - [ ] Phase 2 — Error Model: Address does not own domain errors; all errors come from @comity/primitives
 - [ ] Phase 5 — Module Composition (setup/): No setup directory exists; composition belongs to application layer not Core Module
 

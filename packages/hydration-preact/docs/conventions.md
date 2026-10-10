@@ -32,4 +32,3 @@ It MUST stay focused on runtime wiring and component loading.
 
 - adapter behavior MAY raise errors from the hydration layer
 - the adapter MUST NOT introduce its own public domain error contract
-

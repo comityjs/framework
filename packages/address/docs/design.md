@@ -133,6 +133,7 @@ AddressSnapshot is a **type** (not a class), defined in the contracts module.
 It is an immutable representation of an address at a specific point in time. It is created via `address.snapshot()`.
 
 Key properties:
+
 - `id: AddressId | undefined`
 - `capturedAt: Instant`
 

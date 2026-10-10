@@ -38,6 +38,7 @@ The contract itself has no library dependency.
 Formatting follows the same principle — it does not belong in Address.
 
 Examples of the same address data formatted differently:
+
 ```
 Via Roma 10
 20100 Milano MI
@@ -55,11 +56,13 @@ The address entity does not format or present itself.
 ## Consequences
 
 **Positive:**
+
 - No dependency on external libraries
 - Validation rules can be updated without changing the domain
 - Global support via multiple validator adapters
 - Multiple formatting strategies possible
 
 **Negative:**
+
 - Consumers must choose and configure the appropriate validator
 - The base address does not guarantee geographic correctness

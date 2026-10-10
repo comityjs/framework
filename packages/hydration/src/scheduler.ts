@@ -4,13 +4,8 @@ import type {
   HydrationPlatformCapabilities,
   HydrationVisibilityObserver,
 } from "./contracts/hydration-scheduler.js";
-import {
-  createNoopHydrationCapabilities,
-} from "./contracts/hydration-scheduler.js";
-import type {
-  HydrationInteractionStrategy,
-  HydrationMediaStrategy,
-} from "./contracts/strategy.js";
+import { createNoopHydrationCapabilities } from "./contracts/hydration-scheduler.js";
+import type { HydrationInteractionStrategy, HydrationMediaStrategy } from "./contracts/strategy.js";
 
 /**
  * Default strategy-based scheduler adapter.

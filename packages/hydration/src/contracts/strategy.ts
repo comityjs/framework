@@ -32,6 +32,4 @@ export type HydrationOtherStrategy = {
  * Hydration strategy union type
  */
 export type HydrationStrategy =
-  | HydrationInteractionStrategy
-  | HydrationMediaStrategy
-  | HydrationOtherStrategy;
+  HydrationInteractionStrategy | HydrationMediaStrategy | HydrationOtherStrategy;

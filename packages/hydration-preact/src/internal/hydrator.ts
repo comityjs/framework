@@ -58,8 +58,7 @@ export class PreactIslandHydrationAdapter implements IslandHydrationAdapter {
       component as ComponentType<Record<string, unknown>>,
       contract.data as Record<string, unknown>
     );
-    const mountTarget =
-      (island.querySelector("[data-comity-root]") as Element | null) ?? island;
+    const mountTarget = (island.querySelector("[data-comity-root]") as Element | null) ?? island;
 
     // Apply hydration strategy
     if (contract.mode === "client-only") {

@@ -133,11 +133,11 @@ class NotFoundError extends BaseError<NotFoundErrorMeta> {
 
 ```ts
 type ErrorMeta = Readonly<{
-  httpStatus?: number;      // Associated HTTP status code
-  reason?: string;          // Machine-readable reason
-  cause?: unknown;          // Underlying cause for error chaining
-  details?: Readonly<Record<string, unknown>>;  // Domain-specific context
-  context?: Readonly<Record<string, unknown>>;  // Diagnostic runtime context
+  httpStatus?: number; // Associated HTTP status code
+  reason?: string; // Machine-readable reason
+  cause?: unknown; // Underlying cause for error chaining
+  details?: Readonly<Record<string, unknown>>; // Domain-specific context
+  context?: Readonly<Record<string, unknown>>; // Diagnostic runtime context
 }>;
 ```
 
@@ -211,10 +211,7 @@ Transport representation (404 Not Found)
 class HttpError extends BaseError<HttpErrorMeta> {
   readonly code: `http:${HttpErrorReason}`;
 
-  constructor(
-    reason: HttpErrorReason,
-    meta?: Omit<HttpErrorMeta, "reason">
-  );
+  constructor(reason: HttpErrorReason, meta?: Omit<HttpErrorMeta, "reason">);
 }
 ```
 
@@ -226,11 +223,11 @@ HTTP errors carry an `httpStatus` derived from the reason, and are used by the H
 
 Comity favors explicit `Result` semantics for expected operation outcomes. This does not mean exceptions cannot exist in the runtime, but rather that:
 
-| Scenario | Mechanism |
-|----------|----------|
-| Expected domain failure (validation, not found, conflict) | `Result` with domain error |
-| Infrastructure/contract violation | Domain error or `HttpError` |
-| Truly exceptional runtime condition (unrecoverable) | Exception at appropriate boundary |
+| Scenario                                                  | Mechanism                         |
+| --------------------------------------------------------- | --------------------------------- |
+| Expected domain failure (validation, not found, conflict) | `Result` with domain error        |
+| Infrastructure/contract violation                         | Domain error or `HttpError`       |
+| Truly exceptional runtime condition (unrecoverable)       | Exception at appropriate boundary |
 
 The key distinction: **expected failures are part of the operation's contract and should be typed**.
 
@@ -270,7 +267,9 @@ return failure("Something went wrong");
 // Prefer
 class PaymentDeclinedError extends BaseError {
   readonly code = "payment:declined";
-  constructor() { super("Payment declined", {}); }
+  constructor() {
+    super("Payment declined", {});
+  }
 }
 return failure(new PaymentDeclinedError());
 ```
@@ -297,17 +296,23 @@ Safe payload conversion prevents implementation details from reaching external c
 import { HttpError } from "@comity/http/errors";
 
 class OrderService {
-  fail() { throw new HttpError("internal_error"); }
+  fail() {
+    throw new HttpError("internal_error");
+  }
 }
 
 // Prefer
 class OrderProcessingError extends BaseError {
   readonly code = "order:processing_failed";
-  constructor() { super("Order processing failed", {}); }
+  constructor() {
+    super("Order processing failed", {});
+  }
 }
 
 class OrderService {
-  fail() { return failure(new OrderProcessingError()); }
+  fail() {
+    return failure(new OrderProcessingError());
+  }
 }
 ```
 

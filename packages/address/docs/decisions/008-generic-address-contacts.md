@@ -31,10 +31,12 @@ Consumers decide which contact types they support and how to interpret them.
 ## Consequences
 
 **Positive:**
+
 - No perpetual contact taxonomy to maintain
 - New communication channels require no module changes
 - Consumers remain free to define their own contact semantics
 
 **Negative:**
+
 - No built-in type safety for contact types
 - Structural validation of contacts is deferred to consumers

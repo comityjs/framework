@@ -18,13 +18,7 @@ describe("useLayout", () => {
       return createElement("span", { "data-available": layout !== null }, "probe");
     };
 
-    const html = renderToString(
-      createElement(
-        LayoutProvider,
-        { collector },
-        createElement(Probe)
-      )
-    );
+    const html = renderToString(createElement(LayoutProvider, { collector }, createElement(Probe)));
 
     expect(html).toContain('data-available="true"');
   });

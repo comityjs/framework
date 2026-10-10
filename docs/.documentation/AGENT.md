@@ -861,4 +861,3 @@ Scope violations:   <none | list>
 ```
 
 Do not claim completion without evidence.
-

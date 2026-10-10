@@ -48,7 +48,8 @@ const REASON_MESSAGES: Record<OrderErrorReason, string> = {
   invalid_quantity: "Invalid order item quantity",
   invalid_item: "Order item not found",
   invalid_status_transition: "Invalid order status transition",
-  shipping_destination_immutable: "Shipping destination cannot be changed in the current order status",
+  shipping_destination_immutable:
+    "Shipping destination cannot be changed in the current order status",
   ambiguous_shipping_destination: "Order must contain exactly one shipping destination",
   duplicate_item_id: "Duplicate order item identifier",
 };

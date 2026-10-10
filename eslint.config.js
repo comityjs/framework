@@ -30,13 +30,7 @@ const IGNORED_GLOBS = [
 export default defineConfig([
   // Ignore test files and other generated files globally
   {
-    ignores: [
-      ...IGNORED_GLOBS,
-      "scripts/**",
-      "**/*.mjs",
-      "**/*.cjs",
-      ".pnpm-store/**",
-    ],
+    ignores: [...IGNORED_GLOBS, "scripts/**", "**/*.mjs", "**/*.cjs", ".pnpm-store/**"],
   },
   /**
    * SHARED PLUGIN — Development-owned `@comity-dev/eslint-plugin`.

@@ -26,7 +26,12 @@ function createFacadeWithHooks(hooks?: any, commands: any[] = []) {
     registry.register(command);
   }
   const events = new DefaultEventBus<any>();
-  const facade = createCliExecutionFacade(registry, actualHooks, new DefaultEventBus<any>(), CONTEXT);
+  const facade = createCliExecutionFacade(
+    registry,
+    actualHooks,
+    new DefaultEventBus<any>(),
+    CONTEXT
+  );
   return { facade, registry, hooks: actualHooks };
 }
 
@@ -72,11 +77,13 @@ describe("createCommanderAdapter", () => {
 
   it("translates option values into neutral Core argument keys", async () => {
     const action = vi.fn();
-    const { facade } = createFacade([{
-      name: "build",
-      options: [{ name: "env", value: true }, { name: "verbose" }],
-      action,
-    }]);
+    const { facade } = createFacade([
+      {
+        name: "build",
+        options: [{ name: "env", value: true }, { name: "verbose" }],
+        action,
+      },
+    ]);
 
     const adapter = createCommanderAdapter({ program: createProgram(), facade });
 
@@ -91,14 +98,16 @@ describe("createCommanderAdapter", () => {
 
   it("applies Commander option defaults and maps kebab-case names back", async () => {
     const action = vi.fn();
-    const { facade } = createFacade([{
-      name: "build",
-      options: [
-        { name: "dry-run", aliases: ["d"], value: false, default: false },
-        { name: "env", value: true, default: "development" },
-      ],
-      action,
-    }]);
+    const { facade } = createFacade([
+      {
+        name: "build",
+        options: [
+          { name: "dry-run", aliases: ["d"], value: false, default: false },
+          { name: "env", value: true, default: "development" },
+        ],
+        action,
+      },
+    ]);
 
     const adapter = createCommanderAdapter({ program: createProgram(), facade });
 
@@ -113,11 +122,13 @@ describe("createCommanderAdapter", () => {
 
   it("provides the short alias when only the long name is used", async () => {
     const action = vi.fn();
-    const { facade } = createFacade([{
-      name: "build",
-      options: [{ name: "force", aliases: ["f"] }],
-      action,
-    }]);
+    const { facade } = createFacade([
+      {
+        name: "build",
+        options: [{ name: "force", aliases: ["f"] }],
+        action,
+      },
+    ]);
 
     const adapter = createCommanderAdapter({ program: createProgram(), facade });
 
@@ -129,12 +140,14 @@ describe("createCommanderAdapter", () => {
 
   it("maps positional arguments under their declared names", async () => {
     const action = vi.fn();
-    const { facade } = createFacade([{
-      name: "build",
-      arguments: [{ name: "target", required: true }, { name: "mode" }],
-      options: [{ name: "env", value: true }],
-      action,
-    }]);
+    const { facade } = createFacade([
+      {
+        name: "build",
+        arguments: [{ name: "target", required: true }, { name: "mode" }],
+        options: [{ name: "env", value: true }],
+        action,
+      },
+    ]);
 
     const adapter = createCommanderAdapter({ program: createProgram(), facade });
 
@@ -153,11 +166,13 @@ describe("createCommanderAdapter", () => {
 
   it("returns exit code 1 when a required argument is missing", async () => {
     const action = vi.fn();
-    const { facade } = createFacade([{
-      name: "build",
-      arguments: [{ name: "target", required: true }],
-      action,
-    }]);
+    const { facade } = createFacade([
+      {
+        name: "build",
+        arguments: [{ name: "target", required: true }],
+        action,
+      },
+    ]);
 
     const program = createProgram();
     const lines = captureErrorOutput(program);
@@ -172,11 +187,13 @@ describe("createCommanderAdapter", () => {
 
   it("returns exit code 1 when a required option is missing", async () => {
     const action = vi.fn();
-    const { facade } = createFacade([{
-      name: "build",
-      options: [{ name: "env", value: true, required: true }],
-      action,
-    }]);
+    const { facade } = createFacade([
+      {
+        name: "build",
+        options: [{ name: "env", value: true, required: true }],
+        action,
+      },
+    ]);
 
     const program = createProgram();
     const lines = captureErrorOutput(program);
@@ -201,12 +218,14 @@ describe("createCommanderAdapter", () => {
       calls.push(`after:${run.name}`);
       return run;
     });
-    const { facade: facadeWithHooks } = createFacadeWithHooks(hooks, [{
-      name: "build",
-      action: async () => {
-        calls.push("action");
+    const { facade: facadeWithHooks } = createFacadeWithHooks(hooks, [
+      {
+        name: "build",
+        action: async () => {
+          calls.push("action");
+        },
       },
-    }]);
+    ]);
 
     const adapter = createCommanderAdapter({ program: createProgram(), facade: facadeWithHooks });
 
@@ -231,12 +250,14 @@ describe("createCommanderAdapter", () => {
   });
 
   it("maps a failed command action to exit code 1 and surfaces the cause", async () => {
-    const { facade } = createFacade([{
-      name: "build",
-      action: async () => {
-        throw new Error("build exploded");
+    const { facade } = createFacade([
+      {
+        name: "build",
+        action: async () => {
+          throw new Error("build exploded");
+        },
       },
-    }]);
+    ]);
 
     const program = createProgram();
     const lines = captureErrorOutput(program);
@@ -299,12 +320,14 @@ describe("createCommanderAdapter", () => {
   });
 
   it("maps command_failed error from Core to exit code 1", async () => {
-    const { facade } = createFacade([{
-      name: "build",
-      action: async () => {
-        throw new Error("core action failed");
+    const { facade } = createFacade([
+      {
+        name: "build",
+        action: async () => {
+          throw new Error("core action failed");
+        },
       },
-    }]);
+    ]);
 
     const program = createProgram();
     const lines = captureErrorOutput(program);
@@ -322,7 +345,9 @@ describe("createCommanderAdapter", () => {
     hooks.define("beforeCommand", async () => {
       throw new Error("hook exploded");
     });
-    const { facade: facadeWithHooks } = createFacadeWithHooks(hooks, [{ name: "build", action: async () => {} }]);
+    const { facade: facadeWithHooks } = createFacadeWithHooks(hooks, [
+      { name: "build", action: async () => {} },
+    ]);
 
     const program = createProgram();
     const lines = captureErrorOutput(program);
@@ -334,4 +359,3 @@ describe("createCommanderAdapter", () => {
     expect(lines.some((line) => line.includes("hook exploded"))).toBe(true);
   });
 });
-

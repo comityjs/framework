@@ -8,4 +8,3 @@
 - keep React-specific details inside the adapter boundary
 - do not own the HTML domain model
 - keep renderers replaceable
-

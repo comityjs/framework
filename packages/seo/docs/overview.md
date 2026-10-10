@@ -14,4 +14,3 @@ domain modules.
 - rendering logic
 - crawling policies
 - application-specific SEO orchestration
-

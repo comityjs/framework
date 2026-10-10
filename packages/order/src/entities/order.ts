@@ -142,7 +142,7 @@ function copyAddressSnapshot(address: OrderAddressSnapshot): OrderAddressSnapsho
  */
 function isSameShippingDestination(
   address: OrderAddressSnapshot,
-  destination: Omit<OrderAddressSnapshot, "role">,
+  destination: Omit<OrderAddressSnapshot, "role">
 ): boolean {
   return (
     address.addressId === destination.addressId &&
@@ -191,9 +191,12 @@ export class Order {
     this.#items = fields.items.map(copyOrderItem);
     this.#price = fields.price;
     this.#channelId = fields.channelId;
-    this.#customer = fields.customer !== undefined ? copyCustomerSnapshot(fields.customer) : undefined;
+    this.#customer =
+      fields.customer !== undefined ? copyCustomerSnapshot(fields.customer) : undefined;
     this.#addresses =
-      fields.addresses !== undefined ? fields.addresses.map((address) => copyAddressSnapshot(address)) : undefined;
+      fields.addresses !== undefined
+        ? fields.addresses.map((address) => copyAddressSnapshot(address))
+        : undefined;
     this.#payments =
       fields.payments !== undefined
         ? fields.payments.map((payment) => ({ ...payment }))
@@ -320,10 +323,7 @@ export class Order {
    * @param snapshot - The payment fact to record.
    */
   attachPayment(snapshot: OrderPaymentSnapshot): void {
-    this.#payments = [
-      ...(this.#payments ?? []),
-      { ...snapshot },
-    ];
+    this.#payments = [...(this.#payments ?? []), { ...snapshot }];
 
     this.#updatedAt = Instant.now();
   }
@@ -346,7 +346,7 @@ export class Order {
    * @returns A result indicating the success or failure of the change.
    */
   changeShippingDestination(
-    destination: Omit<OrderAddressSnapshot, "role">,
+    destination: Omit<OrderAddressSnapshot, "role">
   ): Result<void, OrderError> {
     if (this.#status !== "draft" && this.#status !== "pending") {
       return failure(
@@ -377,7 +377,9 @@ export class Order {
     }
 
     this.#addresses = addresses.map((address) =>
-      address.role === "shipping" ? copyAddressSnapshot({ ...destination, role: "shipping" }) : address
+      address.role === "shipping"
+        ? copyAddressSnapshot({ ...destination, role: "shipping" })
+        : address
     );
     this.#updatedAt = Instant.now();
 

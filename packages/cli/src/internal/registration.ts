@@ -6,9 +6,9 @@ import type { CliError } from "../errors/cli.js";
 
 /**
  * CLI registration facade for module setup.
- * 
+ *
  * @typeParam Context - Application-defined context shape.
- * 
+ *
  * @remarks
  * This facade is provided to modules during the Composition setup phase
  * when the CLI capability is enabled. It allows modules to register
@@ -23,9 +23,9 @@ export class CliRegistration<Context = {}> implements CliRegistrationFacade<Cont
 
   /**
    * Register a command.
-   * 
+   *
    * @param command - Command to register
-   * 
+   *
    * @throws {Error} If a command with the same name is already registered
    */
   registerCommand(command: CliCommand<Context>): void {
@@ -34,7 +34,7 @@ export class CliRegistration<Context = {}> implements CliRegistrationFacade<Cont
 
   /**
    * Get all registered commands in registration order.
-   * 
+   *
    * @returns Registered commands
    */
   commands(): readonly CliCommand<Context>[] {

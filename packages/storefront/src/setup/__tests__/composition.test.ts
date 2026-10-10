@@ -70,13 +70,15 @@ describe("storefront module setup", () => {
   });
 
   it("should register all four page composers when fully configured", async () => {
-    const productRepository = { getById: vi.fn().mockResolvedValue({ success: true, value: null }) };
-    const productSearchPort: SearchPort<ProductProjection> = {
-      search: vi.fn().mockResolvedValue(
-        success({ items: [], total: 0, page: 1, pageSize: 20 })
-      ),
+    const productRepository = {
+      getById: vi.fn().mockResolvedValue({ success: true, value: null }),
     };
-    const taxonomyRepository = { getById: vi.fn().mockResolvedValue({ success: true, value: null }) };
+    const productSearchPort: SearchPort<ProductProjection> = {
+      search: vi.fn().mockResolvedValue(success({ items: [], total: 0, page: 1, pageSize: 20 })),
+    };
+    const taxonomyRepository = {
+      getById: vi.fn().mockResolvedValue({ success: true, value: null }),
+    };
     const pageRepository = { getById: vi.fn().mockResolvedValue({ success: true, value: null }) };
 
     const result = await composition.setup(ctx, {

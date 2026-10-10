@@ -14,4 +14,3 @@ client.
 - cache semantics
 - application logic
 - a public adapter-specific error contract
-

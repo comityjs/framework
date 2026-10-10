@@ -39,11 +39,11 @@ pnpm add @comity/primitives @comity/kernel @comity/composition
 
 These packages provide:
 
-| Package | Purpose |
-|---------|--------|
-| `@comity/primitives` | Foundational types: `Result`, `BaseError`, DI container, event/hook buses |
-| `@comity/kernel` | Application lifecycle, service registry, event and hook dispatching |
-| `@comity/composition` | Module loading, dependency resolution, and composition engine |
+| Package               | Purpose                                                                   |
+| --------------------- | ------------------------------------------------------------------------- |
+| `@comity/primitives`  | Foundational types: `Result`, `BaseError`, DI container, event/hook buses |
+| `@comity/kernel`      | Application lifecycle, service registry, event and hook dispatching       |
+| `@comity/composition` | Module loading, dependency resolution, and composition engine             |
 
 ### HTTP packages
 
@@ -55,11 +55,11 @@ pnpm add @comity/http @comity/http-hono hono
 
 These packages provide:
 
-| Package | Purpose |
-|---------|--------|
-| `@comity/http` | HTTP contracts: `HttpRequest`, `HttpResponse`, `HttpHandler`, `HttpFacade` |
-| `@comity/http-hono` | Hono technology adapter that bridges Comity HTTP to the Hono framework |
-| `hono` | The HTTP framework itself (peer dependency) |
+| Package             | Purpose                                                                    |
+| ------------------- | -------------------------------------------------------------------------- |
+| `@comity/http`      | HTTP contracts: `HttpRequest`, `HttpResponse`, `HttpHandler`, `HttpFacade` |
+| `@comity/http-hono` | Hono technology adapter that bridges Comity HTTP to the Hono framework     |
+| `hono`              | The HTTP framework itself (peer dependency)                                |
 
 ---
 
@@ -203,13 +203,13 @@ Hono (HTTP server)
 
 Key concepts you will use:
 
-| Concept | Description |
-|---------|-------------|
-| `HttpRequest` | Incoming request snapshot (method, url, headers, body) |
-| `HttpResponse` | Outgoing response (status, headers, body) |
-| `HttpHandler` | Your application logic: `(ctx) => Promise<HttpResponse>` |
-| `HttpContext` | Full context: request, services, events, state |
-| `HttpFacade` | Manages handler execution and emits lifecycle events |
+| Concept        | Description                                              |
+| -------------- | -------------------------------------------------------- |
+| `HttpRequest`  | Incoming request snapshot (method, url, headers, body)   |
+| `HttpResponse` | Outgoing response (status, headers, body)                |
+| `HttpHandler`  | Your application logic: `(ctx) => Promise<HttpResponse>` |
+| `HttpContext`  | Full context: request, services, events, state           |
+| `HttpFacade`   | Manages handler execution and emits lifecycle events     |
 
 The HTTP module (`@comity/http/setup`) is a pre-built Comity module that wires the HTTP infrastructure into your kernel. It requires you to provide an `HttpHandler` during configuration.
 

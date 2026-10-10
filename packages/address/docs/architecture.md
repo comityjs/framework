@@ -25,13 +25,13 @@ Application / Adapters
 
 ## External concerns
 
-| Concern          | Module                     |
-| ---------------- | -------------------------- |
-| Country metadata   | `@comity/address-geography` |
-| Validation rules   | External adapters          |
-| Formatting         | `@comity/address-formatters` |
-| Persistence        | Adapters                   |
-| Domain errors      | `@comity/primitives`       |
+| Concern          | Module                       |
+| ---------------- | ---------------------------- |
+| Country metadata | `@comity/address-geography`  |
+| Validation rules | External adapters            |
+| Formatting       | `@comity/address-formatters` |
+| Persistence      | Adapters                     |
+| Domain errors    | `@comity/primitives`         |
 
 ## File structure
 

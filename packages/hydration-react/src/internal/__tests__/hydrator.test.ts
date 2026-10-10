@@ -31,9 +31,7 @@ describe("ReactIslandHydrationAdapter", () => {
   it("supports contracts with a component", () => {
     const adapter = new ReactIslandHydrationAdapter(registry);
 
-    expect(
-      adapter.supports({ component: "Hero" } as IslandContract)
-    ).toBe(true);
+    expect(adapter.supports({ component: "Hero" } as IslandContract)).toBe(true);
   });
 
   it("does not support contracts without a component", () => {

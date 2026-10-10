@@ -165,7 +165,9 @@ describe("Price", () => {
 
   it("should reject a money modifier in a different currency with currency_mismatch", () => {
     const result = Price.create(money(10000n), [
-      moneyModifier(100n, "add", "fee", { adjustment: { type: "money", amount: money(100n, usd), operation: "add" } }),
+      moneyModifier(100n, "add", "fee", {
+        adjustment: { type: "money", amount: money(100n, usd), operation: "add" },
+      }),
     ]);
 
     expect(isFailure(result)).toBe(true);
@@ -205,7 +207,9 @@ describe("Price", () => {
 
   it("should reject an unknown operation with invalid_modifier", () => {
     const result = Price.create(money(10000n), [
-      moneyModifier(100n, "add", "x", { adjustment: { type: "money", amount: money(100n), operation: "multiply" } }),
+      moneyModifier(100n, "add", "x", {
+        adjustment: { type: "money", amount: money(100n), operation: "multiply" },
+      }),
     ]);
 
     expect(isFailure(result)).toBe(true);
@@ -319,10 +323,7 @@ describe("Price", () => {
 
   it("should not equal a price with a different number of modifiers", () => {
     const a = price(10000n, [moneyModifier(1000n, "subtract")]);
-    const b = price(10000n, [
-      moneyModifier(1000n, "subtract"),
-      percentModifier(10n, "add"),
-    ]);
+    const b = price(10000n, [moneyModifier(1000n, "subtract"), percentModifier(10n, "add")]);
 
     expect(a.equals(b)).toBe(false);
   });

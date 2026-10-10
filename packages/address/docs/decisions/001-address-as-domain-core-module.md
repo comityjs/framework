@@ -7,6 +7,7 @@
 Comity requires a strict separation between domain contracts, infrastructure implementations, application logic, and external integrations.
 
 An address is used by multiple bounded contexts:
+
 - Customer
 - Order
 - Shipment
@@ -25,6 +26,7 @@ The module owns the address conceptual model and defines the stable contracts us
 ## Responsibilities
 
 **@comity/address owns:**
+
 - Address entity and value objects
 - Address identity
 - Address snapshots
@@ -33,6 +35,7 @@ The module owns the address conceptual model and defines the stable contracts us
 - Address types (AddressData, AddressFields, AddressCreate, AddressUpdate, AddressContact, etc.)
 
 **@comity/address does not own:**
+
 - Country-specific rules
 - Postal formatting
 - Validation libraries
@@ -49,6 +52,7 @@ The module owns the address conceptual model and defines the stable contracts us
 ## Dependency direction
 
 Allowed:
+
 ```
 Customer / Order / Shipment / Billing
     ↓
@@ -58,6 +62,7 @@ Customer / Order / Shipment / Billing
 ```
 
 Forbidden:
+
 ```
 @comity/address → Customer
 @comity/address → Magento
@@ -67,6 +72,7 @@ Forbidden:
 ## Consequences
 
 **Positive:**
+
 - Address ownership is centralized
 - All consumers share the same domain language
 - Infrastructure remains replaceable
@@ -74,6 +80,7 @@ Forbidden:
 - Future modules can reuse the same contract
 
 **Negative:**
+
 - The module must remain generic
 - Some business-specific concepts must remain outside
 - Consumers may require additional domain wrappers around Address

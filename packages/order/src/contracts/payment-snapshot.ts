@@ -7,11 +7,7 @@ import type { Money } from "@comity/pricing";
  * Mirrors the confirmed `@comity/payment` lifecycle without importing any
  * payment type: the order records the factual outcome only.
  */
-export type OrderPaymentStatus =
-  | "authorized"
-  | "captured"
-  | "failed"
-  | "cancelled";
+export type OrderPaymentStatus = "authorized" | "captured" | "failed" | "cancelled";
 
 /**
  * Immutable historical fact about the payment of an order.

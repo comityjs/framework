@@ -88,9 +88,11 @@ describe("DefaultSearchPageComposer", () => {
     const port = makePort(success(result));
     const enrichers: SearchPageEnricher[] = [
       {
-        enrich: vi.fn().mockImplementation(async (page) =>
-          success({ ...page, breadcrumbs: [{ label: "Search", url: "/search" }] })
-        ),
+        enrich: vi
+          .fn()
+          .mockImplementation(async (page) =>
+            success({ ...page, breadcrumbs: [{ label: "Search", url: "/search" }] })
+          ),
       },
     ];
     const composer = new DefaultSearchPageComposer(port, enrichers);

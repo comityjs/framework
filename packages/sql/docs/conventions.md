@@ -9,4 +9,3 @@
 - model transactions as capabilities
 - keep hooks and observability separate from query contracts
 - do not introduce ORM- or driver-specific types into the public surface
-

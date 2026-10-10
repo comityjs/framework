@@ -53,7 +53,11 @@ const product: OrderItem = {
   price: price(10000n),
 };
 
-function createOrder(status: OrderStatus = "draft", id?: OrderId, channel: ChannelId = channelWeb): Order {
+function createOrder(
+  status: OrderStatus = "draft",
+  id?: OrderId,
+  channel: ChannelId = channelWeb
+): Order {
   const orderId = id ?? createId(`order-${Math.random().toString(36).slice(2, 12)}`);
   return new Order(
     {
@@ -244,8 +248,12 @@ describe("MemoryOrderRepository", () => {
     });
 
     it("search returns orders with channelId", async () => {
-      await repository.save(createOrder("draft", createId("order-1"), channelWeb), { tenant: tenantA });
-      await repository.save(createOrder("pending", createId("order-2"), channelPos), { tenant: tenantA });
+      await repository.save(createOrder("draft", createId("order-1"), channelWeb), {
+        tenant: tenantA,
+      });
+      await repository.save(createOrder("pending", createId("order-2"), channelPos), {
+        tenant: tenantA,
+      });
 
       const result = await repository.search(undefined, { tenant: tenantA });
 

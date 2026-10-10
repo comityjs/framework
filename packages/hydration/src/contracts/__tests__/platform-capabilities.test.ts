@@ -72,7 +72,10 @@ describe("HydrationPlatformCapabilities", () => {
       expect(observe).toHaveBeenCalledWith(element);
       expect(observation).not.toBeNull();
 
-      observerCallback!([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
+      observerCallback!(
+        [{ isIntersecting: true } as IntersectionObserverEntry],
+        {} as IntersectionObserver
+      );
 
       expect(onVisible).toHaveBeenCalledTimes(1);
       expect(disconnect).toHaveBeenCalledTimes(1);
@@ -99,7 +102,10 @@ describe("HydrationPlatformCapabilities", () => {
 
       capabilities.observeVisibility({} as unknown as IslandElement, onVisible);
 
-      observerCallback!([{ isIntersecting: false } as IntersectionObserverEntry], {} as IntersectionObserver);
+      observerCallback!(
+        [{ isIntersecting: false } as IntersectionObserverEntry],
+        {} as IntersectionObserver
+      );
 
       expect(onVisible).not.toHaveBeenCalled();
     });

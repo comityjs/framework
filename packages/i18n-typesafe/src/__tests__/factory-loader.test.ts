@@ -5,7 +5,8 @@ import { TypesafeI18nLoader } from "../loader.js";
 describe("createTypesafeFactory", () => {
   it("creates a translator delegating to the underlying i18n instance", () => {
     const createI18n = vi.fn((locale: string) => ({
-      t: (key: string, params?: Record<string, unknown>) => `${locale}:${key}:${JSON.stringify(params)}`,
+      t: (key: string, params?: Record<string, unknown>) =>
+        `${locale}:${key}:${JSON.stringify(params)}`,
     }));
     const factory = createTypesafeFactory(createI18n);
 
@@ -13,7 +14,7 @@ describe("createTypesafeFactory", () => {
 
     expect(createI18n).toHaveBeenCalledWith("it", { greeting: "Ciao" });
     expect(translator.locale).toBe("it");
-    expect(translator.t("greeting")).toBe('it:greeting:undefined');
+    expect(translator.t("greeting")).toBe("it:greeting:undefined");
     expect(translator.t("greeting", { name: "Anna" })).toBe('it:greeting:{"name":"Anna"}');
   });
 });

@@ -23,4 +23,3 @@ It MUST NOT grow into a storage or processing layer.
 
 - the media model is shared and framework-agnostic
 - changes to the model are contract changes
-

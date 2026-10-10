@@ -16,7 +16,7 @@ describe("buildQuery", () => {
     });
 
     expect(query).toBe(
-      'query Products(id: ID!) {\n  products(id: $id) {\n    id\n    name\n  }\n}'
+      "query Products(id: ID!) {\n  products(id: $id) {\n    id\n    name\n  }\n}"
     );
   });
 
@@ -45,9 +45,7 @@ describe("buildQuery", () => {
   });
 
   it("emits a leaf node with only arguments", () => {
-    expect(buildQuery({ viewer: { $args: { id: "1" } } })).toBe(
-      'query {\n  viewer(id: "1")\n}'
-    );
+    expect(buildQuery({ viewer: { $args: { id: "1" } } })).toBe('query {\n  viewer(id: "1")\n}');
   });
 
   it("skips falsy field values", () => {
@@ -111,7 +109,7 @@ describe("defaultSerializeValue", () => {
   });
 
   it("serializes strings with JSON escaping", () => {
-    expect(defaultSerializeValue("a\"b")).toBe('"a\\"b"');
+    expect(defaultSerializeValue('a"b')).toBe('"a\\"b"');
   });
 
   it("serializes numbers and booleans as-is", () => {

@@ -29,7 +29,6 @@ This package does NOT:
 
 - `WsGraphqlTransport`
 
-
 No exhaustive reference; see docs for constraints.
 ---
 

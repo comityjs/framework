@@ -35,10 +35,7 @@ export interface SearchPageComposer {
    *
    * @returns The composed search page model or an error if the composition fails.
    */
-  compose(
-    query: string,
-    context: StorefrontContext
-  ): Promise<Result<SearchPageModel, SearchError>>;
+  compose(query: string, context: StorefrontContext): Promise<Result<SearchPageModel, SearchError>>;
 }
 
 /**

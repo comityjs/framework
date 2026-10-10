@@ -1,8 +1,5 @@
 import type { Result } from "@comity/primitives/result";
-import type {
-  AuthSessionCommands,
-  AuthSessionRevocation,
-} from "../contracts/session-commands.js";
+import type { AuthSessionCommands, AuthSessionRevocation } from "../contracts/session-commands.js";
 import type { AuthSessionRepository } from "../contracts/session-repository.js";
 import type { AuthSession } from "../contracts/session.js";
 import type { AuthSessionObserver } from "../observers/session.js";

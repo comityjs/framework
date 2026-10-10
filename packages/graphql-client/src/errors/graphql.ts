@@ -7,10 +7,7 @@ import { BaseError } from "@comity/primitives/errors";
  * Reasons for GraphQL client errors.
  */
 export type GraphqlClientErrorReason =
-  | "network_error"
-  | "protocol_error"
-  | "subscription_not_supported"
-  | "transport_error";
+  "network_error" | "protocol_error" | "subscription_not_supported" | "transport_error";
 
 /**
  * GraphQL client error metadata

@@ -87,5 +87,8 @@ export interface OrderRepository {
    *
    * @returns Matching orders with a total count.
    */
-  search(criteria: OrderSearchCriteria | undefined, ctx: OrderRepositoryContext): Promise<Result<OrderSearchResult, RepositoryError>>;
+  search(
+    criteria: OrderSearchCriteria | undefined,
+    ctx: OrderRepositoryContext
+  ): Promise<Result<OrderSearchResult, RepositoryError>>;
 }

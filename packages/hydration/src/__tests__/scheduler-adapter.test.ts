@@ -35,7 +35,10 @@ describe("DefaultHydrationScheduler", () => {
   it("runs immediately for the immediate strategy", () => {
     const run = vi.fn().mockResolvedValue(undefined);
 
-    scheduler.schedule(islandWithContract({ strategy: { kind: "immediate" } } as IslandElement["contract"]), run);
+    scheduler.schedule(
+      islandWithContract({ strategy: { kind: "immediate" } } as IslandElement["contract"]),
+      run
+    );
 
     expect(run).toHaveBeenCalled();
   });
@@ -63,7 +66,10 @@ describe("DefaultHydrationScheduler", () => {
     };
     const schedulerWithCaps = new DefaultHydrationScheduler(customCapabilities);
 
-    schedulerWithCaps.schedule(islandWithContract({ strategy: { kind: "idle" } } as IslandElement["contract"]), run);
+    schedulerWithCaps.schedule(
+      islandWithContract({ strategy: { kind: "idle" } } as IslandElement["contract"]),
+      run
+    );
 
     expect(idleCb).toHaveBeenCalledWith(run);
     expect(run).not.toHaveBeenCalled();
@@ -74,7 +80,10 @@ describe("DefaultHydrationScheduler", () => {
 
     vi.useFakeTimers();
 
-    scheduler.schedule(islandWithContract({ strategy: { kind: "idle" } } as IslandElement["contract"]), run);
+    scheduler.schedule(
+      islandWithContract({ strategy: { kind: "idle" } } as IslandElement["contract"]),
+      run
+    );
 
     expect(run).not.toHaveBeenCalled();
 

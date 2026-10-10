@@ -56,12 +56,7 @@ export type CoreErrorReason =
  * Type definition for JSON-serializable values
  */
 export type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
+  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
 /**
  * Type definition for error-like objects

@@ -32,7 +32,9 @@ describe("OrderError", () => {
     const error = new OrderError("shipping_destination_immutable");
 
     expect(error.code).toBe("order:shipping_destination_immutable");
-    expect(error.message).toBe("Shipping destination cannot be changed in the current order status");
+    expect(error.message).toBe(
+      "Shipping destination cannot be changed in the current order status"
+    );
     expect(error.meta.reason).toBe("shipping_destination_immutable");
     expect(error.meta.httpStatus).toBe(409);
   });

@@ -32,7 +32,6 @@ This package does NOT:
 - `fetchHttp` — standalone fetch helper with timeout and delay
 - `HttpOptions` — request options type
 
-
 No exhaustive reference; see docs for constraints.
 ---
 

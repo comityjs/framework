@@ -20,12 +20,16 @@ describe("assertKyselyClient", () => {
 
   it("should throw SqlError for null client", () => {
     expect(() => assertKyselyClient(null as any)).toThrow(SqlError);
-    expect(() => assertKyselyClient(null as any)).toThrow("The SQL client configuration is invalid");
+    expect(() => assertKyselyClient(null as any)).toThrow(
+      "The SQL client configuration is invalid"
+    );
   });
 
   it("should throw SqlError for undefined client", () => {
     expect(() => assertKyselyClient(undefined as any)).toThrow(SqlError);
-    expect(() => assertKyselyClient(undefined as any)).toThrow("The SQL client configuration is invalid");
+    expect(() => assertKyselyClient(undefined as any)).toThrow(
+      "The SQL client configuration is invalid"
+    );
   });
 
   it("should throw SqlError for non-object client", () => {

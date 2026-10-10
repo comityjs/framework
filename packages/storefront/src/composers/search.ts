@@ -4,9 +4,9 @@ import type { SearchError } from "@comity/search/errors";
 import { isSuccess, success, type Result } from "@comity/primitives/result";
 import type { StorefrontContext } from "../contracts/context.js";
 import type {
-    SearchPageComposer,
-    SearchPageEnricher,
-    SearchPageModel,
+  SearchPageComposer,
+  SearchPageEnricher,
+  SearchPageModel,
 } from "../contracts/search-page.js";
 
 /**
@@ -28,7 +28,10 @@ export class DefaultSearchPageComposer implements SearchPageComposer {
    * @param search - Search port used to execute product search queries.
    * @param enrichers - Optional enrichers to apply after base composition.
    */
-  constructor(search: SearchPort<ProductProjection>, enrichers?: ReadonlyArray<SearchPageEnricher>) {
+  constructor(
+    search: SearchPort<ProductProjection>,
+    enrichers?: ReadonlyArray<SearchPageEnricher>
+  ) {
     this.#search = search;
     this.#enrichers = enrichers ?? [];
   }

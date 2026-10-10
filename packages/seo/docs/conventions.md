@@ -7,4 +7,3 @@
 - keep the package contract-only
 - do not introduce runtime dependencies
 - keep metadata models framework-agnostic
-

@@ -15,4 +15,3 @@ hydration.
 - hydration domain semantics
 - transport policy
 - application data loading
-

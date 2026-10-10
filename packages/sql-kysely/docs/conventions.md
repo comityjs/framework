@@ -8,4 +8,3 @@
 - keep Kysely-specific details inside the adapter boundary
 - normalize driver failures into `SqlError`
 - do not leak Kysely types into the domain boundary
-

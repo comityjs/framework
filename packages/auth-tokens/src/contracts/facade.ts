@@ -1,8 +1,8 @@
 import type {
-    AuthSession,
-    AuthSessionAssuranceInput,
-    AuthSessionId,
-    AuthSessionTransport,
+  AuthSession,
+  AuthSessionAssuranceInput,
+  AuthSessionId,
+  AuthSessionTransport,
 } from "@comity/auth";
 import type { AuthError } from "@comity/auth/errors";
 import type { Result } from "@comity/primitives/result";

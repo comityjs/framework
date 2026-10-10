@@ -261,7 +261,7 @@ plans:
     approved_at: 2026-09-14T00:45:00Z
     notes: explicitly approved by human ("PLAN-DOC-004-006 approved by human"); Writer is authorized only for the documentation changes described in this plan — remediation of DOC-004, DOC-005 and DOC-006 on docs/architecture/repository.md and docs/migrations/public-api.md only; all other scope, exclusion and forbidden-change constraints remain in force
     authorized_changes:
-      - DOC-004: 'In docs/architecture/repository.md line 165 (ESLint Rules section), change the relative link to development/docs/architecture/rule-reconciliation.md from ../../../../development/docs/architecture/rule-reconciliation.md to ../../../development/docs/architecture/rule-reconciliation.md. Keep the link text and the referenced target unchanged; make no other link edits.'
+      - DOC-004: "In docs/architecture/repository.md line 165 (ESLint Rules section), change the relative link to development/docs/architecture/rule-reconciliation.md from ../../../../development/docs/architecture/rule-reconciliation.md to ../../../development/docs/architecture/rule-reconciliation.md. Keep the link text and the referenced target unchanged; make no other link edits."
       - DOC-005: 'In docs/architecture/repository.md "Dependencies — Root devDependencies" table (lines 93-98), update only the four stale version cells to match the current authoritative community/package.json: turbo ^2.10.7 -> ^2.10.12; vitest ^4.1.10 -> ^4.1.11; @vitest/coverage-v8 ^4.1.10 -> ^4.1.11; @typescript-eslint/parser ^8.65.0 -> ^8.70.0. Leave all other dependency values and surrounding text unchanged; do not update versions for any other reason.'
       - DOC-006: 'In docs/migrations/public-api.md section 14 "New @comity/search public API" (lines 273-275), correct the false root-export claim so the statement communicates that SearchError is exported from the @comity/search/errors subpath and NOT from the @comity/search root. Preferred minimal correction: remove the phrase "from the root" (e.g., reword to "Exported from the intentional `@comity/search/errors` subpath."). Preserve the existing migration explanation and do not redesign Section 14; do not modify the package implementation or the exports map.'
     acceptance_criteria:
@@ -283,9 +283,9 @@ plans:
       - expanding scope, reopening previous findings, or introducing new findings
   - plan_id: PLAN-H8G7V4-H8G7V5
     document:
-      - community/packages/auth-jose/package.json   # H8G7V4
-      - development/packages/dependency-rules/      # H8G7V5
-      - development/packages/validate/              # H8G7V5
+      - community/packages/auth-jose/package.json # H8G7V4
+      - development/packages/dependency-rules/ # H8G7V5
+      - development/packages/validate/ # H8G7V5
     findings: [H8G7V4, H8G7V5]
     status: approved
     write_authorized: true
@@ -440,10 +440,6 @@ plans:
       The new engine is additive; existing engines are unchanged. On regression, remove the engine
       wiring in run.ts and the two new files. No effect on published package manifests or ADR-008 data.
 
-
-
-
-
 approvals:
   - plan_id: PLAN-IDX-001
     document: docs/index.md
@@ -516,7 +512,7 @@ approvals:
     decision: approved
     scope: exact plan — PLAN-DOC-004-006 as produced by Phase 7.1; findings DOC-004, DOC-005 and DOC-006 only; documentation-only remediation of the two authorized public documents only
     authorized:
-      - DOC-004: 'In docs/architecture/repository.md line 165, change the relative link to development/docs/architecture/rule-reconciliation.md from ../../../../development/docs/architecture/rule-reconciliation.md to ../../../development/docs/architecture/rule-reconciliation.md; keep link text and target unchanged; no other link edits'
+      - DOC-004: "In docs/architecture/repository.md line 165, change the relative link to development/docs/architecture/rule-reconciliation.md from ../../../../development/docs/architecture/rule-reconciliation.md to ../../../development/docs/architecture/rule-reconciliation.md; keep link text and target unchanged; no other link edits"
       - DOC-005: 'In docs/architecture/repository.md "Dependencies — Root devDependencies" table, update only the four stale version cells to match community/package.json: turbo ^2.10.7 -> ^2.10.12; vitest ^4.1.10 -> ^4.1.11; @vitest/coverage-v8 ^4.1.10 -> ^4.1.11; @typescript-eslint/parser ^8.65.0 -> ^8.70.0'
       - DOC-006: 'In docs/migrations/public-api.md section 14 ("New @comity/search public API"), correct the false root-export claim so the statement communicates that SearchError is exported from the @comity/search/errors subpath and NOT from the @comity/search root, by removing the phrase "from the root"; preserve the migration explanation'
     acceptance_criteria: AC-01 through AC-09 (as defined by PLAN-DOC-004-006)
@@ -526,12 +522,17 @@ approvals:
     timestamp: 2026-09-14T00:46:00Z
     basis: "I approve PLAN-DOC-004-006 exactly as produced by Phase 7.1. I authorize only the remediation of findings DOC-004, DOC-005 and DOC-006 — the link-depth correction and the four dependency-version corrections in docs/architecture/repository.md, and the root-export-claim correction in docs/migrations/public-api.md — as described in the plan. I do not authorize any other documentation change, source-code change, package change, lockfile change, dependency change, workflow change, protocol change, modifications to ARCH-001/DOC-002/DOC-003, or any expansion of the plan scope. All forbidden changes defined by PLAN-DOC-004-006 remain forbidden. The authorized targets are docs/architecture/repository.md and docs/migrations/public-api.md only."
   - plan_id: PLAN-H8G7V4-H8G7V5
-    document: [community/packages/auth-jose/package.json, development/packages/dependency-rules/, development/packages/validate/]
+    document:
+      [
+        community/packages/auth-jose/package.json,
+        development/packages/dependency-rules/,
+        development/packages/validate/,
+      ]
     decision: approved
     scope: exact plan — PLAN-H8G7V4-H8G7V5 as produced by Phase 8.1; findings H8G7V4 and H8G7V5 only; H8G7V4 is a package.json-only change to community/packages/auth-jose; H8G7V5 is an ADR-008 Core-to-Core enforcement fix limited to development/packages/dependency-rules and development/packages/validate (reusing the existing adr008CoreExceptionRegister from @comity-dev/schemas)
     authorized:
       - H8G7V4: 'In community/packages/auth-jose/package.json, add "@comity/auth-tokens": "workspace:*" to peerDependencies; retain the existing dependencies["@comity/auth-tokens"] runtime entry unchanged; no source code changes; no new external package or dependency version'
-      - H8G7V5: 'Restore ADR-008 Core-to-Core closed-register enforcement: remove the inversion that pushes approved registered Core-to-Core edges into the dependency-cruiser forbidden array in development/packages/dependency-rules/src/build-config.ts; add a general core-to-core forbidden rule so any unregistered Core-to-Core edge is reported as a violation; represent registered edges as allowed/exempt rules derived from the existing adr008CoreExceptionRegister (no duplication); wire the register into the actual validation path so the dependency-cruiser engine receives the registered exceptions'
+      - H8G7V5: "Restore ADR-008 Core-to-Core closed-register enforcement: remove the inversion that pushes approved registered Core-to-Core edges into the dependency-cruiser forbidden array in development/packages/dependency-rules/src/build-config.ts; add a general core-to-core forbidden rule so any unregistered Core-to-Core edge is reported as a violation; represent registered edges as allowed/exempt rules derived from the existing adr008CoreExceptionRegister (no duplication); wire the register into the actual validation path so the dependency-cruiser engine receives the registered exceptions"
     acceptance_criteria: H8G7V4-AC1 through H8G7V4-AC6 and H8G7V5-AC1 through H8G7V5-AC9 (as defined by PLAN-H8G7V4-H8G7V5)
     authorized_target: community/packages/auth-jose/package.json, development/packages/dependency-rules/, development/packages/validate/ (plus the reused existing ADR-008 register representation in @comity-dev/schemas, referenced read-only) only
     not_authorized: any other package manifest change; any community/ runtime source change; any dependency/lockfile change beyond an unavoidable package-manager update caused solely by the authorized manifest change; modification of any other development package; new external dependencies or versions; weakening Core-to-Core restrictions; permitting all Core-to-Core dependencies; duplicating the ADR-008 register; redesigning dependency-rules architecture; protocol/workflow changes; any expansion of the plan scope; all PLAN-H8G7V4-H8G7V5 forbidden changes remain forbidden
@@ -553,9 +554,6 @@ approvals:
     timestamp: 2026-09-14T03:00:00Z
     basis: "I approve PLAN-H8G7V5-REMEDIATION-001 exactly as produced in the Phase 8.2 recovery-planning phase. I authorize only the remediation of finding H8G7V5 described in the plan — an ADR-008 Core-to-Core closed-register check engine in development/packages/validate (new engine file, run.ts wiring, and an integration test), reusing the existing adr008CoreExceptionRegister and preserving all existing dependency-cruiser validation. I do not authorize any other package manifest change, modification of community/packages/auth-jose/package.json, community/ runtime source change, dependency/lockfile change, new external dependency, ADR-008 register/data/documentation change, register duplication, dependency-rules redesign, weakening of Core-to-Core restrictions, or any expansion of the plan scope. All forbidden changes defined by PLAN-H8G7V5-REMEDIATION-001 remain forbidden."
 
-
-
-
 reviews:
   - document: index
     plan_id: PLAN-IDX-001
@@ -576,7 +574,7 @@ reviews:
     timestamp: 2026-09-13T23:06:27Z
     findings:
       - AC-01: PASS — architecture.md documents five execution stages (diagram Stage 1-5; list 5 items)
-      - AC-02: 'PASS — fifth stage is Start (Stage 5: Start diagram; 5. START list)'
+      - AC-02: "PASS — fifth stage is Start (Stage 5: Start diagram; 5. START list)"
       - AC-03: PASS — fifth item states load() invokes kernel.start()
       - AC-04: PASS — states kernel transitions to running
       - AC-05: PASS — order Resolve Graph → Setup → Seal → Initialize → Start preserved
@@ -598,7 +596,7 @@ reviews:
       - AC-05: PASS — single-line wording replacement (1 added / 1 removed); no unrelated changes
       - AC-06: PASS — only docs/architecture.md modified by Writer
       - AC-07: PASS — no Phase 5.4 observation incorporated; Core Modules bullet (line 57) untouched
-      - AC-08: 'PASS — ARCH-001 five-stage lifecycle (Stage 5: Start) intact and unchanged'
+      - AC-08: "PASS — ARCH-001 five-stage lifecycle (Stage 5: Start) intact and unchanged"
       - AC-09: PASS — no source/package/lockfile/workflow/unrelated documentation changes by Writer
     global_check: PASS — Writer-caused delta limited to the Technology Adapters bullet (line 58); pre-existing ARCH-001 delta preserved; no scope violations; no other files touched by Writer
   - document: getting-started
@@ -641,11 +639,9 @@ reviews:
       - H8G7V5-AC6: FAIL — production validation invocation cannot apply the closed-register rules. The engine runs depcruise from cwd=development/packages/validate with target=package dirs; dependency-cruiser evaluates from modules as file paths (module sources are file paths and options.prefix is not used in matching), so the generated from-rule never matches a real dependency. Real Core-to-Core edges such as storefront→catalog do not surface as package-name targets in this mode. Independent reproduction by Reviewer yields (a) full register → 0 violations and (b) storefront->catalog removed from the exemption set → also 0 violations, i.e. an actually-unregistered edge is NOT rejected; applying the matcher over the real graph yields 0 core-to-core rule firings and 0 module sources matching any from rule. The permanent unit test verifies only the generated-rule abstraction, not the production enforcement path.
     global_check: REJECT — H8G7V5's core closed-register enforcement is not effective in the actual comity validate dependency path; the actual validation pipeline does not reject an unregistered Core-to-Core dependency. Register reuse, code structure, matcher semantics, and H8G7V4 are correct; the remediation gap is that the generated rules cannot fire in the engine invocation (from never matches package names) and the plan did not authorize, nor did the Writer implement, a change to the depcruise module-matching/invocation. Reviewer modified no implementation.
 
+blockers: [] # list of { document, since, revision, summary, evidence, decision_needed }
 
-
-blockers: []           # list of { document, since, revision, summary, evidence, decision_needed }
-
-scope_violations: []   # list of { path, phase, timestamp }
+scope_violations: [] # list of { path, phase, timestamp }
 
 last_review:
   document: H8G7V4 + H8G7V5 (PLAN-H8G7V4-H8G7V5)

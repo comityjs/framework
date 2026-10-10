@@ -21,9 +21,7 @@ function makeSessionId(value: string): AuthSessionId {
   return result.value;
 }
 
-interface AuthGuardEmitter
-  extends AuthEvaluationObserver,
-    AuthRefreshEvaluationObserver {}
+interface AuthGuardEmitter extends AuthEvaluationObserver, AuthRefreshEvaluationObserver {}
 
 describe("AuthGuard", () => {
   let assurancePolicy: AuthSessionAssurancePolicy;

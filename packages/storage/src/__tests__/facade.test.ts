@@ -100,12 +100,12 @@ describe("DefaultStorage", () => {
     it("should include the namespace in the wrapped error", async () => {
       store.put.mockRejectedValue(new Error("boom"));
 
-      await expect(
-        storage.put("key", new Uint8Array(), { namespace: "ns" })
-      ).rejects.toMatchObject({
-        code: "storage:put_failed",
-        meta: { details: { key: "key", namespace: "ns" } },
-      });
+      await expect(storage.put("key", new Uint8Array(), { namespace: "ns" })).rejects.toMatchObject(
+        {
+          code: "storage:put_failed",
+          meta: { details: { key: "key", namespace: "ns" } },
+        }
+      );
     });
   });
 

@@ -30,7 +30,10 @@ export class MemoryOrderRepository implements OrderRepository {
   /**
    * @inheritdoc
    */
-  async getById(id: OrderId, ctx: OrderRepositoryContext): Promise<Result<Order | null, RepositoryError>> {
+  async getById(
+    id: OrderId,
+    ctx: OrderRepositoryContext
+  ): Promise<Result<Order | null, RepositoryError>> {
     const order = this.#orders.get(this.#makeKey(ctx.tenant, id));
 
     if (!order) {

@@ -79,7 +79,9 @@ describe("CliRegistration", () => {
 
     registration.registerCommand({ name: "build", action: async () => {} });
 
-    expect(() => registration.registerCommand({ name: "build", action: async () => {} })).toThrow(CliError);
+    expect(() => registration.registerCommand({ name: "build", action: async () => {} })).toThrow(
+      CliError
+    );
 
     try {
       registration.registerCommand({ name: "build", action: async () => {} });

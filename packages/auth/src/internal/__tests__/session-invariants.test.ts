@@ -39,10 +39,7 @@ describe("checkSessionInvariants", () => {
 
     it("should fail with empty id", () => {
       const emptyId = "" as unknown as AuthSessionId;
-      const result = checkSessionInvariants(
-        { ...validSession, id: emptyId },
-        2000
-      );
+      const result = checkSessionInvariants({ ...validSession, id: emptyId }, 2000);
 
       expect(result.ok).toBe(false);
 

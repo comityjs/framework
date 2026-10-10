@@ -29,4 +29,3 @@
 - the package does not commit to any specific backend
 - backend adapters belong in separate packages
 - application-specific caching policy does not belong here
-

@@ -49,7 +49,9 @@ describe("DefaultCategoryPageComposer", () => {
     const repository = {
       getById: vi
         .fn()
-        .mockResolvedValue(success({ ...category, id: undefined, url: undefined, name: undefined })),
+        .mockResolvedValue(
+          success({ ...category, id: undefined, url: undefined, name: undefined })
+        ),
     };
     const composer = new DefaultCategoryPageComposer(repository as any);
 
@@ -65,9 +67,11 @@ describe("DefaultCategoryPageComposer", () => {
     const repository = { getById: vi.fn().mockResolvedValue(success(category)) };
     const enrichers: CategoryPageEnricher[] = [
       {
-        enrich: vi.fn().mockImplementation(async (page) =>
-          success({ ...page, products: [{ id: "p-1", name: "T-Shirt", variants: [] }] })
-        ),
+        enrich: vi
+          .fn()
+          .mockImplementation(async (page) =>
+            success({ ...page, products: [{ id: "p-1", name: "T-Shirt", variants: [] }] })
+          ),
       },
     ];
     const composer = new DefaultCategoryPageComposer(repository as any, enrichers);

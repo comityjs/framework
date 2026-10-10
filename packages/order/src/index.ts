@@ -8,7 +8,12 @@ export type {
   OrderProductSnapshot,
   OrderVariantSnapshot,
 } from "./contracts/item.js";
-export type { OrderRepository, OrderRepositoryContext, OrderSearchCriteria, OrderSearchResult } from "./contracts/order-repository.js";
+export type {
+  OrderRepository,
+  OrderRepositoryContext,
+  OrderSearchCriteria,
+  OrderSearchResult,
+} from "./contracts/order-repository.js";
 export type {
   OrderCreate,
   OrderData,

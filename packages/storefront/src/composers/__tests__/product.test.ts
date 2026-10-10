@@ -37,7 +37,9 @@ describe("DefaultProductPageComposer", () => {
 
   it("should use fallbacks when the product has no id, url or name", async () => {
     const repository = {
-      getById: vi.fn().mockResolvedValue(success({ ...product, id: undefined, url: undefined, name: undefined })),
+      getById: vi
+        .fn()
+        .mockResolvedValue(success({ ...product, id: undefined, url: undefined, name: undefined })),
     };
     const composer = new DefaultProductPageComposer(repository as any);
 
@@ -64,9 +66,11 @@ describe("DefaultProductPageComposer", () => {
     const repository = { getById: vi.fn().mockResolvedValue(success(product)) };
     const enrichers: ProductPageEnricher[] = [
       {
-        enrich: vi.fn().mockImplementation(async (page) =>
-          success({ ...page, breadcrumbs: [{ label: "Home", url: "/" }] })
-        ),
+        enrich: vi
+          .fn()
+          .mockImplementation(async (page) =>
+            success({ ...page, breadcrumbs: [{ label: "Home", url: "/" }] })
+          ),
       },
     ];
     const composer = new DefaultProductPageComposer(repository as any, enrichers);

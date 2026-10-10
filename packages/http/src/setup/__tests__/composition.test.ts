@@ -164,12 +164,14 @@ describe("http module setup", () => {
 
   it("should apply configured middleware before the handler", async () => {
     const order: string[] = [];
-    const middleware = vi.fn().mockImplementation(async (_ctx: HttpContext, next: () => Promise<HttpResponse>) => {
-      order.push("middleware");
-      const response = await next();
-      order.push("after");
-      return response;
-    });
+    const middleware = vi
+      .fn()
+      .mockImplementation(async (_ctx: HttpContext, next: () => Promise<HttpResponse>) => {
+        order.push("middleware");
+        const response = await next();
+        order.push("after");
+        return response;
+      });
     const handler = vi.fn().mockImplementation(async () => {
       order.push("handler");
       return { status: 200 };

@@ -14,4 +14,3 @@
 - may depend on `@comity/primitives`
 - may depend on `@comity/kernel` when runtime hooks are needed
 - must not depend on adapters or applications
-

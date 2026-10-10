@@ -14,4 +14,3 @@
 The current source tree is setup-centric and does not expose a top-level
 `src/index.ts` file in the repository snapshot. That shape is documented as-is
 for now.
-

@@ -24,9 +24,7 @@ import { failure, isFailure, success } from "@comity/primitives/result";
  * Note: This function does NOT validate the payload beyond the identifier
  * creation boundary. It assumes the payload is otherwise validated upstream.
  */
-export function jwtPayloadToAuthSession(
-  payload: JoseJwtPayload
-): Result<AuthSession, AuthError> {
+export function jwtPayloadToAuthSession(payload: JoseJwtPayload): Result<AuthSession, AuthError> {
   const idResult = AuthSessionId.create(payload.sid);
 
   if (isFailure(idResult)) {

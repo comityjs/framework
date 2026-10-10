@@ -15,7 +15,7 @@ interface Manifest {
 
 function readManifest(pkg: string): Manifest {
   return JSON.parse(
-    readFileSync(resolve(repoRoot, "packages", pkg, "package.json"), "utf8"),
+    readFileSync(resolve(repoRoot, "packages", pkg, "package.json"), "utf8")
   ) as Manifest;
 }
 

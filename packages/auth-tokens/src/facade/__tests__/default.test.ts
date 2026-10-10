@@ -250,11 +250,7 @@ describe("DefaultAuthTokenFacade", () => {
         error,
       });
 
-      const result = await facade.refreshTokens(
-        "invalid-token",
-        sessionId("session-123"),
-        2000
-      );
+      const result = await facade.refreshTokens("invalid-token", sessionId("session-123"), 2000);
 
       expect(result.ok).toBe(false);
       expect((result as any).error).toEqual(error);
@@ -272,11 +268,7 @@ describe("DefaultAuthTokenFacade", () => {
         error,
       });
 
-      const result = await facade.refreshTokens(
-        "valid-token",
-        sessionId("session-123"),
-        2000
-      );
+      const result = await facade.refreshTokens("valid-token", sessionId("session-123"), 2000);
 
       expect(result.ok).toBe(false);
       expect((result as any).error).toEqual(error);
@@ -298,11 +290,7 @@ describe("DefaultAuthTokenFacade", () => {
         error,
       });
 
-      const result = await facade.refreshTokens(
-        "valid-token",
-        sessionId("session-123"),
-        2000
-      );
+      const result = await facade.refreshTokens("valid-token", sessionId("session-123"), 2000);
 
       expect(result.ok).toBe(false);
       expect((result as any).error).toEqual(error);
@@ -328,11 +316,7 @@ describe("DefaultAuthTokenFacade", () => {
         error,
       });
 
-      const result = await facade.refreshTokens(
-        "valid-token",
-        sessionId("session-123"),
-        2000
-      );
+      const result = await facade.refreshTokens("valid-token", sessionId("session-123"), 2000);
 
       expect(result.ok).toBe(false);
       expect((result as any).error).toEqual(error);

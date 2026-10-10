@@ -43,11 +43,7 @@ describe("ReactStreamingHtmlRenderer (Node)", () => {
 
           if (done) break;
 
-          parts.push(
-            typeof value === "string"
-              ? value
-              : new TextDecoder().decode(value)
-          );
+          parts.push(typeof value === "string" ? value : new TextDecoder().decode(value));
         }
 
         const html = parts.join("");

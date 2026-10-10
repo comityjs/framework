@@ -47,16 +47,19 @@ class Address {
 ### Creation
 
 ```ts
-const address = new Address({
-  lines: [AddressLine.create("Via Roma 1")],
-  city: "Milano",
-  postalCode: "20100",
-  countryCode: "IT",
-  administrativeArea: null,
-  label: null,
-  metadata: null,
-  contacts: [],
-}, AddressId.create("addr-1"));
+const address = new Address(
+  {
+    lines: [AddressLine.create("Via Roma 1")],
+    city: "Milano",
+    postalCode: "20100",
+    countryCode: "IT",
+    administrativeArea: null,
+    label: null,
+    metadata: null,
+    contacts: [],
+  },
+  AddressId.create("addr-1")
+);
 ```
 
 `id` is optional. A newly created address without an id has `id` as `undefined`.
