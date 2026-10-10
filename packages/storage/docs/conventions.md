@@ -8,4 +8,3 @@
 - expose stores and setup contracts explicitly
 - keep error handling in the module error layer
 - keep adapter integrations separate from the storage contracts
-

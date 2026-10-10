@@ -10,10 +10,7 @@ import { BaseError } from "@comity/primitives/errors";
  * Each reason maps to a distinct recovery strategy.
  */
 export type CliErrorReason =
-  | "command_not_found"
-  | "command_failed"
-  | "hook_failed"
-  | "already_registered";
+  "command_not_found" | "command_failed" | "hook_failed" | "already_registered";
 
 /**
  * CLI Error metadata.

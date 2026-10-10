@@ -39,7 +39,6 @@ This package does NOT:
 - `CustomerCreate` / `CustomerUpdate` — mutation input types
 - `CustomerContact` / `CustomerPreferences` — customer detail types
 
-
 No exhaustive reference; see docs for constraints.
 ---
 

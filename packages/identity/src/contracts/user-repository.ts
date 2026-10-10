@@ -40,9 +40,7 @@ export interface UserRepository {
   getById(id: UserId): Promise<Result<User | null, RepositoryError>>;
 
   /** Searches users matching the given criteria */
-  search(
-    criteria?: UserSearchCriteria
-  ): Promise<Result<UserSearchResult, RepositoryError>>;
+  search(criteria?: UserSearchCriteria): Promise<Result<UserSearchResult, RepositoryError>>;
 
   /** Saves a user */
   save(user: User): Promise<Result<void, RepositoryError>>;

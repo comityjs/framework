@@ -2,9 +2,9 @@ import type { TaxonomyRepository } from "@comity/taxonomy";
 import type { RepositoryError } from "@comity/primitives/errors";
 import { isSuccess, success, type Result } from "@comity/primitives/result";
 import type {
-    CategoryPageComposer,
-    CategoryPageEnricher,
-    CategoryPageModel,
+  CategoryPageComposer,
+  CategoryPageEnricher,
+  CategoryPageModel,
 } from "../contracts/category-page.js";
 import type { StorefrontContext } from "../contracts/context.js";
 

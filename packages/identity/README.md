@@ -38,7 +38,6 @@ This package does NOT:
 - `UserCreate` / `UserUpdate` / `UserStatus` — mutation and status types
 - `UserValidator` — validation contract
 
-
 No exhaustive reference; see docs for constraints.
 ---
 

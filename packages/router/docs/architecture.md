@@ -28,4 +28,3 @@
 - the package does not perform rendering
 - the package does not own business logic
 - the package does not bind to a specific routing backend
-

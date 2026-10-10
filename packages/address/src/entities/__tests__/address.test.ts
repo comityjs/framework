@@ -341,10 +341,7 @@ describe("Address", () => {
     });
 
     it("should expose the entity updatedAt in the snapshot", () => {
-      const address = new Address(
-        { ...fields, updatedAt: persistedUpdatedAt },
-        id
-      );
+      const address = new Address({ ...fields, updatedAt: persistedUpdatedAt }, id);
       const snapshot = address.snapshot();
 
       expect(snapshot.updatedAt.epochMilliseconds).toBe(persistedUpdatedAt.epochMilliseconds);

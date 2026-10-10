@@ -58,17 +58,16 @@ describe("router module setup", () => {
     if (isSuccess(result)) {
       await result.value();
 
-      const configured = await ctx.hooks.execute(
-        "@comity/http:configuring" as never,
-        {} as never
-      );
+      const configured = await ctx.hooks.execute("@comity/http:configuring" as never, {} as never);
 
       expect(configured).toMatchObject({ handler: expect.any(Function) });
     }
   });
 
   it("should route requests through the configured routers", async () => {
-    const routeHandler = vi.fn().mockResolvedValue({ status: 200, body: "from-route" } satisfies HttpResponse);
+    const routeHandler = vi
+      .fn()
+      .mockResolvedValue({ status: 200, body: "from-route" } satisfies HttpResponse);
     const router: Router = {
       match: vi.fn().mockResolvedValue({
         route: { handler: routeHandler },
@@ -88,9 +87,7 @@ describe("router module setup", () => {
 
       const response = await configured.handler(createContext());
 
-      expect(router.match).toHaveBeenCalledWith(
-        expect.objectContaining({ url: expect.any(URL) })
-      );
+      expect(router.match).toHaveBeenCalledWith(expect.objectContaining({ url: expect.any(URL) }));
       expect(routeHandler).toHaveBeenCalled();
       expect(response).toEqual({ status: 200, body: "from-route" });
     }
@@ -139,9 +136,7 @@ describe("router module setup", () => {
 
       await configured.handler(createContext());
 
-      expect(router.match).toHaveBeenCalledWith(
-        expect.objectContaining({ url: expect.any(URL) })
-      );
+      expect(router.match).toHaveBeenCalledWith(expect.objectContaining({ url: expect.any(URL) }));
       expect(rewriter.rewrite).toHaveBeenCalled();
     }
   });

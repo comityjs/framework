@@ -14,7 +14,8 @@ function unwrap<T>(result: { success: true; value: T } | { success: false }): T 
 }
 
 const eur = unwrap(Currency.create("EUR"));
-const money = (amount: bigint): import("@comity/pricing").Money => unwrap(Money.create(amount, eur));
+const money = (amount: bigint): import("@comity/pricing").Money =>
+  unwrap(Money.create(amount, eur));
 
 function makeRequest(overrides: Partial<PaymentRequest> = {}): PaymentRequest {
   return {

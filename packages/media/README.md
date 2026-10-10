@@ -28,7 +28,6 @@ This package does NOT:
 
 - `MediaModel`
 
-
 No exhaustive reference; see docs for constraints.
 ---
 

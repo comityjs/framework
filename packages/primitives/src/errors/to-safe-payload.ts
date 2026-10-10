@@ -1,5 +1,6 @@
 import type { JsonValue, SafeErrorPayload } from "./types.js";
 
+import { Instant } from "../time/instant.js";
 import { BaseError } from "./base.js";
 
 /**
@@ -80,7 +81,7 @@ export function toSafePayload(error: unknown): SafeErrorPayload {
     return {
       code: "unknown",
       message: message || "An unknown error occurred",
-      timestamp: new Date().toISOString(),
+      timestamp: Instant.now().toISOString(),
     };
   }
 
@@ -89,7 +90,7 @@ export function toSafePayload(error: unknown): SafeErrorPayload {
   return {
     code: error.code,
     message: error.message,
-    timestamp: new Date().toISOString(),
+    timestamp: Instant.now().toISOString(),
     ...(typeof httpStatus === "number" && { httpStatus }),
     ...(typeof reason === "string" && { reason }),
     ...(typeof details === "object" && { details: sanitizeMeta(details) }),

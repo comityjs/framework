@@ -89,10 +89,10 @@
   },
   "dependencies": {
     "@comity/html": "workspace:*",
-    "preact-render-to-string": "^6.7.0"
+    "preact-render-to-string": "^6.8.0"
   },
   "devDependencies": {
-    "@types/node": "^24.13.4",
+    "@types/node": "^24.19.1",
     "preact": "^10.29.8",
     "typescript": "^5.9.3"
   }

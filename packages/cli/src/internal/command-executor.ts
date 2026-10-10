@@ -12,7 +12,7 @@ import { CliError } from "../errors/cli.js";
 
 /**
  * Normalizes an unknown thrown value into a message string.
- * 
+ *
  * @param error - The thrown value
  * @returns The error message
  */
@@ -24,16 +24,31 @@ function toMessage(error: unknown): string {
  * Event emitter interface for the executor with proper overloads.
  */
 interface ExecutorEvents {
-  emit(event: "cli.command.started", payload: { name: string; args: CliCommandArgs; context: CliCommandContext }): void;
-  emit(event: "cli.command.completed", payload: { name: string; args: CliCommandArgs; context: CliCommandContext; durationMs: number }): void;
-  emit(event: "cli.command.failed", payload: { name: string; args: CliCommandArgs; context: CliCommandContext; error: Error; durationMs: number }): void;
+  emit(
+    event: "cli.command.started",
+    payload: { name: string; args: CliCommandArgs; context: CliCommandContext }
+  ): void;
+  emit(
+    event: "cli.command.completed",
+    payload: { name: string; args: CliCommandArgs; context: CliCommandContext; durationMs: number }
+  ): void;
+  emit(
+    event: "cli.command.failed",
+    payload: {
+      name: string;
+      args: CliCommandArgs;
+      context: CliCommandContext;
+      error: Error;
+      durationMs: number;
+    }
+  ): void;
 }
 
 /**
  * Command executor.
- * 
+ *
  * @typeParam Context - Application-defined context shape.
- * 
+ *
  * @remarks
  * Orchestrates a single command execution through the CLI lifecycle:
  * `beforeCommand` hooks, the command action, and `afterCommand` hooks.
@@ -67,10 +82,10 @@ export class CommandExecutor<Context = {}> {
 
   /**
    * Execute a command by name.
-   * 
+   *
    * @param name - Registered command name
    * @param args - Parsed command arguments
-   * 
+   *
    * @returns Result of the command execution
    */
   async execute(name: string, args: CliCommandArgs): Promise<Result<void, CliError>> {
@@ -80,7 +95,11 @@ export class CommandExecutor<Context = {}> {
       return failure(new CliError("command_not_found", { details: { name } }));
     }
 
-    const run: CliCommandRun<Context> = { name, args, context: this.#context as CliCommandContext<Context> };
+    const run: CliCommandRun<Context> = {
+      name,
+      args,
+      context: this.#context as CliCommandContext<Context>,
+    };
     const startTime = Date.now();
 
     // Emit command started event
@@ -93,7 +112,13 @@ export class CommandExecutor<Context = {}> {
     } catch (error) {
       const durationMs = Date.now() - startTime;
       const err = error instanceof Error ? error : new Error(String(error));
-      this.#events?.emit("cli.command.failed", { name, args, context: run.context, error: err, durationMs });
+      this.#events?.emit("cli.command.failed", {
+        name,
+        args,
+        context: run.context,
+        error: err,
+        durationMs,
+      });
 
       return failure(
         new CliError("hook_failed", { cause: error, details: { hook: "beforeCommand" } })
@@ -108,7 +133,8 @@ export class CommandExecutor<Context = {}> {
         const result = actionResult as Result<void, BaseError>;
         if (!result.success) {
           const durationMs = Date.now() - startTime;
-          const err = result.error instanceof Error ? result.error : new Error(String(result.error));
+          const err =
+            result.error instanceof Error ? result.error : new Error(String(result.error));
           this.#events?.emit("cli.command.failed", {
             name,
             args,
@@ -124,15 +150,19 @@ export class CommandExecutor<Context = {}> {
             // Hook error during cleanup - log but don't override action failure
           }
 
-          return failure(
-            new CliError("command_failed", { cause: result.error })
-          );
+          return failure(new CliError("command_failed", { cause: result.error }));
         }
       }
     } catch (error) {
       const durationMs = Date.now() - startTime;
       const err = error instanceof Error ? error : new Error(String(error));
-      this.#events?.emit("cli.command.failed", { name, args, context: prepared.context, error: err, durationMs });
+      this.#events?.emit("cli.command.failed", {
+        name,
+        args,
+        context: prepared.context,
+        error: err,
+        durationMs,
+      });
 
       // Best-effort execution of afterCommand hooks after a failed action
       try {
@@ -149,7 +179,13 @@ export class CommandExecutor<Context = {}> {
     } catch (error) {
       const durationMs = Date.now() - startTime;
       const err = error instanceof Error ? error : new Error(String(error));
-      this.#events?.emit("cli.command.failed", { name, args, context: prepared.context, error: err, durationMs });
+      this.#events?.emit("cli.command.failed", {
+        name,
+        args,
+        context: prepared.context,
+        error: err,
+        durationMs,
+      });
 
       return failure(
         new CliError("hook_failed", { cause: error, details: { hook: "afterCommand" } })
@@ -157,7 +193,12 @@ export class CommandExecutor<Context = {}> {
     }
 
     const durationMs = Date.now() - startTime;
-    this.#events?.emit("cli.command.completed", { name, args, context: prepared.context, durationMs });
+    this.#events?.emit("cli.command.completed", {
+      name,
+      args,
+      context: prepared.context,
+      durationMs,
+    });
 
     return success(undefined);
   }

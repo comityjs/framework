@@ -24,4 +24,3 @@ It MUST stay aligned with `@comity/router` contracts.
 - matching behavior belongs to the implementation
 - route contracts belong to `@comity/router`
 - application policy must not be embedded here
-

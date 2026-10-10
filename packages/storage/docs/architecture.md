@@ -16,4 +16,3 @@ kernel setup metadata.
 
 The package stays contract-oriented and leaves external provider integration to
 adapters or applications.
-

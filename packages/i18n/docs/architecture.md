@@ -15,4 +15,3 @@ facade-level access.
 
 The package keeps translation semantics in the core and delegates any concrete
 translation source or runtime integration to lower-level composition.
-

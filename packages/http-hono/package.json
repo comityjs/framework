@@ -92,8 +92,8 @@
     "@comity/primitives": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^24.13.4",
-    "hono": "^4.13.7",
+    "@types/node": "^24.19.1",
+    "hono": "^4.13.13",
     "typescript": "^5.9.3"
   }
 }

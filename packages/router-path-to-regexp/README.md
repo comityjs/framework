@@ -29,7 +29,6 @@ This package does NOT:
 
 - `PathRouter`
 
-
 No exhaustive reference; see docs for constraints.
 ---
 

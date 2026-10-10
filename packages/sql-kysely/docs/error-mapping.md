@@ -5,14 +5,14 @@ from `@comity/sql`.
 
 ## Canonical error reasons
 
-| Failure type                 | SqlError.reason          |
-| ---------------------------- | ------------------------ |
-| Connection failure           | sql:connection-failed    |
-| SQL syntax error             | sql:invalid-query        |
-| Constraint / execution error | sql:query-failed         |
-| Transaction commit/rollback  | sql:transaction-failed   |
-| Query timeout                | sql:timeout              |
-| Explicit cancellation        | sql:cancelled            |
+| Failure type                 | SqlError.reason        |
+| ---------------------------- | ---------------------- |
+| Connection failure           | sql:connection-failed  |
+| SQL syntax error             | sql:invalid-query      |
+| Constraint / execution error | sql:query-failed       |
+| Transaction commit/rollback  | sql:transaction-failed |
+| Query timeout                | sql:timeout            |
+| Explicit cancellation        | sql:cancelled          |
 
 ## Security considerations
 

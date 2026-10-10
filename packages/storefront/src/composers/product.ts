@@ -3,9 +3,9 @@ import type { RepositoryError } from "@comity/primitives/errors";
 import { isSuccess, success, type Result } from "@comity/primitives/result";
 import type { StorefrontContext } from "../contracts/context.js";
 import type {
-    ProductPageComposer,
-    ProductPageEnricher,
-    ProductPageModel,
+  ProductPageComposer,
+  ProductPageEnricher,
+  ProductPageModel,
 } from "../contracts/product-page.js";
 
 /**

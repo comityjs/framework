@@ -34,13 +34,13 @@ Kernel / Primitives
 
 ### Layer Responsibilities
 
-| Layer            | Responsibility                                                              | Key Rule                                                              |
-| ---------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| **Primitives**   | Foundational types, `Result`, DI container, error base class                | No runtime state, no infrastructure, no business logic                |
-| **Kernel**       | Module lifecycle, service registration, event dispatching, observers | No HTTP, no Router, no HTML, no infrastructure                         |
-| **Core Modules** | Business abstractions. Primarily define contracts (interfaces); may also ship canonical domain implementations (e.g. `Default*` composers, `Memory*` test doubles, transport-independent client facades) | Must not depend on Adapters or Application                            |
-| **Adapters**     | Integrate external technologies (Hono, React, Kysely, Preact, Jose, etc.)   | Implement one Core contract (+ external library); may consume additional Core contracts without implementing them. Must remain replaceable |
-| **Application**  | Configuration, routing, presenters, business orchestration                  | May depend on every lower layer                                       |
+| Layer            | Responsibility                                                                                                                                                                                           | Key Rule                                                                                                                                   |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Primitives**   | Foundational types, `Result`, DI container, error base class                                                                                                                                             | No runtime state, no infrastructure, no business logic                                                                                     |
+| **Kernel**       | Module lifecycle, service registration, event dispatching, observers                                                                                                                                     | No HTTP, no Router, no HTML, no infrastructure                                                                                             |
+| **Core Modules** | Business abstractions. Primarily define contracts (interfaces); may also ship canonical domain implementations (e.g. `Default*` composers, `Memory*` test doubles, transport-independent client facades) | Must not depend on Adapters or Application                                                                                                 |
+| **Adapters**     | Integrate external technologies (Hono, React, Kysely, Preact, Jose, etc.)                                                                                                                                | Implement one Core contract (+ external library); may consume additional Core contracts without implementing them. Must remain replaceable |
+| **Application**  | Configuration, routing, presenters, business orchestration                                                                                                                                               | May depend on every lower layer                                                                                                            |
 
 ### Package Identification
 
@@ -111,17 +111,17 @@ Every package MUST document its public API with JSDoc. ESLint requires `@descrip
 
 ### Development Commands
 
-| Command                          | Purpose                                                   |
-| -------------------------------- | --------------------------------------------------------- |
-| `pnpm install`                   | Install dependencies (pnpm only, enforced via preinstall) |
-| `pnpm dev`                       | Watch mode across all packages                            |
-| `pnpm build`                     | Full build via Turborepo (workspace scope; drafts excluded)          |
-| `pnpm build:single @comity/http` | Build a single package and its deps                       |
-| `pnpm type-check`                | TypeScript type checking across all packages              |
-| `pnpm test`                      | Run all tests (Vitest workspace mode)                     |
-| `pnpm test:watch`                | Watch mode for tests                                      |
+| Command                          | Purpose                                                               |
+| -------------------------------- | --------------------------------------------------------------------- |
+| `pnpm install`                   | Install dependencies (pnpm only, enforced via preinstall)             |
+| `pnpm dev`                       | Watch mode across all packages                                        |
+| `pnpm build`                     | Full build via Turborepo (workspace scope; drafts excluded)           |
+| `pnpm build:single @comity/http` | Build a single package and its deps                                   |
+| `pnpm type-check`                | TypeScript type checking across all packages                          |
+| `pnpm test`                      | Run all tests (Vitest workspace mode)                                 |
+| `pnpm test:watch`                | Watch mode for tests                                                  |
 | `pnpm test:coverage`             | Run tests and emit coverage report (per-package thresholds may apply) |
-| `pnpm changeset`                 | Create a versioning changeset                             |
+| `pnpm changeset`                 | Create a versioning changeset                                         |
 
 ### Build Pipeline
 
@@ -153,8 +153,9 @@ const result = Result.failure(new AuthError("session-expired"));
 **Dependency Injection** — Use tokens and lazy registration:
 
 ```typescript
-const TOKEN = createToken<MyRepository>("@comity/catalog/my-repo");
+const TOKEN = createToken<"catalog/my-repo", MyRepository>("@comity/catalog/my-repo");
 ctx.services.define(TOKEN, () => new Implementation());
+// resolve(TOKEN) returns MyRepository exactly; unknown symbols are rejected
 ```
 
 **Lifecycle Hooks** — `@comity/module:configuring` (modify config), `@comity/module:initialized` (signals ready).
@@ -213,13 +214,13 @@ Follow this sequence:
 
 ## Do / Don't
 
-| Do                                         | Don't                                                  |
-| ------------------------------------------ | ------------------------------------------------------ |
-| Start from "who owns this responsibility?" | Start from "where can I put this?"                     |
-| Define contracts in Core Modules           | Put technology-specific implementations in Core Modules    |
-| Expose only the minimum public API         | Create convenience short cuts that leak implementation |
-| Register services lazily                   | Construct eagerly                                      |
-| Use `Result<T, E>` for failures            | Throw for business logic                               |
+| Do                                         | Don't                                                                                                                       |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| Start from "who owns this responsibility?" | Start from "where can I put this?"                                                                                          |
+| Define contracts in Core Modules           | Put technology-specific implementations in Core Modules                                                                     |
+| Expose only the minimum public API         | Create convenience short cuts that leak implementation                                                                      |
+| Register services lazily                   | Construct eagerly                                                                                                           |
+| Use `Result<T, E>` for failures            | Throw for business logic                                                                                                    |
 | Preserve folder naming conventions         | Use singular `error/`/`hooks/` — the conventions are `errors/`, `observers/`, `contracts/` (plural) and `setup/` (singular) |
-| Align exports with physical folders        | Export subpaths for non-existent directories           |
-| Justify every abstraction                  | Create abstraction "just in case"                      |
+| Align exports with physical folders        | Export subpaths for non-existent directories                                                                                |
+| Justify every abstraction                  | Create abstraction "just in case"                                                                                           |

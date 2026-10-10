@@ -99,6 +99,7 @@
   "sideEffects": false,
   "peerDependencies": {
     "@comity/auth": "workspace:*",
+    "@comity/auth-tokens": "workspace:*",
     "jose": "^6.0.0"
   },
   "dependencies": {
@@ -108,7 +109,7 @@
     "@comity/primitives": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^24.13.4",
+    "@types/node": "^24.19.1",
     "jose": "^6.2.12",
     "typescript": "^5.9.3"
   }

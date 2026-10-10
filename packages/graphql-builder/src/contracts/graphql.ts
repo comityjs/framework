@@ -12,10 +12,7 @@ export type GraphqlPrimitive = string | number | boolean | null | undefined;
  * GraphQL value types, including primitives, arrays, objects, and variable references
  */
 export type GraphqlValue =
-  | GraphqlPrimitive
-  | GraphqlValue[]
-  | { [key: string]: GraphqlValue }
-  | GraphqlVar;
+  GraphqlPrimitive | GraphqlValue[] | { [key: string]: GraphqlValue } | GraphqlVar;
 
 /**
  * Variable reference

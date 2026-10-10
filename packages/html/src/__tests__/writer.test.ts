@@ -144,14 +144,14 @@ describe("createDefaultHtmlDocumentWriter", () => {
 
     const html = writer.writeLayoutOpen();
 
-    expect(html).toContain('<body data-bool>');
+    expect(html).toContain("<body data-bool>");
   });
 
   it("filters attributes with names rejected by the default validator", () => {
     const writer = createDefaultHtmlDocumentWriter({
       headTags: [],
       htmlAttrs: undefined,
-      bodyAttrs: { "onclick": "alert(1)", "onload": "evil()" },
+      bodyAttrs: { onclick: "alert(1)", onload: "evil()" },
     });
 
     const html = writer.writeLayoutOpen();
@@ -179,9 +179,7 @@ describe("createDefaultHtmlDocumentWriter", () => {
 
   it("serializes a style tag with content", () => {
     const writer = createDefaultHtmlDocumentWriter({
-      headTags: [
-        { type: "style", value: { id: "st", content: "body { color: red; }" } },
-      ],
+      headTags: [{ type: "style", value: { id: "st", content: "body { color: red; }" } }],
       htmlAttrs: undefined,
       bodyAttrs: undefined,
     });
@@ -236,7 +234,7 @@ describe("createDefaultHtmlDocumentWriter", () => {
       {
         headTags: [],
         htmlAttrs: undefined,
-        bodyAttrs: { "dataTestId": "x" },
+        bodyAttrs: { dataTestId: "x" },
       },
       { normalizeAttributeName: (name) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`) }
     );
@@ -251,7 +249,7 @@ describe("createDefaultHtmlDocumentWriter", () => {
       {
         headTags: [],
         htmlAttrs: undefined,
-        bodyAttrs: { title: "a\"b" },
+        bodyAttrs: { title: 'a"b' },
       },
       { escapeAttributeValue: (str) => str.replace(/"/g, "&quot;") }
     );

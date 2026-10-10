@@ -43,6 +43,7 @@ packages/address/src/
 Public contracts: interfaces and types.
 
 Contains:
+
 - `address.ts` — AddressData, AddressFields, AddressSnapshot, AddressContact, AddressCreate, AddressUpdate, AddressState
 - `address-repository.ts` — AddressRepository
 - `address-validator.ts` — AddressValidator
@@ -64,6 +65,7 @@ No `errors/`, `setup/`, or `internal/` directories exist. Address errors come fr
 ## Design Constraints
 
 The package must not introduce:
+
 - Country-specific address classes
 - ShippingAddress / BillingAddress
 - CustomerAddress

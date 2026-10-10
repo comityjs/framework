@@ -47,7 +47,10 @@ export interface HttpOptions extends Omit<RequestInit, "method" | "headers"> {
  * });
  * ```
  */
-export const fetchHttp = async (url: Request | URL, options: HttpOptions = {}): Promise<Response> => {
+export const fetchHttp = async (
+  url: Request | URL,
+  options: HttpOptions = {}
+): Promise<Response> => {
   const { timeout = 0, delay = 0, ...fetchOptions } = options;
 
   // Apply delay if specified

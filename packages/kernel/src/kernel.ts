@@ -1,11 +1,12 @@
+import type { ServiceToken } from "@comity/primitives/di";
 import type { EventHandler, HookHandler } from "@comity/primitives/lifecycle";
 import type { KernelLifecycleObserver } from "./observers/lifecycle.js";
 import type {
-    KernelContext,
-    KernelEventBus,
-    KernelHookBus,
-    KernelLifecycleState,
-    KernelServiceResolver,
+  KernelContext,
+  KernelEventBus,
+  KernelHookBus,
+  KernelLifecycleState,
+  KernelServiceResolver,
 } from "./setup/types.js";
 
 import { toSafePayload } from "@comity/primitives/errors";
@@ -44,26 +45,30 @@ export class Kernel<
     // Services
     this.#services = {
       /**
-       * @param name - Service name
+       * Register a service for a token.
+       *
+       * @param token - Service token (or map key — see remarks above)
        * @param factory - Service factory
        *
        * @returns void
        */
-      define: <K extends keyof Services>(name: K, factory: () => Services[K]) => {
+      define: <K extends keyof Services, R>(token: K & ServiceToken<R>, factory: () => R): void => {
         this.#assertLifecycle(() => this.#lifecycle.canDefineServices(), "service.define");
 
-        return context.services.define(name, factory);
+        return context.services.define<K, R>(token, factory);
       },
 
       /**
-       * @param name - Service name
+       * Resolve the service a token points to.
        *
-       * @returns The resolved service instance
+       * @param token - Service token (or map key — see remarks above)
+       *
+       * @returns The resolved service instance, typed by the token
        */
-      resolve: <K extends keyof Services>(name: K) => {
+      resolve: <K extends keyof Services, R>(token: K & ServiceToken<R>): R => {
         this.#assertLifecycle(() => this.#lifecycle.canResolveServices(), "service.resolve");
 
-        return context.services.resolve(name) as Services[K];
+        return context.services.resolve<K, R>(token);
       },
 
       /**

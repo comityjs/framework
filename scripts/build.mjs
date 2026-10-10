@@ -17,10 +17,14 @@ const CWD = process.cwd();
 
 function exec(command, args) {
   return new Promise((resolvePromise, reject) => {
-    const child = spawn(command, args.filter((a) => a !== ""), {
-      stdio: "inherit",
-      cwd: CWD,
-    });
+    const child = spawn(
+      command,
+      args.filter((a) => a !== ""),
+      {
+        stdio: "inherit",
+        cwd: CWD,
+      }
+    );
 
     child.on("close", (code) => {
       if (code === 0) {
@@ -40,7 +44,7 @@ async function main() {
 
   // Delegate to comity-build binary (available at repo root node_modules/.bin)
   const binaryPath = resolve(ROOT, "node_modules", ".bin", "comity-build");
-  
+
   try {
     await exec(binaryPath, watch ? ["--watch"] : []);
   } catch (error) {

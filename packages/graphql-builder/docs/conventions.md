@@ -24,4 +24,3 @@ It MUST stay transport-agnostic.
 - query construction MUST remain explicit
 - value serialization MUST be deterministic
 - implementation helpers belong in `internal/` when needed
-

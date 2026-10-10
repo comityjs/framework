@@ -15,4 +15,3 @@ and applications.
 - translation storage implementations
 - UI rendering
 - transport-specific behavior
-

@@ -17,4 +17,3 @@ runtime support layers.
 
 The package keeps session semantics in the core and lets adapters handle
 transport or persistence integration.
-

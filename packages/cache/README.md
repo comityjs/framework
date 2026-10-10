@@ -36,7 +36,6 @@ This package does NOT:
 - Error types (`@comity/cache/errors`)
 - Module setup contracts (`@comity/cache/setup`)
 
-
 No exhaustive reference; see docs for constraints.
 ---
 

@@ -177,10 +177,7 @@ describe("User", () => {
 
   describe("hydration", () => {
     it("should preserve a supplied createdAt during hydration", () => {
-      const user = new User(
-        { ...createFields, createdAt: hydratedCreatedAt },
-        makeUserId("id")
-      );
+      const user = new User({ ...createFields, createdAt: hydratedCreatedAt }, makeUserId("id"));
 
       expect(user.createdAt.epochMilliseconds).toBe(hydratedCreatedAt.epochMilliseconds);
     });
@@ -367,10 +364,7 @@ describe("User", () => {
     });
 
     it("should expose the entity updatedAt in the snapshot", () => {
-      const user = new User(
-        { ...createFields, updatedAt: updatedInstant },
-        id
-      );
+      const user = new User({ ...createFields, updatedAt: updatedInstant }, id);
       const snapshot = user.snapshot();
 
       expect(snapshot.updatedAt.epochMilliseconds).toBe(updatedInstant.epochMilliseconds);

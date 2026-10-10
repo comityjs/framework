@@ -128,7 +128,10 @@ describe("ADR-025 Integration: Application-owned CLI wiring", () => {
     // It must ONLY receive the registry
     let receivedArgs: unknown[] = [];
 
-    function ordersModuleRegisterCliCommands(registry: CommandRegistry<AppContext>, ...extra: unknown[]) {
+    function ordersModuleRegisterCliCommands(
+      registry: CommandRegistry<AppContext>,
+      ...extra: unknown[]
+    ) {
       receivedArgs = [registry, ...extra];
       registry.register({
         name: "orders:list",

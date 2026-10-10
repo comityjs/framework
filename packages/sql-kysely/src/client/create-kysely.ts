@@ -1,6 +1,8 @@
 import type { SqlClient, SqlClientOptions } from "@comity/sql";
 import type { Kysely } from "kysely";
+import type { KyselyAtomicBatchExecutor } from "./types.js";
 
+import { executeAtomicBatch } from "../batch/execute.js";
 import { executeQuery } from "../query/execute.js";
 import { executeTransaction } from "../transaction/execute.js";
 
@@ -15,6 +17,16 @@ export interface KyselySqlClientOptions<DB> extends SqlClientOptions {
 
   /** Adapter name for diagnostics */
   readonly adapter: string;
+
+  /**
+   * Executor providing atomic all-or-nothing multi-statement execution.
+   *
+   * @remarks
+   * Injected by composition because Kysely exposes no such primitive. When
+   * omitted, `atomicBatch` reports `invalid_configuration` rather than falling
+   * back to sequential execution.
+   */
+  readonly atomicBatchExecutor?: KyselyAtomicBatchExecutor;
 }
 
 /**
@@ -41,5 +53,9 @@ export function createKyselySqlClient<DB = unknown>(
 
     /** @inheritdoc */
     begin: () => executeTransaction(options.db, options.adapter),
+
+    /** @inheritdoc */
+    atomicBatch: (queries) =>
+      executeAtomicBatch(queries, options.atomicBatchExecutor, options.adapter),
   };
 }

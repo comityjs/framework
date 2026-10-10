@@ -2,10 +2,7 @@ import type { HydrationRuntimeObserver } from "@comity/hydration/lifecycle";
 import type { IslandComponentRegistry } from "../contracts/registry.js";
 
 import { HydrationController } from "@comity/hydration";
-import {
-  DefaultHydrationScheduler,
-  createBrowserHydrationCapabilities,
-} from "@comity/hydration";
+import { DefaultHydrationScheduler, createBrowserHydrationCapabilities } from "@comity/hydration";
 import { DomIslandDiscoveryAdapter } from "../internal/discoverer.js";
 import { PreactIslandHydrationAdapter } from "../internal/hydrator.js";
 

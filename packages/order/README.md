@@ -30,7 +30,7 @@ This package does NOT:
 
 ## Public API
 
-- `Order` — order entity with lifecycle and item mutations (`addItem`, `removeItem`, `updateItemQuantity`, `submit`, `confirm`, `fulfill`, `cancel`)
+- `Order` — order entity with lifecycle and item mutations (`setItems`, `addItem`, `removeItem`, `updateItemQuantity`, `submit`, `confirm`, `fulfill`, `cancel`)
 - `OrderId` — order identifier value object
 - `OrderRepository` — persistence-boundary contract (`getById`, `search`, `save`)
 - `OrderState`, `OrderCreate`, `OrderUpdate`, `OrderSnapshot`, `OrderData`, `OrderStatus` — domain contracts

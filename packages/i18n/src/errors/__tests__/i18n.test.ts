@@ -5,7 +5,11 @@ describe("I18nError", () => {
   it("exposes reason, message and code for each reason", () => {
     const cases: Array<[Parameters<typeof I18nError>[0], string, string]> = [
       ["missing_loader", "missing_loader", "I18n loader not configured"],
-      ["missing_translator_factory", "missing_translator_factory", "I18n translator factory not configured"],
+      [
+        "missing_translator_factory",
+        "missing_translator_factory",
+        "I18n translator factory not configured",
+      ],
       ["locale_resolution_failed", "locale_resolution_failed", "Failed to resolve locale"],
       ["locale_not_supported", "locale_not_supported", "Locale not supported"],
     ];

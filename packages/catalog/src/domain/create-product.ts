@@ -10,9 +10,7 @@ import { CatalogError } from "../errors/catalog.js";
  *
  * @returns The immutable product projection, or a validation error.
  */
-export function createProduct(
-  input: ProductCreate
-): Result<ProductProjection, CatalogError> {
+export function createProduct(input: ProductCreate): Result<ProductProjection, CatalogError> {
   if (input.id.trim().length === 0) {
     return failure(
       new CatalogError("invalid_product", {

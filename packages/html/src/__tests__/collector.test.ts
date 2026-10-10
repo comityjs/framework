@@ -115,7 +115,9 @@ describe("DefaultHtmlLayoutCollector", () => {
     collector.addMeta({ property: "og:title", content: "A" });
     collector.addMeta({ property: "og:title", content: "B" });
 
-    expect(collector.headTags).toEqual([{ type: "meta", value: { property: "og:title", content: "B" } }]);
+    expect(collector.headTags).toEqual([
+      { type: "meta", value: { property: "og:title", content: "B" } },
+    ]);
   });
 
   it("keys meta by id", () => {
@@ -205,7 +207,9 @@ describe("DefaultHtmlLayoutCollector", () => {
     collector.addScript({ id: "s1", content: "var a = 1;" });
     collector.addScript({ id: "s1", content: "var b = 2;" });
 
-    expect(collector.headTags).toEqual([{ type: "script", value: { id: "s1", content: "var b = 2;" } }]);
+    expect(collector.headTags).toEqual([
+      { type: "script", value: { id: "s1", content: "var b = 2;" } },
+    ]);
   });
 
   it("keys script by src even when an id is present", () => {
@@ -234,7 +238,9 @@ describe("DefaultHtmlLayoutCollector", () => {
     collector.addStyle({ id: "st1", content: "body {}" });
     collector.addStyle({ id: "st1", content: "html {}" });
 
-    expect(collector.headTags).toEqual([{ type: "style", value: { id: "st1", content: "html {}" } }]);
+    expect(collector.headTags).toEqual([
+      { type: "style", value: { id: "st1", content: "html {}" } },
+    ]);
   });
 
   it("appends style tags without an id", () => {

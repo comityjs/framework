@@ -74,6 +74,7 @@ Approved architectural decisions (out of scope here):
 | `@comity/composition` | Wiring types in root           | Move to `/setup`                                                                                                      |
 
 > ✅ COMPLETED / SUPERSEDED — Phase 6.4B:
+>
 > - `@comity/auth` — interfaces are `export type`; the root surface stays canonical and explicit
 >   `/use-cases` and `/repositories` barrels were added. `CompositeAssuranceEvaluator`/`AuthGuard`
 >   remain canonical root exports (supersedes the subpath-move proposal).
@@ -134,12 +135,12 @@ Approved architectural decisions (out of scope here):
 
 Rule reference: [`public-api.md`](../../../development/docs/standards/public-api.md) §5.
 
-| Old Path       | New Path           | Status  |
-| -------------- | ------------------ | ------- |
-| `auth/hooks`   | `auth/observers`   | Done    |
-| `html/hooks`   | `html/observers`   | Done    |
-| `http/hooks`   | `http/observers`   | Done    |
-| `kernel/hooks` | `kernel/observers` | Done    |
+| Old Path       | New Path           | Status |
+| -------------- | ------------------ | ------ |
+| `auth/hooks`   | `auth/observers`   | Done   |
+| `html/hooks`   | `html/observers`   | Done   |
+| `http/hooks`   | `http/observers`   | Done   |
+| `kernel/hooks` | `kernel/observers` | Done   |
 
 Hooks are lifecycle extension points called by the framework/kernel.
 Observers are passive subscribers implemented by consumers. The migration
@@ -224,11 +225,11 @@ the Core Module.
 
 ## 12. Pending Decisions
 
-| Topic                              | Status                                                              |
-| ---------------------------------- | ------------------------------------------------------------------- |
-| `@comity/http` client adapters     | ✅ RESOLVED — `@comity/http-fetch` (canonical `fetchHttp`) extracted |
-| `@comity/cache` root exports       | ✅ RESOLVED — `DefaultCache`/`serializeCacheKey` canonical in root     |
-| `@comity/storage` root exports     | ✅ RESOLVED — `DefaultStorage` canonical in root                       |
+| Topic                              | Status                                                                         |
+| ---------------------------------- | ------------------------------------------------------------------------------ |
+| `@comity/http` client adapters     | ✅ RESOLVED — `@comity/http-fetch` (canonical `fetchHttp`) extracted           |
+| `@comity/cache` root exports       | ✅ RESOLVED — `DefaultCache`/`serializeCacheKey` canonical in root             |
+| `@comity/storage` root exports     | ✅ RESOLVED — `DefaultStorage` canonical in root                               |
 | `@comity/order` ADR-002 compliance | ✅ RESOLVED — `OrderRepository` persistence-only; domain ops on `Order` entity |
 
 Each pending decision may shift the migration order in §3–§7.
@@ -257,13 +258,13 @@ Normative decision: ADR-008 — Explicit Core Module Composition Exceptions
 The search-shaped retrieval methods were **removed** from domain repository
 contracts. Search now has its own contract surface owned by `@comity/search`.
 
-| Old API                                                        | New API                                                    |
-| -------------------------------------------------------------- | ---------------------------------------------------------- |
-| `ProductRepository.search(criteria, ctx?)`                     | `SearchPort<ProductProjection>` (`@comity/search`)          |
-| `PageRepository.search(criteria, ctx?)`                        | `SearchPort<PageModel>` (`@comity/search`)                  |
-| `BlockRepository.search<T>(criteria, ctx?)`                    | `SearchPort<BlockModel>` (`@comity/search`)                 |
-| `TaxonomyRepository.search(criteria, ctx?)`                    | `SearchPort<TaxonomyModel>` (`@comity/search`)              |
-| Repository failures surfaced as `RepositoryError`              | Search failures surface as `SearchError` (`@comity/search/errors`) |
+| Old API                                           | New API                                                            |
+| ------------------------------------------------- | ------------------------------------------------------------------ |
+| `ProductRepository.search(criteria, ctx?)`        | `SearchPort<ProductProjection>` (`@comity/search`)                 |
+| `PageRepository.search(criteria, ctx?)`           | `SearchPort<PageModel>` (`@comity/search`)                         |
+| `BlockRepository.search<T>(criteria, ctx?)`       | `SearchPort<BlockModel>` (`@comity/search`)                        |
+| `TaxonomyRepository.search(criteria, ctx?)`       | `SearchPort<TaxonomyModel>` (`@comity/search`)                     |
+| Repository failures surfaced as `RepositoryError` | Search failures surface as `SearchError` (`@comity/search/errors`) |
 
 ### New `@comity/search` public API
 
@@ -272,7 +273,7 @@ contracts. Search now has its own contract surface owned by `@comity/search`.
   and MUST NOT import any domain module.
 - `SearchError` (with `SearchErrorReason`) — search-owned error extending
   `BaseError`, compatible with the existing Result conventions. Exported from
-  the root and from the intentional `@comity/search/errors` subpath.
+  the intentional `@comity/search/errors` subpath.
 
 ### Before / after
 
@@ -281,7 +282,9 @@ contracts. Search now has its own contract surface owned by `@comity/search`.
 import type { ProductRepository } from "@comity/catalog";
 
 class MyAdapter implements ProductRepository {
-  async search(criteria: SearchCriteriaModel) { /* ... */ }
+  async search(criteria: SearchCriteriaModel) {
+    /* ... */
+  }
 }
 
 // after — search lives on a SearchPort
@@ -289,7 +292,9 @@ import type { SearchPort } from "@comity/search";
 import type { ProductProjection } from "@comity/catalog";
 
 export class ProductSearchAdapter implements SearchPort<ProductProjection> {
-  async search(criteria: SearchCriteriaModel) { /* ... */ }
+  async search(criteria: SearchCriteriaModel) {
+    /* ... */
+  }
 }
 ```
 
@@ -308,13 +313,13 @@ ctx.services.define(
 
 ### Affected packages
 
-| Package                 | Change                                                        | Release |
-| ----------------------- | ------------------------------------------------------------- | ------- |
-| `@comity/search`        | Added `SearchPort<TProjection>` + `SearchError`                | minor   |
-| `@comity/catalog`       | Removed `ProductRepository.search()`; dropped `@comity/search` | major   |
-| `@comity/content`       | Removed `PageRepository.search()` / `BlockRepository.search()` | major   |
-| `@comity/taxonomy`      | Removed `TaxonomyRepository.search()`                          | major   |
-| `@comity/storefront`    | Composer consumes `SearchPort<ProductProjection>`              | major   |
+| Package              | Change                                                         | Release |
+| -------------------- | -------------------------------------------------------------- | ------- |
+| `@comity/search`     | Added `SearchPort<TProjection>` + `SearchError`                | minor   |
+| `@comity/catalog`    | Removed `ProductRepository.search()`; dropped `@comity/search` | major   |
+| `@comity/content`    | Removed `PageRepository.search()` / `BlockRepository.search()` | major   |
+| `@comity/taxonomy`   | Removed `TaxonomyRepository.search()`                          | major   |
+| `@comity/storefront` | Composer consumes `SearchPort<ProductProjection>`              | major   |
 
 `@comity/storefront → @comity/search` remains the approved capability
 dependency (ADR-008 closed register, unchanged).

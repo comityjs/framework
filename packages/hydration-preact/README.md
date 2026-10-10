@@ -33,7 +33,6 @@ This package does NOT:
 - `IslandComponentRegistry`
 - `createHydrationRuntime`
 
-
 No exhaustive reference; see docs for constraints.
 ---
 

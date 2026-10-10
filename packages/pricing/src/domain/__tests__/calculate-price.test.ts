@@ -103,9 +103,7 @@ describe("calculatePrice", () => {
     });
 
     it("should add an absolute amount with an add operation", () => {
-      expectPrice(calculatePrice(money(10000n), [moneyAdjustment(500n, "add")]), 10500n, [
-        "money",
-      ]);
+      expectPrice(calculatePrice(money(10000n), [moneyAdjustment(500n, "add")]), 10500n, ["money"]);
     });
 
     it("should subtract an absolute amount with a subtract operation", () => {
@@ -207,9 +205,7 @@ describe("calculatePrice", () => {
     });
 
     it("should reject a percentage modifier with a zero rate", () => {
-      const error = expectFailure(
-        calculatePrice(money(10000n), [percentageAdjustment(0n, "add")])
-      );
+      const error = expectFailure(calculatePrice(money(10000n), [percentageAdjustment(0n, "add")]));
 
       expect(error.code).toBe("pricing:invalid_modifier");
     });
@@ -231,9 +227,7 @@ describe("calculatePrice", () => {
 
   describe("negative totals", () => {
     it("should reject a money subtraction that exceeds the base with calculation_failed", () => {
-      const error = expectFailure(
-        calculatePrice(money(100n), [moneyAdjustment(200n, "subtract")])
-      );
+      const error = expectFailure(calculatePrice(money(100n), [moneyAdjustment(200n, "subtract")]));
 
       expect(error.code).toBe("pricing:calculation_failed");
     });

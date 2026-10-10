@@ -32,7 +32,9 @@ describe("OrderError", () => {
     const error = new OrderError("shipping_destination_immutable");
 
     expect(error.code).toBe("order:shipping_destination_immutable");
-    expect(error.message).toBe("Shipping destination cannot be changed in the current order status");
+    expect(error.message).toBe(
+      "Shipping destination cannot be changed in the current order status"
+    );
     expect(error.meta.reason).toBe("shipping_destination_immutable");
     expect(error.meta.httpStatus).toBe(409);
   });
@@ -44,6 +46,15 @@ describe("OrderError", () => {
     expect(error.message).toBe("Order must contain exactly one shipping destination");
     expect(error.meta.reason).toBe("ambiguous_shipping_destination");
     expect(error.meta.httpStatus).toBe(409);
+  });
+
+  it("creates an error with the duplicate_item_id reason", () => {
+    const error = new OrderError("duplicate_item_id");
+
+    expect(error.code).toBe("order:duplicate_item_id");
+    expect(error.message).toBe("Duplicate order item identifier");
+    expect(error.meta.reason).toBe("duplicate_item_id");
+    expect(error.meta.httpStatus).toBe(400);
   });
 
   it("merges contextual details", () => {

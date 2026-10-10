@@ -7,6 +7,7 @@
 Comity uses a clear pattern: Core Modules define contracts, Adapters implement infrastructure.
 
 An address can be persisted through different technologies:
+
 - SQL database
 - Document database
 - External API
@@ -36,11 +37,13 @@ Adapters implement this contract.
 ## Consequences
 
 **Positive:**
+
 - Clear ownership
 - Repository is replaceable
 - No coupling with persistence technology
 - Consistent with other Comity modules
 
 **Negative:**
+
 - Consumer-specific queries require separate interfaces
 - May result in multiple repository interfaces per deployment

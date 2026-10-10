@@ -5,7 +5,8 @@ import { BaseError } from "@comity/primitives/errors";
 /**
  * Reasons for hydration errors.
  */
-export type HydrationErrorReason = "not_registered" | "invalid_component" | "timeout" | "no_dom" | "invalid_contract";
+export type HydrationErrorReason =
+  "not_registered" | "invalid_component" | "timeout" | "no_dom" | "invalid_contract";
 
 /**
  * Metadata for hydration errors

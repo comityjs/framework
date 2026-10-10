@@ -53,10 +53,7 @@ describe("RevokeSession", () => {
       onSessionRevoked: vi.fn(),
       onSessionRefreshed: vi.fn(),
     };
-    useCase = new RevokeSession(
-      repository as unknown as AuthSessionRepository,
-      emitter
-    );
+    useCase = new RevokeSession(repository as unknown as AuthSessionRepository, emitter);
   });
 
   it("should revoke a session", async () => {

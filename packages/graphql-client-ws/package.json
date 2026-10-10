@@ -70,8 +70,8 @@
     "@comity/graphql-client": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^24.13.4",
-    "graphql-ws": "^6.2.1",
+    "@types/node": "^24.19.1",
+    "graphql-ws": "^6.3.0",
     "typescript": "^5.9.3"
   }
 }

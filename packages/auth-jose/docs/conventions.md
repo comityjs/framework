@@ -13,4 +13,3 @@
 
 - keep the surface limited to `JoseAuthTokenService`
 - expose setup hooks only when needed for composition
-

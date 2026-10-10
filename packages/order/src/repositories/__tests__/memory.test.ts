@@ -53,7 +53,11 @@ const product: OrderItem = {
   price: price(10000n),
 };
 
-function createOrder(status: OrderStatus = "draft", id?: OrderId, channel: ChannelId = channelWeb): Order {
+function createOrder(
+  status: OrderStatus = "draft",
+  id?: OrderId,
+  channel: ChannelId = channelWeb
+): Order {
   const orderId = id ?? createId(`order-${Math.random().toString(36).slice(2, 12)}`);
   return new Order(
     {
@@ -85,10 +89,10 @@ describe("MemoryOrderRepository", () => {
     const order = createOrder("draft");
     await repository.save(order, { tenant: tenantA });
 
-    const result = await repository.getById(order.id!, { tenant: tenantA });
+    const result = await repository.getById(order.id, { tenant: tenantA });
 
     expect(result.success).toBe(true);
-    expect(result.value?.id.toString()).toBe(order.id!.toString());
+    expect(result.value?.id.toString()).toBe(order.id.toString());
     expect(result.value?.status).toBe("draft");
   });
 
@@ -154,8 +158,8 @@ describe("MemoryOrderRepository", () => {
       const order = createOrder("draft", createId("order-shared"));
       await repository.save(order, { tenant: tenantA });
 
-      const resultA = await repository.getById(order.id!, { tenant: tenantA });
-      const resultB = await repository.getById(order.id!, { tenant: tenantB });
+      const resultA = await repository.getById(order.id, { tenant: tenantA });
+      const resultB = await repository.getById(order.id, { tenant: tenantB });
 
       expect(resultA.success).toBe(true);
       expect(resultA.value).not.toBeNull();
@@ -237,15 +241,19 @@ describe("MemoryOrderRepository", () => {
       const order = createOrder("draft", createId("order-channel"), channelPos);
       await repository.save(order, { tenant: tenantA });
 
-      const result = await repository.getById(order.id!, { tenant: tenantA });
+      const result = await repository.getById(order.id, { tenant: tenantA });
 
       expect(result.success).toBe(true);
       expect(result.value?.channelId.value).toBe("pos");
     });
 
     it("search returns orders with channelId", async () => {
-      await repository.save(createOrder("draft", createId("order-1"), channelWeb), { tenant: tenantA });
-      await repository.save(createOrder("pending", createId("order-2"), channelPos), { tenant: tenantA });
+      await repository.save(createOrder("draft", createId("order-1"), channelWeb), {
+        tenant: tenantA,
+      });
+      await repository.save(createOrder("pending", createId("order-2"), channelPos), {
+        tenant: tenantA,
+      });
 
       const result = await repository.search(undefined, { tenant: tenantA });
 
@@ -260,7 +268,7 @@ describe("MemoryOrderRepository", () => {
       // The order entity doesn't use meta.channel for channelId - they are independent
       await repository.save(order, { tenant: tenantA });
 
-      const result = await repository.getById(order.id!, { tenant: tenantA });
+      const result = await repository.getById(order.id, { tenant: tenantA });
 
       expect(result.success).toBe(true);
       expect(result.value?.channelId.value).toBe("web");

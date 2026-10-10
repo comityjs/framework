@@ -36,6 +36,7 @@ AddressSnapshot (type)
 - Controlled mutations
 
 **AddressSnapshot is:**
+
 - A type in the contracts module (not a standalone value object class)
 - Created via `address.snapshot()`
 - Immutable after creation

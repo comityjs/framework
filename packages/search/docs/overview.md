@@ -13,4 +13,3 @@
 - indexing implementations
 - query engines
 - persistence adapters
-

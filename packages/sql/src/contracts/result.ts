@@ -21,6 +21,18 @@ export type SqlResult<T> = Readonly<{
 }>;
 
 /**
+ * Result set for an atomic batch.
+ *
+ * @remarks
+ * Intentionally non-generic. A batch may contain heterogeneous statements, so a
+ * single row type parameter would falsely imply a homogeneous row shape.
+ *
+ * Positionally aligned with the submitted statements:
+ * `results.length === queries.length` and `results[i]` corresponds to `queries[i]`.
+ */
+export type SqlBatchResult = readonly SqlResult<unknown>[];
+
+/**
  * Successful operation envelope.
  *
  * @typeParam T - Value produced by the operation.

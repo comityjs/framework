@@ -28,5 +28,7 @@ export interface SearchPort<TProjection> {
    * or a `SearchError`. Raw exceptions MUST NOT leak across this
    * boundary; failures are surfaced as `SearchError` instances.
    */
-  search(criteria: SearchCriteriaModel): Promise<Result<SearchResultModel<TProjection>, SearchError>>;
+  search(
+    criteria: SearchCriteriaModel
+  ): Promise<Result<SearchResultModel<TProjection>, SearchError>>;
 }

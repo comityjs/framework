@@ -46,11 +46,7 @@ describe("RefreshSession", () => {
       onSessionRevoked: vi.fn(),
       onSessionRefreshed: vi.fn(),
     };
-    useCase = new RefreshSession(
-      repository as unknown as AuthSessionRepository,
-      guard,
-      emitter
-    );
+    useCase = new RefreshSession(repository as unknown as AuthSessionRepository, guard, emitter);
   });
 
   it("should refresh a session", async () => {

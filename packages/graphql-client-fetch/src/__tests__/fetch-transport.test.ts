@@ -7,8 +7,8 @@ describe("FetchGraphqlTransport", () => {
   });
 
   it("executes a query with POST and JSON content-type", async () => {
-    const fetchMock = vi.fn<typeof fetch>(async () =>
-      new Response(JSON.stringify({ data: { viewer: { id: "1" } } }), { status: 200 })
+    const fetchMock = vi.fn<typeof fetch>(
+      async () => new Response(JSON.stringify({ data: { viewer: { id: "1" } } }), { status: 200 })
     );
 
     vi.stubGlobal("fetch", fetchMock);
@@ -37,8 +37,8 @@ describe("FetchGraphqlTransport", () => {
   });
 
   it("defaults to the global fetch function", async () => {
-    const fetchMock = vi.fn<typeof fetch>(async () =>
-      new Response(JSON.stringify({ data: { ok: true } }), { status: 200 })
+    const fetchMock = vi.fn<typeof fetch>(
+      async () => new Response(JSON.stringify({ data: { ok: true } }), { status: 200 })
     );
 
     vi.stubGlobal("fetch", fetchMock);
@@ -51,8 +51,8 @@ describe("FetchGraphqlTransport", () => {
   });
 
   it("merges configured headers with request headers", async () => {
-    const fetchMock = vi.fn<typeof fetch>(async () =>
-      new Response(JSON.stringify({ data: { ok: true } }), { status: 200 })
+    const fetchMock = vi.fn<typeof fetch>(
+      async () => new Response(JSON.stringify({ data: { ok: true } }), { status: 200 })
     );
 
     vi.stubGlobal("fetch", fetchMock);
@@ -108,8 +108,8 @@ describe("FetchGraphqlTransport", () => {
   });
 
   it("omits data when absent from the response", async () => {
-    const fetchMock = vi.fn<typeof fetch>(async () =>
-      new Response(JSON.stringify({ errors: [{ message: "oops" }] }), { status: 200 })
+    const fetchMock = vi.fn<typeof fetch>(
+      async () => new Response(JSON.stringify({ errors: [{ message: "oops" }] }), { status: 200 })
     );
 
     vi.stubGlobal("fetch", fetchMock);
@@ -126,15 +126,16 @@ describe("FetchGraphqlTransport", () => {
   it("normalizes data, errors, extensions, headers and status into the response", async () => {
     const headers = new Headers({ "x-request-id": "abc" });
 
-    const fetchMock = vi.fn<typeof fetch>(async () =>
-      new Response(
-        JSON.stringify({
-          data: { ok: true },
-          errors: [{ message: "oops" }],
-          extensions: { tracing: { version: 1 } },
-        }),
-        { status: 200, headers }
-      )
+    const fetchMock = vi.fn<typeof fetch>(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: { ok: true },
+            errors: [{ message: "oops" }],
+            extensions: { tracing: { version: 1 } },
+          }),
+          { status: 200, headers }
+        )
     );
 
     vi.stubGlobal("fetch", fetchMock);
@@ -151,8 +152,8 @@ describe("FetchGraphqlTransport", () => {
   });
 
   it("supports injection of a custom fetch function", async () => {
-    const fetchMock = vi.fn<typeof fetch>(async () =>
-      new Response(JSON.stringify({ data: { ok: true } }), { status: 200 })
+    const fetchMock = vi.fn<typeof fetch>(
+      async () => new Response(JSON.stringify({ data: { ok: true } }), { status: 200 })
     );
 
     const transport = new FetchGraphqlTransport({
@@ -166,8 +167,8 @@ describe("FetchGraphqlTransport", () => {
   });
 
   it("omits extensions when absent from the response", async () => {
-    const fetchMock = vi.fn<typeof fetch>(async () =>
-      new Response(JSON.stringify({ data: { ok: true } }), { status: 200 })
+    const fetchMock = vi.fn<typeof fetch>(
+      async () => new Response(JSON.stringify({ data: { ok: true } }), { status: 200 })
     );
 
     vi.stubGlobal("fetch", fetchMock);

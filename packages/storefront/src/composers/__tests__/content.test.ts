@@ -63,9 +63,11 @@ describe("DefaultContentPageComposer", () => {
     const repository = { getById: vi.fn().mockResolvedValue(success(page)) };
     const enrichers: ContentPageEnricher[] = [
       {
-        enrich: vi.fn().mockImplementation(async (composed) =>
-          success({ ...composed, breadcrumbs: [{ label: "Home", url: "/" }] })
-        ),
+        enrich: vi
+          .fn()
+          .mockImplementation(async (composed) =>
+            success({ ...composed, breadcrumbs: [{ label: "Home", url: "/" }] })
+          ),
       },
     ];
     const composer = new DefaultContentPageComposer(repository as any, enrichers);

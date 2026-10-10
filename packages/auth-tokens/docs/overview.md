@@ -14,4 +14,3 @@ packages.
 - auth session orchestration
 - HTTP transport integration
 - storage adapters
-

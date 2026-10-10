@@ -14,4 +14,3 @@ the Comity cache module.
 - cache domain contracts
 - application behavior
 - external storage policies
-

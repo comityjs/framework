@@ -8,4 +8,3 @@
 - keep store wiring inside `setup/`
 - do not expose a domain-specific public error contract
 - keep the package replaceable
-

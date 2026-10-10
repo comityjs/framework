@@ -100,7 +100,14 @@ export interface OrderProductSnapshot {
  * identity, lifecycle, or repository.
  */
 export interface OrderItem {
-  /** Unique item identifier within the order. */
+  /**
+   * Stable technical key for one occurrence within the order.
+   *
+   * The key identifies the occurrence, not the product: it carries no
+   * commercial equivalence meaning and must never be derived by comparing
+   * product data. Occurrence keys are unique within the order, preserved
+   * across retention/updates, and never reassigned after removal.
+   */
   readonly id: string;
 
   /** Associated product snapshot. */

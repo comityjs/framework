@@ -63,9 +63,7 @@ describe("isSuccess", () => {
   });
 
   it("should return false for failure results", () => {
-    expect(isSuccess({ success: false, error: new Error("test") as any })).toBe(
-      false,
-    );
+    expect(isSuccess({ success: false, error: new Error("test") as any })).toBe(false);
   });
 
   it("should narrow types correctly", () => {

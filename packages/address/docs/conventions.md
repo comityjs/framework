@@ -15,6 +15,7 @@ Consumers that require historical consistency must use `AddressSnapshot` via `ad
 ## Value object API
 
 `AddressId` and `AddressLine` expose:
+
 - `equals(other)` for value comparison
 - `toString()` for string representation
 

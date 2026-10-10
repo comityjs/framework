@@ -1,7 +1,11 @@
 import type { ModuleMeta } from "@comity/composition/setup";
 import { success } from "@comity/primitives/result";
 
-import type { StorefrontModuleContext, StorefrontModuleOptions, StorefrontOptions } from "./types.js";
+import type {
+  StorefrontModuleContext,
+  StorefrontModuleOptions,
+  StorefrontOptions,
+} from "./types.js";
 
 import { DefaultCategoryPageComposer } from "../composers/category.js";
 import { DefaultContentPageComposer } from "../composers/content.js";

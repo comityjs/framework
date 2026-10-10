@@ -31,7 +31,6 @@ This package does NOT:
 
 - `ZodValidator` — validator implementing `Validator<T>` from a `ZodType<T>` schema
 
-
 No exhaustive reference; see docs for constraints.
 ---
 

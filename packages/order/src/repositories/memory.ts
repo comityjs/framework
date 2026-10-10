@@ -30,7 +30,10 @@ export class MemoryOrderRepository implements OrderRepository {
   /**
    * @inheritdoc
    */
-  async getById(id: OrderId, ctx: OrderRepositoryContext): Promise<Result<Order | null, RepositoryError>> {
+  async getById(
+    id: OrderId,
+    ctx: OrderRepositoryContext
+  ): Promise<Result<Order | null, RepositoryError>> {
     const order = this.#orders.get(this.#makeKey(ctx.tenant, id));
 
     if (!order) {
@@ -44,7 +47,7 @@ export class MemoryOrderRepository implements OrderRepository {
    * @inheritdoc
    */
   async save(order: Order, ctx: OrderRepositoryContext): Promise<Result<void, RepositoryError>> {
-    this.#orders.set(this.#makeKey(ctx.tenant, order.id!), order);
+    this.#orders.set(this.#makeKey(ctx.tenant, order.id), order);
 
     return success(undefined);
   }
@@ -69,7 +72,7 @@ export class MemoryOrderRepository implements OrderRepository {
     const limit = criteria?.limit ?? filtered.length;
     const offset = criteria?.offset ?? 0;
     const items = filtered.slice(offset, offset + limit).map((o): OrderState => ({
-      id: o.id!,
+      id: o.id,
       status: o.status,
       createdAt: o.createdAt,
       updatedAt: o.updatedAt,

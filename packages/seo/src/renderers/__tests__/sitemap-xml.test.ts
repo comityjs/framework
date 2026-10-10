@@ -164,7 +164,7 @@ describe("generateSitemapLines", () => {
     const urls: readonly SitemapUrl[] = [{ loc: 'https://example.com/page"test' }];
     const result = renderLines(urls);
 
-    expect(result).toContain('<loc>https://example.com/page&quot;test</loc>');
+    expect(result).toContain("<loc>https://example.com/page&quot;test</loc>");
   });
 
   it("escapes single quote in loc", () => {
