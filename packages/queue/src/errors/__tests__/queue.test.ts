@@ -109,11 +109,7 @@ describe("QueueError", () => {
       details: { operation: "execute" },
     });
 
-    const reasons = [
-      rejected.meta.reason,
-      indeterminate.meta.reason,
-      executionFailed.meta.reason,
-    ];
+    const reasons = [rejected.meta.reason, indeterminate.meta.reason, executionFailed.meta.reason];
 
     expect(new Set(reasons).size).toBe(3);
     expect(rejected.code).toBe("queue:enqueue_rejected");

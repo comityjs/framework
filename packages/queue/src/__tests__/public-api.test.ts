@@ -60,8 +60,6 @@ describe("@comity/queue public API", () => {
   it("should map the errors subpath for legacy TypeScript resolution", () => {
     const manifest = readManifest();
 
-    expect(manifest.typesVersions?.["*"]?.["errors"]).toEqual([
-      "./dist/types/errors/index.d.ts",
-    ]);
+    expect(manifest.typesVersions?.["*"]?.["errors"]).toEqual(["./dist/types/errors/index.d.ts"]);
   });
 });

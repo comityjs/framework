@@ -1,7 +1,5 @@
 import type { Result } from "@comity/primitives/result";
-
 import type { QueueError } from "../errors/queue.js";
-
 import type { QueueName } from "./queue.js";
 
 /**

@@ -134,10 +134,10 @@ its reason union and metadata type from `./errors`.
 
 `@comity/queue` declares two subpaths (ADR-028 D7):
 
-| Subpath | Contents |
-| --- | --- |
+| Subpath                       | Contents                                                                                                                                                                               |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `@comity/queue` (root barrel) | The nine contract exports, as types: `QueueName`, `QueueJobId`, `QueueJobData`, `QueueAcceptedJob`, `QueueJob`, `QueueJobHandler`, `QueueProducer`, `QueueWorker`, `QueueWorkerConfig` |
-| `@comity/queue/errors` | `QueueError` (value), `QueueErrorReason` (type), `QueueErrorMeta` (type) |
+| `@comity/queue/errors`        | `QueueError` (value), `QueueErrorReason` (type), `QueueErrorMeta` (type)                                                                                                               |
 
 The root barrel exports no runtime value in the first version: the package
 contains no class, factory, or implementation. Contracts are exported with
@@ -375,15 +375,15 @@ As in `SqlErrorMeta`, `details` is non-canonical: application logic branches on
 
 ### Reason semantics
 
-| Reason | Raised when | Caller action |
-| --- | --- | --- |
-| `invalid_configuration` | The adapter cannot operate with the configuration it was given | Correct configuration; do not retry unchanged |
-| `invalid_request` | The request is malformed — for example an empty queue name, or a payload the technology cannot serialize | Correct the request; do not retry unchanged |
-| `unknown_queue` | The adapter does not know the requested queue | Register or correct the queue name |
-| `enqueue_rejected` | The technology refused the publication; the job is not queued | Safe to treat as not queued; retry at the caller's discretion |
-| `enqueue_outcome_unknown` | Acceptance cannot be determined — for example a timeout or a lost connection during publication | Treat as **possibly queued**; do not assume non-publication |
-| `handler_failed` | A handler threw or returned a failure `Result` | Reported to the technology as a failed attempt |
-| `lifecycle_failed` | `start()` or `stop()` was valid for the current state but could not complete | Inspect `details.operation`; investigate or retry as appropriate |
+| Reason                    | Raised when                                                                                                        | Caller action                                                       |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| `invalid_configuration`   | The adapter cannot operate with the configuration it was given                                                     | Correct configuration; do not retry unchanged                       |
+| `invalid_request`         | The request is malformed — for example an empty queue name, or a payload the technology cannot serialize           | Correct the request; do not retry unchanged                         |
+| `unknown_queue`           | The adapter does not know the requested queue                                                                      | Register or correct the queue name                                  |
+| `enqueue_rejected`        | The technology refused the publication; the job is not queued                                                      | Safe to treat as not queued; retry at the caller's discretion       |
+| `enqueue_outcome_unknown` | Acceptance cannot be determined — for example a timeout or a lost connection during publication                    | Treat as **possibly queued**; do not assume non-publication         |
+| `handler_failed`          | A handler threw or returned a failure `Result`                                                                     | Reported to the technology as a failed attempt                      |
+| `lifecycle_failed`        | `start()` or `stop()` was valid for the current state but could not complete                                       | Inspect `details.operation`; investigate or retry as appropriate    |
 | `invalid_lifecycle_state` | The requested operation is not valid in the worker's current state — `start()` on a running or on a stopped worker | Do not call `start()` twice, and create a new worker after `stop()` |
 
 Every reason above has a defined producer in the first version: it is either
@@ -402,11 +402,11 @@ adapter exposes must carry — never a technology-native error.
 
 ### Publication outcomes are not interchangeable
 
-| Situation | Result |
-| --- | --- |
-| The technology accepted the job | `success` with a `QueueAcceptedJob` |
-| The technology refused the job | failure with `enqueue_rejected` |
-| Acceptance is indeterminate | failure with `enqueue_outcome_unknown` |
+| Situation                             | Result                                                                     |
+| ------------------------------------- | -------------------------------------------------------------------------- |
+| The technology accepted the job       | `success` with a `QueueAcceptedJob`                                        |
+| The technology refused the job        | failure with `enqueue_rejected`                                            |
+| Acceptance is indeterminate           | failure with `enqueue_outcome_unknown`                                     |
 | The job was accepted and later failed | reported during execution as `handler_failed`; never a publication failure |
 
 A timeout or a lost connection during publication MUST NOT be reported as
@@ -425,7 +425,7 @@ cancellation.
 2. Every core operation reports failure through `Result`: `enqueue`, `start()`, and
    `stop()` resolve with a `QueueError` failure and never reject. No core
    operation in the first version throws.
-3. This includes lifecycle misuse. `invalid_lifecycle_state` is *returned*, not
+3. This includes lifecycle misuse. `invalid_lifecycle_state` is _returned_, not
    thrown, because `start()` and `stop()` are asynchronous operations whose single
    failure channel is their `Result`. The Kernel's reason is reused; its surfacing
    is not. The Kernel throws from synchronous accessors, while
@@ -450,14 +450,14 @@ created ──start()──► running ──stop()──► stopped   (terminal
    └── stop() ──► stopped                          (terminal, idempotent)
 ```
 
-| From | Operation | Outcome |
-| --- | --- | --- |
+| From      | Operation | Outcome                                                                                                                  |
+| --------- | --------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `created` | `start()` | Attempts to begin consumption; `success` moves to `running`, otherwise failure `lifecycle_failed` (`operation: "start"`) |
-| `created` | `stop()` | Idempotent; `success`, moves to `stopped`; nothing was consumed |
-| `running` | `start()` | failure `invalid_lifecycle_state` |
-| `running` | `stop()` | Stops accepting new work, drains in-flight handlers, `success` once they settle, moves to `stopped` |
-| `stopped` | `stop()` | Idempotent; `success` |
-| `stopped` | `start()` | failure `invalid_lifecycle_state` |
+| `created` | `stop()`  | Idempotent; `success`, moves to `stopped`; nothing was consumed                                                          |
+| `running` | `start()` | failure `invalid_lifecycle_state`                                                                                        |
+| `running` | `stop()`  | Stops accepting new work, drains in-flight handlers, `success` once they settle, moves to `stopped`                      |
+| `stopped` | `stop()`  | Idempotent; `success`                                                                                                    |
+| `stopped` | `start()` | failure `invalid_lifecycle_state`                                                                                        |
 
 ### Restart
 
@@ -468,7 +468,7 @@ worker through the adapter's factory to consume again.
 
 This is a deliberate limit of the first version, not a prohibition on the
 capability. The state model does not prevent an adapter from supporting restart;
-it prevents *this contract* from promising it, and it prevents an adapter from
+it prevents _this contract_ from promising it, and it prevents an adapter from
 silently re-opening a stopped worker through `start()`, which would contradict
 the table above. An adapter that can restart exposes it as documented,
 non-portable behaviour. Promoting restart to a portable guarantee requires a
@@ -546,8 +546,8 @@ behaviour on its own factory result, and the Application decides whether to call
 it.
 
 `stop()` and resource disposal are separate concerns and must not be conflated.
-`stop()` governs *consumption*: it stops the worker accepting new work and waits
-for in-flight handlers. It does not govern *resources*: stopping every worker does
+`stop()` governs _consumption_: it stops the worker accepting new work and waits
+for in-flight handlers. It does not govern _resources_: stopping every worker does
 not necessarily release the technology's connections, and releasing connections
 does not necessarily stop workers. An adapter documents both, and neither implies
 the other.
@@ -555,8 +555,8 @@ the other.
 ## Portability boundaries
 
 The contract is deliberately smaller than any single queue technology. What
-follows separates what the contract *promises* from what an adapter may
-*document*.
+follows separates what the contract _promises_ from what an adapter may
+_document_.
 
 ### Portable — promised by `@comity/queue`
 
@@ -574,21 +574,21 @@ follows separates what the contract *promises* from what an adapter may
 
 ### Adapter-documented — not promised by the contract
 
-| Concern | Depends on the technology |
-| --- | --- |
-| Retry count, retry delay, and backoff shape | Yes |
-| Delayed execution | Yes |
-| Deduplication or singleton behaviour | Yes |
-| Priority | Yes |
-| Batching | Yes |
-| Dead-letter routing | Yes |
-| Scheduling and recurrence | Yes |
-| Claim, lease, heartbeat, and visibility semantics | Yes |
-| Concurrency within a worker | Yes |
-| Shutdown bound and forced shutdown | Yes |
-| Persistence and durability of an accepted job | Yes |
-| Payload size limits and serializer restrictions | Yes |
-| Native identifier format | Yes |
+| Concern                                           | Depends on the technology |
+| ------------------------------------------------- | ------------------------- |
+| Retry count, retry delay, and backoff shape       | Yes                       |
+| Delayed execution                                 | Yes                       |
+| Deduplication or singleton behaviour              | Yes                       |
+| Priority                                          | Yes                       |
+| Batching                                          | Yes                       |
+| Dead-letter routing                               | Yes                       |
+| Scheduling and recurrence                         | Yes                       |
+| Claim, lease, heartbeat, and visibility semantics | Yes                       |
+| Concurrency within a worker                       | Yes                       |
+| Shutdown bound and forced shutdown                | Yes                       |
+| Persistence and durability of an accepted job     | Yes                       |
+| Payload size limits and serializer restrictions   | Yes                       |
+| Native identifier format                          | Yes                       |
 
 ### Technology snapshot
 
@@ -596,23 +596,23 @@ Recorded for planning. This is external evidence from vendor documentation;
 it is **not** repository evidence, **not** execution-tested, and **not** a
 contract guarantee. `~` marks a partial or indirect capability.
 
-| Concern | pg-boss | BullMQ | Bee-Queue | imqueue |
-| --- | --- | --- | --- | --- |
-| Model | Job queue on PostgreSQL | Job queue on Redis | Job queue on Redis | Message-queue RPC |
-| Publish | `send(name, data, options)`; may resolve a null id under some policies | `queue.add(name, data, opts)` | `queue.createJob(data).save()` | `send(toQueue, message, delay, errorHandler)` |
-| Handler registration | `work(name, options, handler)` | `new Worker(name, processor, opts)` | `queue.process(concurrency?, handler)` | service methods; queue name is the service class name |
-| Job identity | uuid by default; caller may supply one | auto-increment counter or custom `jobId` | auto id; `job.setId(id)` | message id |
-| Delayed execution | `startAfter` | `delay` | `job.delayUntil()` | `send(..., delay, ...)` |
-| Retries | `retryLimit`, `retryDelay`, `retryBackoff` | `attempts`, `backoff` | `job.retries()`, `job.backoff()` | none documented |
-| Deduplication | queue policies plus `singletonKey` | custom `jobId`; ids of removed jobs are reusable | `setId()` | none documented |
-| Priority | yes | yes | documented non-feature | no |
-| Batching | yes (`batchSize`, `perJobResults`) | ~ | no | no |
-| Dead letter | `deadLetter` per queue | ~ | no | no |
-| Scheduling / recurrence | yes | yes | documented non-feature | no |
-| Graceful shutdown | `stop()` waits by default; `offWork(..., { wait })` | `worker.close()`; no self-timeout | `close(timeout?)` | `stop()`; `destroy()` for teardown |
-| Documented delivery | at-least-once | retries and stalled-job recovery; no exactly-once claim found | at-least-once | at-least-once |
-| Runtime requirement | PostgreSQL | Redis | Redis 3.2+ | Redis; Node.js ≥ 22.12 |
-| Licence | MIT | MIT | MIT | GPL-3.0-only or commercial |
+| Concern                 | pg-boss                                                                | BullMQ                                                        | Bee-Queue                              | imqueue                                               |
+| ----------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------- | -------------------------------------- | ----------------------------------------------------- |
+| Model                   | Job queue on PostgreSQL                                                | Job queue on Redis                                            | Job queue on Redis                     | Message-queue RPC                                     |
+| Publish                 | `send(name, data, options)`; may resolve a null id under some policies | `queue.add(name, data, opts)`                                 | `queue.createJob(data).save()`         | `send(toQueue, message, delay, errorHandler)`         |
+| Handler registration    | `work(name, options, handler)`                                         | `new Worker(name, processor, opts)`                           | `queue.process(concurrency?, handler)` | service methods; queue name is the service class name |
+| Job identity            | uuid by default; caller may supply one                                 | auto-increment counter or custom `jobId`                      | auto id; `job.setId(id)`               | message id                                            |
+| Delayed execution       | `startAfter`                                                           | `delay`                                                       | `job.delayUntil()`                     | `send(..., delay, ...)`                               |
+| Retries                 | `retryLimit`, `retryDelay`, `retryBackoff`                             | `attempts`, `backoff`                                         | `job.retries()`, `job.backoff()`       | none documented                                       |
+| Deduplication           | queue policies plus `singletonKey`                                     | custom `jobId`; ids of removed jobs are reusable              | `setId()`                              | none documented                                       |
+| Priority                | yes                                                                    | yes                                                           | documented non-feature                 | no                                                    |
+| Batching                | yes (`batchSize`, `perJobResults`)                                     | ~                                                             | no                                     | no                                                    |
+| Dead letter             | `deadLetter` per queue                                                 | ~                                                             | no                                     | no                                                    |
+| Scheduling / recurrence | yes                                                                    | yes                                                           | documented non-feature                 | no                                                    |
+| Graceful shutdown       | `stop()` waits by default; `offWork(..., { wait })`                    | `worker.close()`; no self-timeout                             | `close(timeout?)`                      | `stop()`; `destroy()` for teardown                    |
+| Documented delivery     | at-least-once                                                          | retries and stalled-job recovery; no exactly-once claim found | at-least-once                          | at-least-once                                         |
+| Runtime requirement     | PostgreSQL                                                             | Redis                                                         | Redis 3.2+                             | Redis; Node.js ≥ 22.12                                |
+| Licence                 | MIT                                                                    | MIT                                                           | MIT                                    | GPL-3.0-only or commercial                            |
 
 Additional verified constraints an adapter must handle:
 
@@ -936,11 +936,11 @@ portable disposal operation (D9); and restart of a stopped worker producing
 
 Still open, and not blocking implementation:
 
-| Item | Status |
-| --- | --- |
-| Naming review of the `Queue*` type prefix and of the `enqueue` verb | Open; `publish` was rejected as conflated with event publication (ADR-016) |
-| Whether a delivered job should expose attempt metadata | Deferred; not portable across all candidate technologies |
-| Whether a worker should expose observable lifecycle state | Deferred; the `Result` from `start()`/`stop()` is the first version's signal |
+| Item                                                                                | Status                                                                                                          |
+| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Naming review of the `Queue*` type prefix and of the `enqueue` verb                 | Open; `publish` was rejected as conflated with event publication (ADR-016)                                      |
+| Whether a delivered job should expose attempt metadata                              | Deferred; not portable across all candidate technologies                                                        |
+| Whether a worker should expose observable lifecycle state                           | Deferred; the `Result` from `start()`/`stop()` is the first version's signal                                    |
 | The dependency-rule discrepancy for Core Modules depending on `@comity/composition` | Recorded in ADR-028 D2; owned by comity-development; does not affect this design, which uses no such dependency |
 
 ## References
