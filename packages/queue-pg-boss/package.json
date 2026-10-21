@@ -1,0 +1,76 @@
+{
+  "name": "@comity/queue-pg-boss",
+  "version": "0.9.0",
+  "description": "pg-boss technology adapter for @comity/queue contracts",
+  "type": "module",
+  "private": false,
+  "author": "Filippo Bovo <hello@filippobovo.com>",
+  "license": "MIT",
+  "comity": {
+    "layer": "technology-adapter",
+    "implements": "@comity/queue"
+  },
+  "homepage": "https://github.com/comityjs/framework#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/comityjs/framework.git",
+    "directory": "packages/queue-pg-boss"
+  },
+  "bugs": {
+    "url": "https://github.com/comityjs/framework/issues"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "keywords": [
+    "comity",
+    "adapter",
+    "pg-boss",
+    "postgres",
+    "queue"
+  ],
+  "scripts": {
+    "build": "node ../../scripts/build.mjs",
+    "prepublishOnly": "node ../../scripts/build.mjs",
+    "dev": "node ../../scripts/build.mjs --watch",
+    "test": "vitest run",
+    "type-check": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint --ext .ts src"
+  },
+  "files": [
+    "./dist",
+    "!./dist/**/*.map"
+  ],
+  "module": "./dist/esm/index.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/esm/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {}
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  },
+  "sideEffects": false,
+  "peerDependencies": {
+    "@comity/queue": "workspace:*",
+    "pg-boss": "^12.0.0"
+  },
+  "dependencies": {
+    "@comity/primitives": "workspace:*",
+    "@comity/queue": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.1",
+    "pg-boss": "^12.38.0",
+    "typescript": "^5.9.3"
+  }
+}
