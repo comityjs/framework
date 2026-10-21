@@ -1,6 +1,6 @@
 {
   "name": "@comity/queue",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "Job queue capability contract for Comity framework.",
   "type": "module",
   "private": false,
