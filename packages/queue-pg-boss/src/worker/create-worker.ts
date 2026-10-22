@@ -7,11 +7,11 @@ import type {
   QueueWorker,
   QueueWorkerConfig,
 } from "@comity/queue";
-import type { QueueError } from "@comity/queue/errors";
 import type { PgBossFailedJob, PgBossWorkerOptions } from "../client/types.js";
 import type { PgBossJobLike, PgBossPort } from "../internal/port.js";
 
 import { failure, success } from "@comity/primitives/result";
+import { QueueError } from "@comity/queue/errors";
 import { HandlerTracker } from "../internal/handler-tracker.js";
 import {
   handlerFailedError,
@@ -300,8 +300,11 @@ class PgBossQueueWorker<TData extends QueueJobData> implements QueueWorker {
       if (handlerError !== null) {
         this.#notifyHandlerFailure(handlerError, coreJob);
         // Sanitized on purpose: pg-boss persists a failed attempt's error, and
-        // adapter diagnostics must not leak payload or connection detail.
-        throw new Error("queue handler failed");
+        // adapter diagnostics must not leak payload or connection detail. The
+        // QueueError carries a static message and no cause.
+        throw new QueueError("handler_failed", {
+          details: { operation: "execute", adapter: "pg-boss" },
+        });
       }
     }
   }

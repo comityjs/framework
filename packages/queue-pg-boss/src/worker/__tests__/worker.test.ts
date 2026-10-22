@@ -31,6 +31,19 @@ function delay(milliseconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
+function expectInvalidLifecycleState(action: () => unknown): void {
+  try {
+    action();
+  } catch (error) {
+    expect(error).toBeInstanceOf(QueueError);
+    expect((error as QueueError).meta.reason).toBe("invalid_lifecycle_state");
+
+    return;
+  }
+
+  expect.unreachable("expected worker creation to throw");
+}
+
 function job(id = "job-1"): PgBossJobLike {
   return { id, name: "jobs", data: { value: id } };
 }
@@ -586,7 +599,11 @@ describe("handler settlement", () => {
 
     await worker.start();
 
-    await expect(port.deliver("jobs")).rejects.toThrow("queue handler failed");
+    const error: unknown = await port.deliver("jobs").catch((cause: unknown) => cause);
+
+    expect(error).toBeInstanceOf(QueueError);
+    expect((error as QueueError).meta.reason).toBe("handler_failed");
+    expect((error as QueueError).message).not.toContain("secret detail");
     expect(failures).toEqual(["handler_failed"]);
   });
 
@@ -604,7 +621,7 @@ describe("handler settlement", () => {
 
     await worker.start();
 
-    await expect(port.deliver("jobs")).rejects.toThrow("queue handler failed");
+    await expect(port.deliver("jobs")).rejects.toThrow(QueueError);
     expect(normalized[0]?.meta.reason).toBe("handler_failed");
     expect(normalized[0]?.meta.details?.operation).toBe("execute");
   });
@@ -624,7 +641,7 @@ describe("handler settlement", () => {
 
     await worker.start();
 
-    await expect(port.deliver("jobs")).rejects.toThrow("queue handler failed");
+    await expect(port.deliver("jobs")).rejects.toThrow(QueueError);
     expect((await worker.stop()).success).toBe(true);
   });
 
@@ -703,8 +720,8 @@ describe("client close", () => {
 
     const closePromise = client.close();
 
-    expect(() => client.createWorker({ queue: "jobs", handler: async () => undefined })).toThrow(
-      /closing or closed/
+    expectInvalidLifecycleState(() =>
+      client.createWorker({ queue: "jobs", handler: async () => undefined })
     );
 
     stopGate.resolve();
@@ -724,8 +741,8 @@ describe("client close", () => {
 
     const closePromise = client.close();
 
-    expect(() => client.createWorker({ queue: "jobs", handler: async () => undefined })).toThrow(
-      /closing or closed/
+    expectInvalidLifecycleState(() =>
+      client.createWorker({ queue: "jobs", handler: async () => undefined })
     );
 
     offWorkGate.resolve();
@@ -739,8 +756,8 @@ describe("client close", () => {
 
     await client.close();
 
-    expect(() => client.createWorker({ queue: "jobs", handler: async () => undefined })).toThrow(
-      /closing or closed/
+    expectInvalidLifecycleState(() =>
+      client.createWorker({ queue: "jobs", handler: async () => undefined })
     );
   });
 

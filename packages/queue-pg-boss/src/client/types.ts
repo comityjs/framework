@@ -202,7 +202,8 @@ export interface PgBossQueueClient {
   /**
    * Create a worker for a configured queue.
    *
-   * @throws Error when the client is closing or already closed
+   * @throws QueueError with reason `invalid_lifecycle_state` when the client
+   * is closing or already closed
    *
    * @remarks
    * Construction is synchronous and performs no I/O. A worker created before

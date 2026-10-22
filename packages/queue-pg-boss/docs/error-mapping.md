@@ -61,9 +61,10 @@ not usable afterwards; create a new one.
 
 Handler exceptions, rejected promises, and failure `Result`s are normalized to
 `handler_failed` with `operation: "execute"`. The adapter throws a fixed, sanitized
-`Error("queue handler failed")` to pg-boss so that persisted failure output never
-contains payloads, connection strings, or adapter internals. The normalized error
-is delivered to the optional `onHandlerFailed` hook.
+`QueueError("handler_failed")` to pg-boss so that persisted failure output never
+contains payloads, connection strings, or adapter internals. The thrown error has
+a static message and no cause. The normalized error is delivered to the optional
+`onHandlerFailed` hook.
 
 pg-boss's retry policy — `retryLimit`, `retryDelay`, `retryBackoff` — decides what
 happens next. That policy is adapter configuration, not a portable contract.

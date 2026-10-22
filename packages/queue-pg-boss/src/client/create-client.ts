@@ -1,6 +1,5 @@
 import type { Result } from "@comity/primitives/result";
 import type { QueueJobData, QueueProducer, QueueWorker, QueueWorkerConfig } from "@comity/queue";
-import type { QueueError } from "@comity/queue/errors";
 import type { Queue } from "pg-boss";
 import type { PgBossJobLike, PgBossPort } from "../internal/port.js";
 import type { WorkerDeps } from "../worker/create-worker.js";
@@ -13,6 +12,7 @@ import type {
 } from "./types.js";
 
 import { failure, success } from "@comity/primitives/result";
+import { QueueError } from "@comity/queue/errors";
 import { PgBoss } from "pg-boss";
 import {
   mapFactoryError,
@@ -232,7 +232,8 @@ class PgBossQueueClientImpl implements PgBossQueueClient {
    *
    * @returns A worker that performs no I/O until `start()`
    *
-   * @throws Error when the client is closing or already closed
+   * @throws QueueError with reason `invalid_lifecycle_state` when the client
+   * is closing or already closed
    *
    * @remarks
    * Construction is synchronous and performs no I/O. A worker created before
@@ -246,9 +247,9 @@ class PgBossQueueClientImpl implements PgBossQueueClient {
     options: PgBossWorkerOptions = {}
   ): QueueWorker {
     if (this.#closed) {
-      throw new Error(
-        "@comity/queue-pg-boss: cannot create a worker once the client is closing or closed"
-      );
+      throw new QueueError("invalid_lifecycle_state", {
+        details: { adapter: "pg-boss" },
+      });
     }
 
     const deps: WorkerDeps =

@@ -1,5 +1,6 @@
 import type { PgBossQueueClient } from "../../client/types.js";
 
+import { QueueError } from "@comity/queue/errors";
 import { afterAll, expect, it } from "vitest";
 import {
   createTestClient,
@@ -210,10 +211,16 @@ describeIntegration("client close against PostgreSQL", () => {
     await waitFor(() => started);
 
     const closePromise = client.close();
+    let creationError: unknown;
 
-    expect(() => client.createWorker({ queue, handler: async () => undefined })).toThrow(
-      /closing or closed/
-    );
+    try {
+      client.createWorker({ queue, handler: async () => undefined });
+    } catch (error) {
+      creationError = error;
+    }
+
+    expect(creationError).toBeInstanceOf(QueueError);
+    expect((creationError as QueueError).meta.reason).toBe("invalid_lifecycle_state");
 
     release?.();
 
