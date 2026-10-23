@@ -1,6 +1,6 @@
 {
   "name": "@comity/queue-pg-boss",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "description": "pg-boss technology adapter for @comity/queue contracts",
   "type": "module",
   "private": false,
