@@ -1,3 +1,5 @@
+/** @internal */
+
 /**
  * Utility function to pause execution
  *

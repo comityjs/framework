@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { QueueError } from "@comity/queue/errors";
 import type { PgBossQueueClientConfig, PgBossQueueDefinition } from "../client/types.js";
 

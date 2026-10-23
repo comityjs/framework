@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { QueueErrorReason } from "@comity/queue/errors";
 
 import { QueueError } from "@comity/queue/errors";

@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { CliExecutionFacade, CliCommand } from "@comity/cli";
 import type { Command } from "commander";
 

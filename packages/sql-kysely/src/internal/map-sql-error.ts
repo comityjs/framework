@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { SqlErrorReason } from "@comity/sql/errors";
 
 import { SqlError } from "@comity/sql/errors";

@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { KyselyDatabase } from "../client/types.js";
 
 import { SqlError } from "@comity/sql/errors";

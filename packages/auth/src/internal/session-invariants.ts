@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { Result, ResultFailure } from "@comity/primitives/result";
 import type { AuthSession } from "../contracts/session.js";
 import type { AuthErrorMeta, AuthErrorReason } from "../errors/auth.js";

@@ -1,3 +1,5 @@
+/** @internal */
+
 /** Cleanup function for abort listeners. */
 export type AbortCleanup = () => void;
 

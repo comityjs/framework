@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { CliCommand, CliCommandArgs, CliOption } from "@comity/cli";
 import type { CliError } from "@comity/cli/errors";
 

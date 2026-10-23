@@ -1,3 +1,5 @@
+/** @internal */
+
 /**
  * Escapes XML-special characters in a string.
  *

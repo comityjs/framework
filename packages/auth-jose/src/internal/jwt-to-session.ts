@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { AuthSession } from "@comity/auth";
 import { AuthSessionId } from "@comity/auth";
 import type { Result } from "@comity/primitives/result";

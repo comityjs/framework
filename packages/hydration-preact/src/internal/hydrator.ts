@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { IslandContract, IslandHydrationAdapter } from "@comity/hydration";
 import type { IslandElement } from "@comity/hydration/client";
 import type { ComponentType } from "preact";

@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { AuthSession } from "@comity/auth";
 import type { JoseJwtPayload } from "../types.js";
 

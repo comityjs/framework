@@ -1,3 +1,5 @@
+/** @internal */
+
 /**
  * Tracks handler executions accepted from pg-boss.
  *

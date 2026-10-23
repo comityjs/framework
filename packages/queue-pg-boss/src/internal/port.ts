@@ -1,3 +1,5 @@
+/** @internal */
+
 /**
  * The minimal pg-boss surface this adapter depends on.
  *
