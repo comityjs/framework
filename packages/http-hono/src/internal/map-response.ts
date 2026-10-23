@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { HttpResponse } from "@comity/http";
 import type { Context as HonoContext } from "hono";
 

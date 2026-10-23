@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { HttpContext, HttpMethod, HttpRequest, HttpRuntimeContext } from "@comity/http";
 import type { Context as HonoContext } from "hono";
 

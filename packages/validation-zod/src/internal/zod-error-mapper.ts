@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { ValidationIssue } from "@comity/validation/errors";
 import type { ZodError } from "zod";
 

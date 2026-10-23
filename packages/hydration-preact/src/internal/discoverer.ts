@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { IslandDiscoveryAdapter } from "@comity/hydration";
 import type { IslandElement } from "@comity/hydration/client";
 

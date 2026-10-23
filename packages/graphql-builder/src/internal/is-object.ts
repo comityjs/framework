@@ -1,3 +1,5 @@
+/** @internal */
+
 /**
  * Checks if a value is a non-null object (but not an array).
  *

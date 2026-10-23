@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { AuthErrorMeta } from "@comity/auth/errors";
 import type { JOSEError } from "jose/errors";
 

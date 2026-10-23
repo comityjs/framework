@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { CliRegistrationFacade } from "../contracts/cli.js";
 import type { CliCommand } from "../contracts/command.js";
 

@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { GraphqlVar } from "../contracts/graphql.js";
 
 import { isObject } from "./is-object.js";

@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { Result } from "@comity/primitives/result";
 import type { KernelLifecycleState } from "../setup/types.js";
 

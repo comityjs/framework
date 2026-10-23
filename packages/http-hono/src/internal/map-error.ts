@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { HttpContext, HttpRequest, HttpResponse } from "@comity/http";
 
 import { BaseError } from "@comity/primitives/errors";

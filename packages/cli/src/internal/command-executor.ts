@@ -1,3 +1,5 @@
+/** @internal */
+
 import type { HookBus } from "@comity/primitives/lifecycle";
 import type { EventBus } from "@comity/primitives/lifecycle";
 import type { Result } from "@comity/primitives/result";
