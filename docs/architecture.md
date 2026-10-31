@@ -96,7 +96,7 @@ Each technology adapter explicitly declares its targeted Core Module inside its 
 
 - **HTTP Contract:** Implemented via Hono (`@comity/http-hono`) and Fetch API (`@comity/http-fetch`).
 - **HTML Rendering Contract:** Implemented via React (`@comity/html-react`) and Preact (`@comity/html-preact`).
-- **SQL Execution Contract:** Implemented via Kysely (`@comity/sql-kysely`).
+- **SQL Execution Contract:** Implemented via Kysely (`@comity/sql-kysely`) and Drizzle ORM (`@comity/sql-drizzle`).
 - **Validation Contract:** Implemented via Zod (`@comity/validation-zod`).
 
 ---

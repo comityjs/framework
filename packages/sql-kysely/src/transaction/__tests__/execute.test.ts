@@ -163,16 +163,126 @@ describe("executeTransaction", () => {
     });
   });
 
-  it("should handle transaction setup errors", async () => {
-    // Note: Transaction setup doesn't validate the database, so this always succeeds
+  it("should report a transaction that resolves without starting", async () => {
     const mockDb = {
       transaction: vi.fn().mockReturnValue({
+        // Resolves without ever invoking the transaction callback.
         execute: vi.fn().mockResolvedValue(undefined),
       }),
     };
 
     const result = await executeTransaction(mockDb as any, adapter);
 
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
+
+    if (!result.success) {
+      expect(result.error.meta["reason"]).toBe("transaction_failed");
+    }
+  });
+
+  it("should reject a transaction function that is not asynchronous", async () => {
+    const mockDb = {
+      transaction: vi.fn().mockReturnValue({
+        execute: vi.fn().mockReturnValue(undefined),
+      }),
+    };
+
+    const result = await executeTransaction(mockDb as any, adapter);
+
+    expect(result.success).toBe(false);
+
+    if (!result.success) {
+      expect(result.error.meta["reason"]).toBe("invalid_configuration");
+      expect(result.error.meta["details"]?.["expected"]).toBe(
+        "kysely database with an asynchronous transaction()"
+      );
+      expect(result.error.meta["context"]?.["violation"]).toBe("synchronous_transaction");
+    }
+  });
+
+  it("should wait for the transaction to start before resolving", async () => {
+    const mockTransaction = {
+      executeQuery: vi.fn().mockResolvedValue({ rows: [{ id: 5 }], numAffectedRows: 1n }),
+    };
+
+    // Pooled drivers acquire a connection and run BEGIN before invoking the
+    // callback, so the handle is assigned several ticks after transaction().
+    const mockDb = {
+      transaction: vi.fn().mockReturnValue({
+        execute: vi.fn().mockImplementation(async (fn: (trx: unknown) => Promise<void>) => {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+
+          return await fn(mockTransaction);
+        }),
+      }),
+    };
+
+    const created = await executeTransaction(mockDb as any, adapter);
+
+    if (!created.success) throw new Error("expected transaction");
+
+    const query = await created.value.query<{ id: number }>({ statement: "select 5" });
+
+    expect(query.success).toBe(true);
+
+    if (query.success) {
+      expect(query.value.rows).toEqual([{ id: 5 }]);
+    }
+
+    await created.value.commit();
+  });
+
+  it("should report a transaction that fails before it starts", async () => {
+    const connectionError = new Error("connection lost");
+    const mockDb = {
+      transaction: vi.fn().mockReturnValue({
+        execute: vi.fn().mockImplementation(async () => {
+          await Promise.resolve();
+          throw connectionError;
+        }),
+      }),
+    };
+
+    const result = await executeTransaction(mockDb as any, adapter);
+
+    expect(result.success).toBe(false);
+
+    if (!result.success) {
+      expect(result.error.meta["reason"]).toBe("transaction_failed");
+      expect(result.error.cause).toBe(connectionError);
+    }
+  });
+
+  it("should not surface an unhandled rejection when the capability is abandoned", async () => {
+    const unhandled: unknown[] = [];
+    const onUnhandled = (reason: unknown): void => {
+      unhandled.push(reason);
+    };
+
+    process.on("unhandledRejection", onUnhandled);
+
+    try {
+      const mockDb = {
+        transaction: vi.fn().mockReturnValue({
+          execute: vi.fn().mockImplementation(async (fn: (trx: unknown) => Promise<void>) => {
+            // Start the transaction, then fail while nobody observes it.
+            void fn({ executeQuery: async () => ({ rows: [] }) });
+            await new Promise((resolve) => setTimeout(resolve, 5));
+
+            throw new Error("connection lost");
+          }),
+        }),
+      };
+
+      const created = await executeTransaction(mockDb as any, adapter);
+
+      expect(created.success).toBe(true);
+
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    } finally {
+      process.off("unhandledRejection", onUnhandled);
+    }
+
+    expect(unhandled).toEqual([]);
   });
 });
