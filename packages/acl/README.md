@@ -28,10 +28,14 @@ This package does NOT:
 
 ## Public API
 
-- Authorization contracts — context, decision, and authorizer interfaces
+- Authorization contracts — `AuthorizationContext` (`subject`, `action`, `resource`, optional opaque `context`), `AuthorizationDecision`, and `Authorizer`
 - Error types — authorization failure reasons and metadata (`@comity/acl/errors`)
 
 No exhaustive reference; see docs for constraints.
+
+`context` is the only extension point: the core passes it through untouched and
+prescribes no schema, and capabilities such as field-level authorization belong
+to implementations, which document the keys they read.
 ---
 
 ## Documentation

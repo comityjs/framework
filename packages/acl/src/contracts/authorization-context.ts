@@ -20,6 +20,19 @@ export interface AuthorizationContext {
   /** The resource being accessed. */
   readonly resource: string;
 
-  /** Optional opaque contextual data for policy evaluation. */
+  /**
+   * Optional opaque contextual data for policy evaluation.
+   *
+   * @remarks
+   * Its structure and interpretation belong to the authorizer implementation and
+   * the Application Layer. The ACL module neither reads it nor imposes a schema
+   * on it, and it guarantees nothing about which keys an implementation honours:
+   * API-level authorization dimensions such as field-level permissions are
+   * capabilities of individual implementations, not concepts of this contract.
+   *
+   * An implementation that ignores contextual data MUST keep the question it
+   * answers unchanged and SHOULD document that it does so, because ignoring a
+   * restriction narrows what the caller asked for.
+   */
   readonly context?: Readonly<Record<string, unknown>>;
 }
