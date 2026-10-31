@@ -1,6 +1,6 @@
 {
   "name": "@comity/acl-casl",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "description": "CASL adapter for @comity/acl.",
   "type": "module",
   "private": false,
