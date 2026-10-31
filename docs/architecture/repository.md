@@ -46,7 +46,7 @@
 | `@comity/customer`        | Customer domain: `Customer`, `CustomerRepository`, `CustomerId`, classification                                  |
 | `@comity/validation`      | Validation contracts: `Validator`, `ValidationError`, `ValidationResult`                                         |
 
-### Technology Adapters (17)
+### Technology Adapters (18)
 
 | Package                         | Implements               | External Library                      |
 | ------------------------------- | ------------------------ | ------------------------------------- |
@@ -67,6 +67,7 @@
 | `@comity/cli-commander`         | `@comity/cli`            | `commander` (peer)                    |
 | `@comity/acl-casl`              | `@comity/acl`            | `@casl/ability` (peer)                |
 | `@comity/graphql-client-ws`     | `@comity/graphql-client` | `graphql-ws` (peer)                   |
+| `@comity/sql-drizzle`           | `@comity/sql`            | `drizzle-orm` (peer)                  |
 
 ---
 

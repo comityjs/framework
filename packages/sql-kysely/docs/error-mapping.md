@@ -14,6 +14,13 @@ from `@comity/sql`.
 | Query timeout                | sql:timeout            |
 | Explicit cancellation        | sql:cancelled          |
 
+`sql:timeout` belongs to the contract's reason set, but this adapter never
+produces it: no portable Kysely API applies a timeout, and
+`SqlClientOptions.timeout` / `SqlClientOptions.context` are accepted for contract
+compatibility only — they are not forwarded to the driver. A timeout raised by
+the driver surfaces through the normal mapping: `cancelled` for a cancelled
+statement, `query_failed` otherwise.
+
 ## Security considerations
 
 - SQL queries MUST NOT be included in error metadata
