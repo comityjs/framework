@@ -17,6 +17,7 @@ This package:
 - ✅ implements the `Authorizer` contract using CASL abilities
 - ✅ exposes the `CaslAuthorizer` class for direct usage
 - ✅ integrates CASL ability definitions with Comity authorization context
+- ✅ evaluates CASL field-level rules when `context` carries this adapter's `acl:field` directive
 
 This package does NOT:
 
