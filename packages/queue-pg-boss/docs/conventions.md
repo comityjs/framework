@@ -67,7 +67,7 @@ ADR-028 and the `@comity/queue` design where they apply to a Technology Adapter.
 
 ## Packaging
 
-- The package is ESM-only until the shared build emits CommonJS scope markers.
+- The package is ESM-only. Comity does not provide CommonJS modules; ADR-034 (`Proposed`) would add a `require` condition resolving to the same ESM entry point (Node 24+ `require(ESM)`).
 - Do not advertise a `require` condition that resolves to a tree Node cannot load.
 
 ## Testing

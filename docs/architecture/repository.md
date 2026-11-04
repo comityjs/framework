@@ -208,7 +208,7 @@ packages/<name>/
 
 Each package has its own `package.json` with:
 
-- **Dual ESM/CJS exports** — `import` and `require` conditions
+- **`import` and `require` export conditions** — the current build emits a separate `dist/cjs` tree of CommonJS-syntax output that Node evaluates as ESM (under `"type": "module"`), so `require()` of a package fails today; it is not a working CommonJS build. ADR-034 (comity-development, `Accepted` 2026-11-04; **not yet implemented** — WP-B) replaces it with one ESM build to which both conditions resolve (Node 24+ `require(ESM)` compatibility, not CommonJS support), for every package including the CLI packages
 - **DTS types** — `types` property and `typesVersions`
 - **Subpath exports** — matching physical folders (e.g., `./errors`, `./setup`, `./observers`, `./repositories`)
 

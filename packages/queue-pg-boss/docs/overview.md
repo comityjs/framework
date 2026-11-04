@@ -133,8 +133,9 @@ CommonJS scope marker, so Node treats it as ESM and its internal `require()` cal
 fail — a repository-wide packaging defect that also affects `@comity/primitives`
 and `@comity/queue`. Adapter-local markers fix this package but not its
 dependencies, so advertising a `require` condition would publish an entry point
-that fails at runtime. CommonJS support should return once the shared build emits
-scope markers or the package is bundled; that is a packaging decision for review.
+that fails at runtime. Comity does not provide CommonJS modules; ADR-034 (`Proposed`)
+replaces the shared build with a single ESM build, after which a `require` condition
+resolving to the same ESM entry point (Node 24+ `require(ESM)`) would then be added.
 
 ## Development
 
