@@ -129,7 +129,7 @@ Turborepo (`turbo.json`) coordinates builds:
 
 - `build` tasks depends on `^build` (build dependencies first)
 - Cache enabled for builds, tracked by `src/**/*.ts` + `tsconfig.json` + `package.json`
-- Output: `dist/` with dual ESM/CJS bundles
+- Output: one flat `dist/` directory holding ESM JavaScript and its declarations side by side (`dist/index.js` next to `dist/index.d.ts`, `dist/errors/index.js` next to `dist/errors/index.d.ts`). There is no `dist/esm`, `dist/types` or `dist/cjs` tree and no CommonJS build — ADR-034 (`Accepted` 2026-11-04) is implemented. Comity supports ESM and Node 24+ `require(ESM)` compatibility (Node's `require` loads the same ESM file through the `default` condition), not CommonJS modules
 
 ### Testing
 

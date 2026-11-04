@@ -36,65 +36,40 @@
     "lint": "eslint --ext .ts src"
   },
   "files": [
-    "./dist",
-    "!./dist/**/*.map"
+    "dist",
+    "!dist/**/*.map"
   ],
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/types/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/esm/index.js"
-      },
-      "require": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/cjs/index.js"
-      }
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./errors": {
-      "import": {
-        "types": "./dist/types/errors/index.d.ts",
-        "default": "./dist/esm/errors/index.js"
-      },
-      "require": {
-        "types": "./dist/types/errors/index.d.ts",
-        "default": "./dist/cjs/errors/index.js"
-      }
+      "types": "./dist/errors/index.d.ts",
+      "default": "./dist/errors/index.js"
     },
     "./observers": {
-      "import": {
-        "types": "./dist/types/observers/index.d.ts",
-        "default": "./dist/esm/observers/index.js"
-      },
-      "require": {
-        "types": "./dist/types/observers/index.d.ts",
-        "default": "./dist/cjs/observers/index.js"
-      }
+      "types": "./dist/observers/index.d.ts",
+      "default": "./dist/observers/index.js"
     },
     "./setup": {
-      "import": {
-        "types": "./dist/types/setup/index.d.ts",
-        "default": "./dist/esm/setup/index.js"
-      },
-      "require": {
-        "types": "./dist/types/setup/index.d.ts",
-        "default": "./dist/cjs/setup/index.js"
-      }
+      "types": "./dist/setup/index.d.ts",
+      "default": "./dist/setup/index.js"
     },
     "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {
       "errors": [
-        "./dist/types/errors/index.d.ts"
+        "./dist/errors/index.d.ts"
       ],
       "observers": [
-        "./dist/types/observers/index.d.ts"
+        "./dist/observers/index.d.ts"
       ],
       "setup": [
-        "./dist/types/setup/index.d.ts"
+        "./dist/setup/index.d.ts"
       ]
     }
   },

@@ -42,24 +42,18 @@ describe("@comity/queue public API", () => {
     );
   });
 
-  it("should resolve the errors subpath for both module systems", () => {
+  it("should resolve the errors subpath to one flat ESM file and its declaration", () => {
     const manifest = readManifest();
 
     expect(manifest.exports["./errors"]).toEqual({
-      import: {
-        types: "./dist/types/errors/index.d.ts",
-        default: "./dist/esm/errors/index.js",
-      },
-      require: {
-        types: "./dist/types/errors/index.d.ts",
-        default: "./dist/cjs/errors/index.js",
-      },
+      types: "./dist/errors/index.d.ts",
+      default: "./dist/errors/index.js",
     });
   });
 
   it("should map the errors subpath for legacy TypeScript resolution", () => {
     const manifest = readManifest();
 
-    expect(manifest.typesVersions?.["*"]?.["errors"]).toEqual(["./dist/types/errors/index.d.ts"]);
+    expect(manifest.typesVersions?.["*"]?.["errors"]).toEqual(["./dist/errors/index.d.ts"]);
   });
 });

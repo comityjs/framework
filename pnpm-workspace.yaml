@@ -13,3 +13,25 @@ nodeLinker: isolated
 autoInstallPeers: true
 strictPeerDependencies: false
 storeDir: .pnpm-store
+
+# pnpm 12 reads these settings from this file (the root package.json "pnpm" field is no longer read).
+# Peer dependency exceptions: unchanged scope and values from the former package.json "pnpm" field.
+peerDependencyRules:
+  ignoreMissing:
+    - react
+    - vue
+    - solid-js
+
+# Install-script policy: only esbuild may run its build script (formerly onlyBuiltDependencies: [esbuild]).
+# The others have install scripts that were already not run and are denied explicitly.
+allowBuilds:
+  esbuild: true
+  edgedriver: false
+  geckodriver: false
+  msw: false
+minimumReleaseAgeExclude:
+  - "@comity-dev/build@0.3.0"
+  - "@comity-dev/cli@0.2.3"
+  - "@comity-dev/package-tools@0.2.1"
+  - "@comity-dev/semgrep-rules@0.2.3"
+  - "@comity-dev/validate@0.2.3"

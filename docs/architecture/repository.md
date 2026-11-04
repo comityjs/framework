@@ -83,7 +83,7 @@ packages:
   - "packages/**"
 ```
 
-Package manager: **pnpm@10.13.1** (enforced via `preinstall` script)
+Package manager: **pnpm@12.16.1** (pinned by `packageManager`; `preinstall` enforces pnpm). pnpm 12 reads its settings (`peerDependencyRules`, `allowBuilds`, …) from `pnpm-workspace.yaml`, not from a `pnpm` field in `package.json`
 
 ### Dependencies
 
@@ -208,7 +208,7 @@ packages/<name>/
 
 Each package has its own `package.json` with:
 
-- **Dual ESM/CJS exports** — `import` and `require` conditions
+- **`types` and `default` export conditions** — the build emits a **single ESM distribution in one flat `dist/` directory**: JavaScript and declarations side by side (`dist/index.js` + `dist/index.d.ts`, `dist/errors/index.js` + `dist/errors/index.d.ts`), with no `dist/esm`, `dist/types` or `dist/cjs` tree and no CommonJS build. Each exported subpath is `{ "types": "./dist/<subpath>/index.d.ts", "default": "./dist/<subpath>/index.js" }`, with `main` and `types` at the package root; there are no separate `import` / `require` branches, for every package including the CLI packages and `@comity/queue-pg-boss`. Node's `require` resolves through the `default` condition to the same ESM file as `import`, so both yield one module instance and one set of classes. `require` is supported on Node `>=24.0.0` through `require(ESM)` — Node 24+ `require(ESM)` compatibility, **not** CommonJS support; it requires a synchronous module graph (top-level `await` fails with `ERR_REQUIRE_ASYNC_MODULE`). Implemented per ADR-034 (comity-development, `Accepted` 2026-11-04)
 - **DTS types** — `types` property and `typesVersions`
 - **Subpath exports** — matching physical folders (e.g., `./errors`, `./setup`, `./observers`, `./repositories`)
 

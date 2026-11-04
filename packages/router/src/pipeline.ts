@@ -1,7 +1,7 @@
 import type { HttpContext } from "@comity/http";
 import type { RouteMatch, RoutePolicyHandler } from "./contracts/route.js";
 import type { Router, RouteResolutionContext } from "./contracts/router.js";
-import type { UrlRewriter } from "./contracts/url-rewriter";
+import type { UrlRewriter } from "./contracts/url-rewriter.js";
 
 /**
  * RouterPipeline is a composite router that allows you to chain multiple routers and URL rewriters together. It implements the Router interface, enabling it to be used wherever a Router is expected. The pipeline processes incoming HTTP requests by first applying any registered URL rewriters to modify the request URL as needed, and then sequentially invoking each router in the order they were added until a match is found or all routers have been exhausted.

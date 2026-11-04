@@ -125,16 +125,33 @@ execution. Handlers must be idempotent.
 
 ## Module format
 
-The package is **ESM-only**. Import it from an ES module or a bundler; `require()`
-reports `ERR_PACKAGE_PATH_NOT_EXPORTED`.
+The package is **ESM-only**, like every Comity package (ADR-034, `Accepted` and
+implemented). It ships a single ESM build in one flat `dist/` directory
+(`dist/index.js` next to `dist/index.d.ts`), with no `dist/esm`, `dist/types` or
+`dist/cjs` tree and no CommonJS build.
 
-The repository's shared build emits a CommonJS tree, but that tree carries no
-CommonJS scope marker, so Node treats it as ESM and its internal `require()` calls
-fail — a repository-wide packaging defect that also affects `@comity/primitives`
-and `@comity/queue`. Adapter-local markers fix this package but not its
-dependencies, so advertising a `require` condition would publish an entry point
-that fails at runtime. CommonJS support should return once the shared build emits
-scope markers or the package is bundled; that is a packaging decision for review.
+The export map is `{ "types": "./dist/index.d.ts", "default": "./dist/index.js" }`,
+and both resolution paths reach the **same** ESM artifact:
+
+- `import` — the primary contract, in every ESM-capable environment (Node,
+  bundlers, Edge/Workers, browsers).
+- `require` — supported on Node.js `>=24.0.0` (matching `engines`) through
+  `require(ESM)`, resolving through the `default` condition to the same
+  `dist/index.js`. This is Node 24+ `require(ESM)` compatibility, **not**
+  CommonJS module support.
+
+Because there is only one build, `require` and `import` yield the same module
+instance and the same classes. `require(ESM)` requires a synchronous module
+graph: a graph containing top-level `await` fails with
+`ERR_REQUIRE_ASYNC_MODULE`. This package's graph is synchronous.
+
+The package previously advertised no `require` condition, because the shared
+build emitted a `dist/cjs` tree that carried no CommonJS scope marker — Node
+evaluated it as ESM and its internal `require()` calls failed. That defect was
+repository-wide, and adapter-local markers could not fix a package's
+dependencies. ADR-034 removed the CommonJS build entirely, which removed the
+reason for the exception; the uniform ESM export map now applies here
+as it does to every other Comity package.
 
 ## Development
 

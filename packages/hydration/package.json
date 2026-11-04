@@ -39,65 +39,40 @@
     "lint": "eslint --ext .ts src"
   },
   "files": [
-    "./dist",
-    "!./dist/**/*.map"
+    "dist",
+    "!dist/**/*.map"
   ],
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/types/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/esm/index.js"
-      },
-      "require": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/cjs/index.js"
-      }
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./client": {
-      "import": {
-        "types": "./dist/types/client/index.d.ts",
-        "default": "./dist/esm/client/index.js"
-      },
-      "require": {
-        "types": "./dist/types/client/index.d.ts",
-        "default": "./dist/cjs/client/index.js"
-      }
+      "types": "./dist/client/index.d.ts",
+      "default": "./dist/client/index.js"
     },
     "./errors": {
-      "import": {
-        "types": "./dist/types/errors/index.d.ts",
-        "default": "./dist/esm/errors/index.js"
-      },
-      "require": {
-        "types": "./dist/types/errors/index.d.ts",
-        "default": "./dist/cjs/errors/index.js"
-      }
+      "types": "./dist/errors/index.d.ts",
+      "default": "./dist/errors/index.js"
     },
     "./lifecycle": {
-      "import": {
-        "types": "./dist/types/lifecycle/index.d.ts",
-        "default": "./dist/esm/lifecycle/index.js"
-      },
-      "require": {
-        "types": "./dist/types/lifecycle/index.d.ts",
-        "default": "./dist/cjs/lifecycle/index.js"
-      }
+      "types": "./dist/lifecycle/index.d.ts",
+      "default": "./dist/lifecycle/index.js"
     },
     "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {
       "client": [
-        "./dist/types/client/index.d.ts"
+        "./dist/client/index.d.ts"
       ],
       "errors": [
-        "./dist/types/errors/index.d.ts"
+        "./dist/errors/index.d.ts"
       ],
       "lifecycle": [
-        "./dist/types/lifecycle/index.d.ts"
+        "./dist/lifecycle/index.d.ts"
       ]
     }
   },

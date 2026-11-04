@@ -67,7 +67,7 @@ ADR-028 and the `@comity/queue` design where they apply to a Technology Adapter.
 
 ## Packaging
 
-- The package is ESM-only until the shared build emits CommonJS scope markers.
+- The package is ESM-only, as is every Comity package (ADR-034, `Accepted` and implemented): one ESM build in a flat `dist/` (JavaScript and `.d.ts` side by side; no `dist/esm`, `dist/types` or `dist/cjs`), no CommonJS build. `import` and `require` both resolve to the same ESM entry point (`./dist/index.js`); `require` is supported on Node `>=24.0.0` via `require(ESM)`, which is not CommonJS module support. The module graph must stay synchronous — top-level `await` would make `require(ESM)` fail with `ERR_REQUIRE_ASYNC_MODULE`.
 - Do not advertise a `require` condition that resolves to a tree Node cannot load.
 
 ## Testing
