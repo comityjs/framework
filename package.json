@@ -19,7 +19,7 @@
     "normalize:exports:check": "comity normalize exports --check",
     "changeset": "changeset",
     "version": "changeset version",
-    "release": "changeset publish",
+    "release": "pnpm -r publish --access public --no-git-checks --publish-wait-timeout=60000 --report-summary && changeset tag",
     "preinstall": "npx only-allow pnpm"
   },
   "workspaces": [
