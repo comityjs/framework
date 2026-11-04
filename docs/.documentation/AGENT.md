@@ -38,8 +38,8 @@ below are creation-time facts, not a registry, and never override the
   presented as runtime API. Scope alone does not classify a package's role;
   check the package itself when its role matters.
 - All workspace packages are `0.9.0` (pre-1.0; see section 16). Engines
-  require `node >= 24`. Packages expose `import` and `require` entry conditions
-  through their `exports` maps (today `require` points at a `dist/cjs` tree that Node evaluates as ESM, so it fails; ADR-034, `Accepted` 2026-11-04 but **not yet implemented** (WP-B), replaces it with one ESM build that both conditions resolve to — Comity supports ESM and Node 24+ `require(ESM)` compatibility, not CommonJS modules), in a pnpm + turbo monorepo (`pnpm@10.13.1`).
+  require `node >= 24`. Packages expose `types` and `default` entry conditions
+  through their `exports` maps (one flat `dist/` directory of ESM JavaScript plus declarations; Node's `require` and `import` resolve to the same ESM file, per ADR-034, `Accepted` 2026-11-04 and **implemented** — Comity supports ESM and Node 24+ `require(ESM)` compatibility, not CommonJS modules), in a pnpm + turbo monorepo (`pnpm@10.13.1`).
 - Subpath snapshot at protocol creation (re-verify against the `exports` map
   at use time; never assume another subpath exists without checking it):
   `@comity/primitives` (`.`, `./di`, `./errors`, `./lifecycle`, `./result`,

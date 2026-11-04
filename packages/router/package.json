@@ -41,49 +41,30 @@
     "./dist",
     "!./dist/**/*.map"
   ],
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/types/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/esm/index.js"
-      },
-      "require": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/cjs/index.js"
-      }
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./routers": {
-      "import": {
-        "types": "./dist/types/routers/index.d.ts",
-        "default": "./dist/esm/routers/index.js"
-      },
-      "require": {
-        "types": "./dist/types/routers/index.d.ts",
-        "default": "./dist/cjs/routers/index.js"
-      }
+      "types": "./dist/routers/index.d.ts",
+      "default": "./dist/routers/index.js"
     },
     "./setup": {
-      "import": {
-        "types": "./dist/types/setup/index.d.ts",
-        "default": "./dist/esm/setup/index.js"
-      },
-      "require": {
-        "types": "./dist/types/setup/index.d.ts",
-        "default": "./dist/cjs/setup/index.js"
-      }
+      "types": "./dist/setup/index.d.ts",
+      "default": "./dist/setup/index.js"
     },
     "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {
       "routers": [
-        "./dist/types/routers/index.d.ts"
+        "./dist/routers/index.d.ts"
       ],
       "setup": [
-        "./dist/types/setup/index.d.ts"
+        "./dist/setup/index.d.ts"
       ]
     }
   },

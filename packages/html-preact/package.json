@@ -43,38 +43,24 @@
     "./dist",
     "!./dist/**/*.map"
   ],
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/types/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/esm/index.js"
-      },
-      "require": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/cjs/index.js"
-      }
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./streaming": {
-      "import": {
-        "types": "./dist/types/streaming/index.d.ts",
-        "node": "./dist/esm/streaming/node/index.js",
-        "default": "./dist/esm/streaming/index.js"
-      },
-      "require": {
-        "types": "./dist/types/streaming/index.d.ts",
-        "node": "./dist/cjs/streaming/node/index.js",
-        "default": "./dist/cjs/streaming/index.js"
-      }
+      "types": "./dist/streaming/index.d.ts",
+      "node": "./dist/streaming/node/index.js",
+      "default": "./dist/streaming/index.js"
     },
     "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {
       "streaming": [
-        "./dist/types/streaming/index.d.ts"
+        "./dist/streaming/index.d.ts"
       ]
     }
   },

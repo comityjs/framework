@@ -41,88 +41,51 @@
     "./dist",
     "!./dist/**/*.map"
   ],
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/types/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/esm/index.js"
-      },
-      "require": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/cjs/index.js"
-      }
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./di": {
-      "import": {
-        "types": "./dist/types/di/index.d.ts",
-        "default": "./dist/esm/di/index.js"
-      },
-      "require": {
-        "types": "./dist/types/di/index.d.ts",
-        "default": "./dist/cjs/di/index.js"
-      }
+      "types": "./dist/di/index.d.ts",
+      "default": "./dist/di/index.js"
     },
     "./errors": {
-      "import": {
-        "types": "./dist/types/errors/index.d.ts",
-        "default": "./dist/esm/errors/index.js"
-      },
-      "require": {
-        "types": "./dist/types/errors/index.d.ts",
-        "default": "./dist/cjs/errors/index.js"
-      }
+      "types": "./dist/errors/index.d.ts",
+      "default": "./dist/errors/index.js"
     },
     "./lifecycle": {
-      "import": {
-        "types": "./dist/types/lifecycle/index.d.ts",
-        "default": "./dist/esm/lifecycle/index.js"
-      },
-      "require": {
-        "types": "./dist/types/lifecycle/index.d.ts",
-        "default": "./dist/cjs/lifecycle/index.js"
-      }
+      "types": "./dist/lifecycle/index.d.ts",
+      "default": "./dist/lifecycle/index.js"
     },
     "./result": {
-      "import": {
-        "types": "./dist/types/result/index.d.ts",
-        "default": "./dist/esm/result/index.js"
-      },
-      "require": {
-        "types": "./dist/types/result/index.d.ts",
-        "default": "./dist/cjs/result/index.js"
-      }
+      "types": "./dist/result/index.d.ts",
+      "default": "./dist/result/index.js"
     },
     "./time": {
-      "import": {
-        "types": "./dist/types/time/index.d.ts",
-        "default": "./dist/esm/time/index.js"
-      },
-      "require": {
-        "types": "./dist/types/time/index.d.ts",
-        "default": "./dist/cjs/time/index.js"
-      }
+      "types": "./dist/time/index.d.ts",
+      "default": "./dist/time/index.js"
     },
     "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {
       "di": [
-        "./dist/types/di/index.d.ts"
+        "./dist/di/index.d.ts"
       ],
       "errors": [
-        "./dist/types/errors/index.d.ts"
+        "./dist/errors/index.d.ts"
       ],
       "lifecycle": [
-        "./dist/types/lifecycle/index.d.ts"
+        "./dist/lifecycle/index.d.ts"
       ],
       "result": [
-        "./dist/types/result/index.d.ts"
+        "./dist/result/index.d.ts"
       ],
       "time": [
-        "./dist/types/time/index.d.ts"
+        "./dist/time/index.d.ts"
       ]
     }
   },

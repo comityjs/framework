@@ -38,36 +38,23 @@
     "./dist",
     "!./dist/**/*.map"
   ],
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/types/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/esm/index.js"
-      },
-      "require": {
-        "types": "./dist/types/index.d.ts",
-        "default": "./dist/cjs/index.js"
-      }
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
     },
     "./serializers": {
-      "import": {
-        "types": "./dist/types/serializers/index.d.ts",
-        "default": "./dist/esm/serializers/index.js"
-      },
-      "require": {
-        "types": "./dist/types/serializers/index.d.ts",
-        "default": "./dist/cjs/serializers/index.js"
-      }
+      "types": "./dist/serializers/index.d.ts",
+      "default": "./dist/serializers/index.js"
     },
     "./package.json": "./package.json"
   },
   "typesVersions": {
     "*": {
       "serializers": [
-        "./dist/types/serializers/index.d.ts"
+        "./dist/serializers/index.d.ts"
       ]
     }
   },

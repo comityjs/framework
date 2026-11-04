@@ -1,7 +1,7 @@
 import type { AuthFacade, AuthSession, AuthSessionId, AuthTokenService } from "@comity/auth";
 import type { Result } from "@comity/primitives/result";
-import type { AuthTokenEnvelope } from "../contracts/envelope";
-import type { AuthTokenFacade, IssueTokensInput } from "../contracts/facade";
+import type { AuthTokenEnvelope } from "../contracts/envelope.js";
+import type { AuthTokenFacade, IssueTokensInput } from "../contracts/facade.js";
 
 import { AuthError } from "@comity/auth/errors";
 

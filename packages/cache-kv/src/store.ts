@@ -1,5 +1,5 @@
 import type { CacheStore } from "@comity/cache";
-import type { KvNamespace } from "./types";
+import type { KvNamespace } from "./types.js";
 
 /**
  * A cache store implementation that uses a key-value namespace for storage.
