@@ -1,6 +1,6 @@
 {
   "name": "@comity/sql-drizzle",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Drizzle ORM adapter for @comity/sql contracts",
   "type": "module",
   "private": false,

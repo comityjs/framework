@@ -1,6 +1,6 @@
 {
   "name": "@comity/i18n-typesafe",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "description": "Typesafe I18n integration for the Comity i18n module",
   "type": "module",
   "private": false,
