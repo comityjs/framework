@@ -83,7 +83,7 @@ packages:
   - "packages/**"
 ```
 
-Package manager: **pnpm@10.13.1** (enforced via `preinstall` script)
+Package manager: **pnpm@12.16.1** (pinned by `packageManager`; `preinstall` enforces pnpm). pnpm 12 reads its settings (`peerDependencyRules`, `allowBuilds`, …) from `pnpm-workspace.yaml`, not from a `pnpm` field in `package.json`
 
 ### Dependencies
 

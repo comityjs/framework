@@ -7,7 +7,7 @@ Thank you for your interest in contributing to Comity! This document provides gu
 ### Prerequisites
 
 - Node.js 24+
-- pnpm 10+
+- pnpm 12.16.1 (pinned by `packageManager`; enable with `corepack enable`)
 
 ### Setup
 

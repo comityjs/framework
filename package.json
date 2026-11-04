@@ -1,7 +1,7 @@
 {
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.13.1",
+  "packageManager": "pnpm@12.16.1",
   "scripts": {
     "build": "turbo run build",
     "build:single": "turbo run build --filter",
@@ -34,8 +34,8 @@
     "@comity-dev/eslint-plugin": "^0.3.0",
     "@comity-dev/package-tools": "^0.2.1",
     "@comity-dev/schemas": "^0.2.0",
-    "@comity-dev/semgrep-rules": "^0.2.2",
-    "@comity-dev/validate": "^0.2.2",
+    "@comity-dev/semgrep-rules": "^0.2.3",
+    "@comity-dev/validate": "^0.2.3",
     "@typescript-eslint/eslint-plugin": "^8.72.0",
     "@typescript-eslint/parser": "^8.72.0",
     "@vitest/coverage-v8": "^4.1.12",
@@ -49,18 +49,6 @@
     "typescript": "^5.9.3",
     "undici": "^7.30.1",
     "vitest": "^4.1.12"
-  },
-  "pnpm": {
-    "peerDependencyRules": {
-      "ignoreMissing": [
-        "react",
-        "vue",
-        "solid-js"
-      ]
-    },
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
   },
   "overrides": {
     "typescript": "^5.9.3"

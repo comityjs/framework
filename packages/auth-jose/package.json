@@ -43,8 +43,8 @@
     "lint": "eslint --ext .ts src"
   },
   "files": [
-    "./dist",
-    "!./dist/**/*.map"
+    "dist",
+    "!dist/**/*.map"
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
