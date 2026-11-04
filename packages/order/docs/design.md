@@ -45,7 +45,7 @@ Authoritative detail in ADR-032 §1 and the frozen architecture. Summary:
    the element type changes.
 2. **`line.subject: OrderLineSubjectSnapshot`** replaces `line.product` — a closed
    union of five variants: `physical_good | digital_asset | licence | service |
-   plan`. No `bundle` variant.
+plan`. No `bundle` variant.
 3. **`line.priceBasis?: PriceBasis`** (optional; `price_list` with opaque
    `priceListId`/`offeringId`, or `manual`; documented non-exhaustive consumption
    rule) and **`line.term?: OrderLineTerm`** (optional).
@@ -100,7 +100,7 @@ organizations (`kind` defaults to `individual`). Enforced in `Order.create` →
   `OrderError`. It **never** increments `version`.
 - **Repository** owns persistence and (per ADR-029) the version compare-and-set.
   `OrderRepository`'s surface (`getById`, `save`, `search`) is **unchanged** by
-  Phase A; its `save` *semantics* become version-checked only when ADR-029 is
+  Phase A; its `save` _semantics_ become version-checked only when ADR-029 is
   accepted and implemented.
 
 ## Version and concurrency (contract only — no implementation claimed)
