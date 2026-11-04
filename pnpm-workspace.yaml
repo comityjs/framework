@@ -29,3 +29,9 @@ allowBuilds:
   edgedriver: false
   geckodriver: false
   msw: false
+minimumReleaseAgeExclude:
+  - "@comity-dev/build@0.3.0"
+  - "@comity-dev/cli@0.2.3"
+  - "@comity-dev/package-tools@0.2.1"
+  - "@comity-dev/semgrep-rules@0.2.3"
+  - "@comity-dev/validate@0.2.3"
