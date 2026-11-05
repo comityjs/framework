@@ -1,5 +1,22 @@
 # @comity/cli-commander
 
+## 0.9.3
+
+### Patch Changes
+
+- Publish caret sibling ranges instead of exact pins (WP-A1, released by WP-A2).
+
+  Every internal `@comity/*` reference in `dependencies` and `peerDependencies` now uses
+  `workspace:^`, so published manifests carry `^<sibling version>` instead of the exact pin
+  that `pnpm` produced from `workspace:*`. Under 0.x this means a patch bump of a sibling is
+  compatible and a sibling minor is a range break. Sibling `devDependencies` are unchanged.
+
+  This coordinated patch release publishes every package that carries a sibling edge; it
+  contains no behaviour change.
+
+- Updated dependencies
+  - @comity/cli@0.9.3
+
 ## 0.9.2
 
 ### Patch Changes

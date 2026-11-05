@@ -1,6 +1,6 @@
 {
   "name": "@comity/cache-redis",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "Redis cache module for Comity framework",
   "type": "module",
   "private": false,
