@@ -38,6 +38,18 @@ jobs:
       - name: Build
         run: pnpm build
 
+      - name: Validate packed surface
+        env:
+          COMITY_PACKED_SURFACE_ENFORCEMENT: ${{ vars.COMITY_PACKED_SURFACE_ENFORCEMENT }}
+        run: |
+          if [ "$COMITY_PACKED_SURFACE_ENFORCEMENT" = "true" ]; then
+            echo "packed-surface enforcement is active: a stage-2 finding blocks publication"
+            pnpm validate:packed-surface
+          else
+            echo "::warning::packed-surface enforcement is inactive (COMITY_PACKED_SURFACE_ENFORCEMENT is not \"true\"); reporting ARCH-PACK findings without blocking publication. Activate only after WP-A1, WP-A4 and WP-B formal ratification."
+            pnpm validate:packed-surface || true
+          fi
+
       - name: Release
         id: changesets
         uses: changesets/action@v1
