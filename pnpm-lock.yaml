@@ -214,8 +214,8 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0
       "@comity-dev/cli":
-        specifier: ^0.2.3
-        version: 0.2.3(jiti@2.7.0)(supports-color@7.2.0)(typescript@5.9.3)
+        specifier: ^0.2.4
+        version: 0.2.4(jiti@2.7.0)(supports-color@7.2.0)
       "@comity-dev/dependency-rules":
         specifier: ^0.2.0
         version: 0.2.0
@@ -232,8 +232,8 @@ importers:
         specifier: ^0.2.3
         version: 0.2.3
       "@comity-dev/validate":
-        specifier: ^0.2.3
-        version: 0.2.3(jiti@2.7.0)(supports-color@7.2.0)(typescript@5.9.3)
+        specifier: ^0.3.0
+        version: 0.3.0(jiti@2.7.0)(supports-color@7.2.0)
       "@typescript-eslint/eslint-plugin":
         specifier: ^8.72.0
         version: 8.72.0(@typescript-eslint/parser@8.72.0(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@5.9.3))(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@5.9.3)
@@ -1368,10 +1368,10 @@ packages:
     engines: { node: ">=24.0.0" }
     hasBin: true
 
-  "@comity-dev/cli@0.2.3":
+  "@comity-dev/cli@0.2.4":
     resolution:
       {
-        integrity: sha512-GMqmrP6Y7aQUAMqpo6SRvOE+81zjdEQtMq7p5HblCS0gFR9+EqK1mwcZW7MAbnzmsRQ4b3IC1oZ+gp7lvKHIhA==,
+        integrity: sha512-ziCfVz92gl3Q/S0yrelPTSDepm/weVRzfMphQdedeIp3OYgTOnUcDabY7PSTaTI3jBg6+5iHjxKk7q+qXJVbEw==,
       }
     engines: { node: ">=24.0.0" }
     hasBin: true
@@ -1414,10 +1414,10 @@ packages:
       }
     engines: { node: ">=24.0.0" }
 
-  "@comity-dev/validate@0.2.3":
+  "@comity-dev/validate@0.3.0":
     resolution:
       {
-        integrity: sha512-fnDek16W8sFg396P0RaGvqteBMW1+Jj418aiMlwZwN9ntrm4qVxgLelJ7Lpb+C89/rUMPRWO5coDxaq1BsHozg==,
+        integrity: sha512-5M0Y1sJQDpyLQKlXoQBiHZzmoDp43JlRGbeEVO2V3TvITmK3p5aGdDpnKtpD98cpc33y/CafAIy/eCJrNTxqwQ==,
       }
     engines: { node: ">=24.0.0" }
     hasBin: true
@@ -6247,15 +6247,14 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
-  "@comity-dev/cli@0.2.3(jiti@2.7.0)(supports-color@7.2.0)(typescript@5.9.3)":
+  "@comity-dev/cli@0.2.4(jiti@2.7.0)(supports-color@7.2.0)":
     dependencies:
       "@comity-dev/build": 0.3.0
       "@comity-dev/package-tools": 0.2.1
-      "@comity-dev/validate": 0.2.3(jiti@2.7.0)(supports-color@7.2.0)(typescript@5.9.3)
+      "@comity-dev/validate": 0.3.0(jiti@2.7.0)(supports-color@7.2.0)
     transitivePeerDependencies:
       - jiti
       - supports-color
-      - typescript
 
   "@comity-dev/dependency-rules@0.2.0": {}
 
@@ -6274,7 +6273,7 @@ snapshots:
 
   "@comity-dev/semgrep-rules@0.2.3": {}
 
-  "@comity-dev/validate@0.2.3(jiti@2.7.0)(supports-color@7.2.0)(typescript@5.9.3)":
+  "@comity-dev/validate@0.3.0(jiti@2.7.0)(supports-color@7.2.0)":
     dependencies:
       "@comity-dev/dependency-rules": 0.2.0
       "@comity-dev/eslint-plugin": 0.3.0(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))
@@ -6283,10 +6282,10 @@ snapshots:
       "@typescript-eslint/parser": 8.72.0(eslint@9.39.5(jiti@2.7.0)(supports-color@7.2.0))(supports-color@7.2.0)(typescript@5.9.3)
       dependency-cruiser: 16.10.4
       eslint: 9.39.5(jiti@2.7.0)(supports-color@7.2.0)
+      typescript: 5.9.3
     transitivePeerDependencies:
       - jiti
       - supports-color
-      - typescript
 
   "@csstools/color-helpers@6.1.2":
     optional: true
