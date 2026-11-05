@@ -1,6 +1,6 @@
 {
   "name": "@comity/queue-pg-boss",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "pg-boss technology adapter for @comity/queue contracts",
   "type": "module",
   "private": false,
@@ -59,12 +59,12 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/queue": "workspace:*",
+    "@comity/queue": "workspace:^",
     "pg-boss": "^12.38.0"
   },
   "dependencies": {
-    "@comity/primitives": "workspace:*",
-    "@comity/queue": "workspace:*"
+    "@comity/primitives": "workspace:^",
+    "@comity/queue": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

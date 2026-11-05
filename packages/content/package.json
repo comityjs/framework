@@ -1,6 +1,6 @@
 {
   "name": "@comity/content",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "CMS and content abstractions for Comity domain modules.",
   "type": "module",
   "private": false,
@@ -64,9 +64,9 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@comity/media": "workspace:*",
-    "@comity/primitives": "workspace:*",
-    "@comity/seo": "workspace:*"
+    "@comity/media": "workspace:^",
+    "@comity/primitives": "workspace:^",
+    "@comity/seo": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

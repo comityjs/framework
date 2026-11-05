@@ -1,6 +1,6 @@
 {
   "name": "@comity/identity",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "Identity domain abstractions for Comity modules.",
   "type": "module",
   "private": false,
@@ -53,8 +53,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@comity/primitives": "workspace:*",
-    "@comity/validation": "workspace:*"
+    "@comity/primitives": "workspace:^",
+    "@comity/validation": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

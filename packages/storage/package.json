@@ -1,6 +1,6 @@
 {
   "name": "@comity/storage",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "Storage module for Comity framework",
   "type": "module",
   "private": false,
@@ -78,8 +78,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@comity/composition": "workspace:*",
-    "@comity/primitives": "workspace:*"
+    "@comity/composition": "workspace:^",
+    "@comity/primitives": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

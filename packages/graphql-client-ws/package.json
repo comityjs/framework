@@ -1,6 +1,6 @@
 {
   "name": "@comity/graphql-client-ws",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "GraphQL WebSocket client module for Comity framework",
   "type": "module",
   "private": false,
@@ -56,11 +56,11 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/graphql-client": "workspace:*",
+    "@comity/graphql-client": "workspace:^",
     "graphql-ws": "^6.0.0"
   },
   "dependencies": {
-    "@comity/graphql-client": "workspace:*"
+    "@comity/graphql-client": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

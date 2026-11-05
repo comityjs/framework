@@ -277,7 +277,7 @@ importers:
   packages/acl:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -290,10 +290,10 @@ importers:
   packages/acl-casl:
     dependencies:
       "@comity/acl":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../acl
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@casl/ability":
@@ -309,10 +309,10 @@ importers:
   packages/address:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
       "@comity/validation":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../validation
     devDependencies:
       "@types/node":
@@ -325,10 +325,10 @@ importers:
   packages/auth:
     dependencies:
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -341,16 +341,16 @@ importers:
   packages/auth-jose:
     dependencies:
       "@comity/auth":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../auth
       "@comity/auth-tokens":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../auth-tokens
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -366,10 +366,10 @@ importers:
   packages/auth-tokens:
     dependencies:
       "@comity/auth":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../auth
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -382,10 +382,10 @@ importers:
   packages/cache:
     dependencies:
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -398,13 +398,13 @@ importers:
   packages/cache-kv:
     dependencies:
       "@comity/cache":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../cache
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -417,13 +417,13 @@ importers:
   packages/cache-redis:
     dependencies:
       "@comity/cache":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../cache
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
       ioredis:
         specifier: ^5.0.0
@@ -442,13 +442,13 @@ importers:
   packages/catalog:
     dependencies:
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/media":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../media
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -461,7 +461,7 @@ importers:
   packages/cli:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -474,7 +474,7 @@ importers:
   packages/cli-commander:
     dependencies:
       "@comity/cli":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../cli
     devDependencies:
       "@comity/kernel":
@@ -496,10 +496,10 @@ importers:
   packages/composition:
     dependencies:
       "@comity/kernel":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../kernel
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -512,13 +512,13 @@ importers:
   packages/content:
     dependencies:
       "@comity/media":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../media
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
       "@comity/seo":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../seo
     devDependencies:
       "@types/node":
@@ -531,13 +531,13 @@ importers:
   packages/customer:
     dependencies:
       "@comity/organization":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../organization
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
       "@comity/validation":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../validation
     devDependencies:
       "@types/node":
@@ -550,7 +550,7 @@ importers:
   packages/geography:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -572,10 +572,10 @@ importers:
   packages/graphql-client:
     dependencies:
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -588,7 +588,7 @@ importers:
   packages/graphql-client-fetch:
     dependencies:
       "@comity/graphql-client":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../graphql-client
     devDependencies:
       "@types/node":
@@ -601,7 +601,7 @@ importers:
   packages/graphql-client-ws:
     dependencies:
       "@comity/graphql-client":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../graphql-client
     devDependencies:
       "@types/node":
@@ -617,7 +617,7 @@ importers:
   packages/html:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -630,7 +630,7 @@ importers:
   packages/html-preact:
     dependencies:
       "@comity/html":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../html
       preact-render-to-string:
         specifier: ^6.8.1
@@ -649,7 +649,7 @@ importers:
   packages/html-react:
     dependencies:
       "@comity/html":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../html
     devDependencies:
       "@types/node":
@@ -674,13 +674,13 @@ importers:
   packages/http:
     dependencies:
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/kernel":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../kernel
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -693,7 +693,7 @@ importers:
   packages/http-fetch:
     dependencies:
       "@comity/http":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../http
     devDependencies:
       "@types/node":
@@ -706,13 +706,13 @@ importers:
   packages/http-hono:
     dependencies:
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/http":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../http
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -728,7 +728,7 @@ importers:
   packages/hydration:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -741,7 +741,7 @@ importers:
   packages/hydration-preact:
     dependencies:
       "@comity/hydration":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hydration
     devDependencies:
       "@types/node":
@@ -757,7 +757,7 @@ importers:
   packages/hydration-react:
     dependencies:
       "@comity/hydration":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../hydration
     devDependencies:
       "@types/node":
@@ -782,10 +782,10 @@ importers:
   packages/i18n:
     dependencies:
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -798,13 +798,13 @@ importers:
   packages/i18n-typesafe:
     dependencies:
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/i18n":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../i18n
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -820,10 +820,10 @@ importers:
   packages/identity:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
       "@comity/validation":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../validation
     devDependencies:
       "@types/node":
@@ -836,7 +836,7 @@ importers:
   packages/inventory:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -849,7 +849,7 @@ importers:
   packages/kernel:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -871,13 +871,13 @@ importers:
   packages/order:
     dependencies:
       "@comity/organization":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../organization
       "@comity/pricing":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../pricing
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -890,7 +890,7 @@ importers:
   packages/organization:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -903,13 +903,13 @@ importers:
   packages/payment:
     dependencies:
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/pricing":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../pricing
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -922,7 +922,7 @@ importers:
   packages/pricing:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -944,7 +944,7 @@ importers:
   packages/queue:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -957,10 +957,10 @@ importers:
   packages/queue-pg-boss:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
       "@comity/queue":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../queue
     devDependencies:
       "@types/node":
@@ -976,13 +976,13 @@ importers:
   packages/router:
     dependencies:
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/http":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../http
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -995,7 +995,7 @@ importers:
   packages/router-path-to-regexp:
     dependencies:
       "@comity/router":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../router
     devDependencies:
       "@types/node":
@@ -1011,7 +1011,7 @@ importers:
   packages/search:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -1033,7 +1033,7 @@ importers:
   packages/sql:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -1046,7 +1046,7 @@ importers:
   packages/sql-drizzle:
     dependencies:
       "@comity/sql":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../sql
     devDependencies:
       "@types/node":
@@ -1062,7 +1062,7 @@ importers:
   packages/sql-kysely:
     dependencies:
       "@comity/sql":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../sql
     devDependencies:
       "@types/node":
@@ -1078,10 +1078,10 @@ importers:
   packages/storage:
     dependencies:
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -1094,22 +1094,22 @@ importers:
   packages/storefront:
     dependencies:
       "@comity/catalog":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../catalog
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/content":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../content
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
       "@comity/search":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../search
       "@comity/taxonomy":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../taxonomy
     devDependencies:
       "@types/node":
@@ -1122,13 +1122,13 @@ importers:
   packages/taxonomy:
     dependencies:
       "@comity/composition":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../composition
       "@comity/media":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../media
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -1141,7 +1141,7 @@ importers:
   packages/validation:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
     devDependencies:
       "@types/node":
@@ -1154,10 +1154,10 @@ importers:
   packages/validation-zod:
     dependencies:
       "@comity/primitives":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../primitives
       "@comity/validation":
-        specifier: workspace:*
+        specifier: workspace:^
         version: link:../validation
       zod:
         specifier: ^4

@@ -1,6 +1,6 @@
 {
   "name": "@comity/sql-kysely",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "Kysely ORM adapter for @comity/sql contracts",
   "type": "module",
   "private": false,
@@ -58,11 +58,11 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/sql": "workspace:*",
+    "@comity/sql": "workspace:^",
     "kysely": "^0.28.0"
   },
   "dependencies": {
-    "@comity/sql": "workspace:*"
+    "@comity/sql": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

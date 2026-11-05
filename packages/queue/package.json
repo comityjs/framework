@@ -1,6 +1,6 @@
 {
   "name": "@comity/queue",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "Job queue capability contract for Comity framework.",
   "type": "module",
   "private": false,
@@ -64,7 +64,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@comity/primitives": "workspace:*"
+    "@comity/primitives": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

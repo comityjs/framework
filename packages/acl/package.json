@@ -1,6 +1,6 @@
 {
   "name": "@comity/acl",
-  "version": "0.9.3",
+  "version": "0.9.4",
   "description": "Authorization capability for Comity modules.",
   "type": "module",
   "private": false,
@@ -63,7 +63,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@comity/primitives": "workspace:*"
+    "@comity/primitives": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

@@ -1,6 +1,6 @@
 {
   "name": "@comity/hydration-react",
-  "version": "0.9.2",
+  "version": "0.9.3",
   "description": "Hydration module for server-rendered applications with Comity framework",
   "type": "module",
   "private": false,
@@ -60,12 +60,12 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/hydration": "workspace:*",
+    "@comity/hydration": "workspace:^",
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0"
   },
   "dependencies": {
-    "@comity/hydration": "workspace:*"
+    "@comity/hydration": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

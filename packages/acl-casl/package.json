@@ -1,6 +1,6 @@
 {
   "name": "@comity/acl-casl",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "CASL adapter for @comity/acl.",
   "type": "module",
   "private": false,
@@ -54,12 +54,12 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/acl": "workspace:*",
+    "@comity/acl": "workspace:^",
     "@casl/ability": "^7.0.0"
   },
   "dependencies": {
-    "@comity/acl": "workspace:*",
-    "@comity/primitives": "workspace:*"
+    "@comity/acl": "workspace:^",
+    "@comity/primitives": "workspace:^"
   },
   "devDependencies": {
     "@casl/ability": "^7.0.2",
