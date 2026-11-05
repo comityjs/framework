@@ -57,10 +57,10 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/http": "workspace:*"
+    "@comity/http": "workspace:^"
   },
   "dependencies": {
-    "@comity/http": "workspace:*"
+    "@comity/http": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

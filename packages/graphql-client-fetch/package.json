@@ -57,10 +57,10 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/graphql-client": "workspace:*"
+    "@comity/graphql-client": "workspace:^"
   },
   "dependencies": {
-    "@comity/graphql-client": "workspace:*"
+    "@comity/graphql-client": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

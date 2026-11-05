@@ -59,12 +59,12 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/queue": "workspace:*",
+    "@comity/queue": "workspace:^",
     "pg-boss": "^12.38.0"
   },
   "dependencies": {
-    "@comity/primitives": "workspace:*",
-    "@comity/queue": "workspace:*"
+    "@comity/primitives": "workspace:^",
+    "@comity/queue": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

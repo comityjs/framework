@@ -58,11 +58,11 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/sql": "workspace:*",
+    "@comity/sql": "workspace:^",
     "kysely": "^0.28.0"
   },
   "dependencies": {
-    "@comity/sql": "workspace:*"
+    "@comity/sql": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

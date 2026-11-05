@@ -64,9 +64,9 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@comity/media": "workspace:*",
-    "@comity/primitives": "workspace:*",
-    "@comity/seo": "workspace:*"
+    "@comity/media": "workspace:^",
+    "@comity/primitives": "workspace:^",
+    "@comity/seo": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

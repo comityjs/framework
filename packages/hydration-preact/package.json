@@ -60,11 +60,11 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/hydration": "workspace:*",
+    "@comity/hydration": "workspace:^",
     "preact": "^10.0.0"
   },
   "dependencies": {
-    "@comity/hydration": "workspace:*"
+    "@comity/hydration": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

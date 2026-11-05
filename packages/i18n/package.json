@@ -74,8 +74,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@comity/composition": "workspace:*",
-    "@comity/primitives": "workspace:*"
+    "@comity/composition": "workspace:^",
+    "@comity/primitives": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

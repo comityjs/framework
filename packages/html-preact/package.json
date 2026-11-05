@@ -70,11 +70,11 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/html": "workspace:*",
+    "@comity/html": "workspace:^",
     "preact": "^10.0.0"
   },
   "dependencies": {
-    "@comity/html": "workspace:*",
+    "@comity/html": "workspace:^",
     "preact-render-to-string": "^6.8.1"
   },
   "devDependencies": {

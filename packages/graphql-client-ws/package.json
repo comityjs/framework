@@ -56,11 +56,11 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/graphql-client": "workspace:*",
+    "@comity/graphql-client": "workspace:^",
     "graphql-ws": "^6.0.0"
   },
   "dependencies": {
-    "@comity/graphql-client": "workspace:*"
+    "@comity/graphql-client": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

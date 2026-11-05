@@ -41,9 +41,9 @@ describe("@comity/queue-pg-boss public API", () => {
   it("should declare the core contract and pg-boss as peers", () => {
     const manifest = readManifest();
 
-    expect(manifest.peerDependencies?.["@comity/queue"]).toBe("workspace:*");
+    expect(manifest.peerDependencies?.["@comity/queue"]).toBe("workspace:^");
     expect(manifest.peerDependencies?.["pg-boss"]).toBe("^12.38.0");
-    expect(manifest.dependencies?.["@comity/queue"]).toBe("workspace:*");
+    expect(manifest.dependencies?.["@comity/queue"]).toBe("workspace:^");
   });
 
   it("should be MIT licensed", () => {

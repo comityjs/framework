@@ -73,12 +73,12 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@comity/catalog": "workspace:*",
-    "@comity/composition": "workspace:*",
-    "@comity/content": "workspace:*",
-    "@comity/primitives": "workspace:*",
-    "@comity/search": "workspace:*",
-    "@comity/taxonomy": "workspace:*"
+    "@comity/catalog": "workspace:^",
+    "@comity/composition": "workspace:^",
+    "@comity/content": "workspace:^",
+    "@comity/primitives": "workspace:^",
+    "@comity/search": "workspace:^",
+    "@comity/taxonomy": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

@@ -58,11 +58,11 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/router": "workspace:*",
+    "@comity/router": "workspace:^",
     "path-to-regexp": "^8.0.0"
   },
   "dependencies": {
-    "@comity/router": "workspace:*"
+    "@comity/router": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

@@ -53,7 +53,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@comity/primitives": "workspace:*"
+    "@comity/primitives": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

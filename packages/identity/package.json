@@ -53,8 +53,8 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@comity/primitives": "workspace:*",
-    "@comity/validation": "workspace:*"
+    "@comity/primitives": "workspace:^",
+    "@comity/validation": "workspace:^"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

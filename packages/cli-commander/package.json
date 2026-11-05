@@ -59,11 +59,11 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/cli": "workspace:*",
+    "@comity/cli": "workspace:^",
     "commander": "^14 || ^15"
   },
   "dependencies": {
-    "@comity/cli": "workspace:*"
+    "@comity/cli": "workspace:^"
   },
   "devDependencies": {
     "@comity/kernel": "workspace:*",
