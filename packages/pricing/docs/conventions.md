@@ -6,10 +6,13 @@ This document defines the conventions for `@comity/pricing`.
 
 ## 1. Scope
 
-The package owns the pricing domain. It contains no Entity and no Repository:
-prices are computed, never stored. It MUST NOT grow into a discount/tax policy
-engine, MUST NOT introduce generic numeric abstractions, and MUST NOT depend on
-any other Core Module except `@comity/primitives` (ADR-008 register, ADR-014).
+The package owns the pricing domain. It contains no Entity, Repository or I/O:
+`Price` values are **computed and transient**, while `PriceRecord` is the
+**defined historical persistence representation**. Pricing defines that record
+contract; storage adapters persist it outside this package. It MUST NOT grow
+into a discount/tax policy engine, MUST NOT introduce generic numeric
+abstractions, and MUST NOT depend on any other Core Module except
+`@comity/primitives` (ADR-008 register, ADR-014).
 
 ---
 
@@ -97,14 +100,44 @@ architectural decision, not to pricing.
   `pricing:<reason>`
 - allowed reasons: `invalid_currency`, `invalid_amount`, `invalid_precision`,
   `currency_mismatch`, `invalid_percentage`, `invalid_modifier`,
-  `calculation_failed`
+  `calculation_failed`, `unsupported_record_format`
 - `invalid_precision` is reserved for future scaled operations; it is
   unreachable with the current integer-minor-unit API
+- `unsupported_record_format` is a structural failure: the stored record's
+  schema `format` is not supported
 - forbidden: `not_found`, `unknown`, `validation_failed`, `repository_error`
 
 ---
 
-## 6. Public API
+## 6. Historical price records
+
+- `PriceRecord` is the immutable historical persistence representation;
+  `Price` remains transient and never crosses the persistence boundary
+  (ADR-014 §6, §14)
+- `PriceSnapshot` remains a `Price` + `capturedAt` in-memory/render form; it is
+  not a persistence form
+- `PriceCurrency` is structural `{ code, exponent }`, recorded verbatim;
+  restoration never consults the current ISO 4217 table
+- recorded amounts are bare `bigint` integer minor units in the record
+  currency; percentages restore losslessly from `(amount, scale)`
+- `format` identifies the record schema; `semanticsId` identifies the
+  calculation pipeline; the two axes are independent
+- `PriceRecord.from` stamps the current `format`/`semanticsId` internally;
+  callers cannot choose either value
+- `combine` is commit-time only: it validates each line record under current
+  semantics, sums `part.total` exactly, never reapplies line modifiers, and
+  applies order-level adjustments exactly once, in order
+- `restore` is structural only (no `Currency.create`, no recomputation, no
+  repair); `verify` is historical and never answers commit eligibility
+- commitment reconciliation compares `format`, `semanticsId`, currency
+  `(code, exponent)`, `subtotal`, `total` and the ordered modifiers on every
+  persisted field (ADR-014 A14-12)
+- no repository, adapter or I/O is introduced; persistence adapters live
+  outside this package
+
+---
+
+## 7. Public API
 
 - the root entrypoint is the public surface
 - errors are exposed through the `@comity/pricing/errors` subpath

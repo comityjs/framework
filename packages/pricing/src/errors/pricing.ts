@@ -17,7 +17,8 @@ export type PricingErrorReason =
   | "currency_mismatch"
   | "invalid_percentage"
   | "invalid_modifier"
-  | "calculation_failed";
+  | "calculation_failed"
+  | "unsupported_record_format";
 
 /**
  * Pricing error metadata.
@@ -39,6 +40,15 @@ interface PricingErrorMeta extends ErrorMeta {
 
     /** Modifier code that failed validation. */
     modifierCode?: string;
+
+    /** Record schema `format` that is unsupported or malformed. */
+    format?: number;
+
+    /** Pricing semantics identifier that is malformed. */
+    semanticsId?: number;
+
+    /** Currency minor-unit exponent that is malformed or mismatched. */
+    exponent?: number;
   }>;
 }
 
@@ -50,6 +60,7 @@ const REASON_MESSAGES: Record<PricingErrorReason, string> = {
   invalid_percentage: "Invalid percentage",
   invalid_modifier: "Invalid price modifier",
   calculation_failed: "Price calculation failed",
+  unsupported_record_format: "Unsupported price record format",
 };
 
 const REASON_HTTP_STATUS: Record<PricingErrorReason, number> = {
@@ -60,6 +71,7 @@ const REASON_HTTP_STATUS: Record<PricingErrorReason, number> = {
   invalid_percentage: 400,
   invalid_modifier: 400,
   calculation_failed: 422,
+  unsupported_record_format: 400,
 };
 
 /**

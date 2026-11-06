@@ -23,6 +23,14 @@ export class MemoryOrderRepository implements OrderRepository {
   /** Internal storage keyed by tenant + order ID */
   #orders = new Map<string, Order>();
 
+  /**
+   * Builds the tenant-scoped storage key.
+   *
+   * @param tenant - The tenant identifier.
+   * @param id - The order identifier.
+   *
+   * @returns The storage key.
+   */
   #makeKey(tenant: TenantId, id: OrderId): string {
     return `${tenant.toString()}\u0000${id.toString()}`;
   }
@@ -76,8 +84,10 @@ export class MemoryOrderRepository implements OrderRepository {
       status: o.status,
       createdAt: o.createdAt,
       updatedAt: o.updatedAt,
-      items: o.items,
+      version: o.version,
+      lines: o.lines,
       price: o.price,
+      currency: o.currency,
       channelId: o.channelId,
       ...(o.customer !== undefined ? { customer: o.customer } : {}),
       ...(o.addresses !== undefined ? { addresses: o.addresses } : {}),

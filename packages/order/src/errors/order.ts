@@ -9,6 +9,12 @@ import { BaseError } from "@comity/primitives/errors";
  * a `null` repository result, never an error; infrastructure and
  * cross-module failures (`repository_error`, `insufficient_stock`,
  * `product_not_available`, coupon validation) belong to other layers/modules.
+ *
+ * The four `currency_mismatch`, `price_incoherent`, `commitment_immutable` and
+ * `payment_fact_conflict` reasons are additive (errors.md §10): no existing
+ * reason changed its meaning, and no other reason exists. The former
+ * `invalid_buyer` reason is removed with O-11, whose commercial/fiscal buyer
+ * coherence belongs to Commerce.
  */
 export type OrderErrorReason =
   | "invalid_quantity"
@@ -16,7 +22,11 @@ export type OrderErrorReason =
   | "invalid_status_transition"
   | "shipping_destination_immutable"
   | "ambiguous_shipping_destination"
-  | "duplicate_item_id";
+  | "duplicate_item_id"
+  | "currency_mismatch"
+  | "price_incoherent"
+  | "commitment_immutable"
+  | "payment_fact_conflict";
 
 /**
  * Order error metadata.
@@ -45,13 +55,17 @@ interface OrderErrorMeta extends ErrorMeta {
 }
 
 const REASON_MESSAGES: Record<OrderErrorReason, string> = {
-  invalid_quantity: "Invalid order item quantity",
-  invalid_item: "Order item not found",
+  invalid_quantity: "Invalid order line quantity",
+  invalid_item: "Order line not found",
   invalid_status_transition: "Invalid order status transition",
   shipping_destination_immutable:
     "Shipping destination cannot be changed in the current order status",
   ambiguous_shipping_destination: "Order must contain exactly one shipping destination",
-  duplicate_item_id: "Duplicate order item identifier",
+  duplicate_item_id: "Duplicate order line identifier",
+  currency_mismatch: "Order lines and price must share one currency",
+  price_incoherent: "Order price is not coherent with its lines",
+  commitment_immutable: "Committed lines and price cannot be changed outside draft",
+  payment_fact_conflict: "Payment fact conflicts with the recorded payment facts",
 };
 
 const REASON_HTTP_STATUS: Record<OrderErrorReason, number> = {
@@ -61,6 +75,10 @@ const REASON_HTTP_STATUS: Record<OrderErrorReason, number> = {
   shipping_destination_immutable: 409,
   ambiguous_shipping_destination: 409,
   duplicate_item_id: 400,
+  currency_mismatch: 409,
+  price_incoherent: 409,
+  commitment_immutable: 409,
+  payment_fact_conflict: 409,
 };
 
 /**
