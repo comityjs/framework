@@ -1,6 +1,9 @@
-import type { OrderItem } from "../../contracts/item.js";
+import type { PriceCurrency } from "@comity/pricing";
+import type { OrderLine } from "../../contracts/line.js";
+import type { OrderStatus } from "../../contracts/order.js";
 
-import { Currency, Money, Price } from "@comity/pricing";
+import { Currency, Money, Price, PriceRecord } from "@comity/pricing";
+import { Instant } from "@comity/primitives/time";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Order } from "../../entities/order.js";
 import { OrderId } from "../../value-objects/order-id.js";
@@ -27,18 +30,15 @@ function createChannel(value: string): ChannelId {
   return unwrap(ChannelId.create(value));
 }
 
-function createCurrency(): Currency {
-  return unwrap(Currency.create("EUR"));
+const eur = unwrap(Currency.create("EUR"));
+const currency: PriceCurrency = { code: eur.code, exponent: eur.exponent };
+
+function money(amount: bigint): Money {
+  return unwrap(Money.create(amount, eur));
 }
 
-function money(amount: bigint, eur: Currency): Money {
-  const m = unwrap(Money.create(amount, eur));
-  return m;
-}
-
-function price(amount: bigint, modifiers: ReadonlyArray<any> = []): Price {
-  const eur = createCurrency();
-  return unwrap(Price.create(money(amount, eur), modifiers));
+function record(amount: bigint): PriceRecord {
+  return unwrap(PriceRecord.from(unwrap(Price.create(money(amount), []))));
 }
 
 const tenantA = createTenant("tenant-a");
@@ -46,11 +46,11 @@ const tenantB = createTenant("tenant-b");
 const channelWeb = createChannel("web");
 const channelPos = createChannel("pos");
 
-const product: OrderItem = {
-  id: "item-1",
-  product: { productId: "prod-1", sku: "SKU-1", name: "T-shirt" } as any,
+const line: OrderLine = {
+  lineId: "line-1",
+  subject: { reference: "SKU-1", name: "T-shirt" },
   quantity: 2,
-  price: price(10000n),
+  price: record(10000n),
 };
 
 function createOrder(
@@ -61,12 +61,13 @@ function createOrder(
   const orderId = id ?? createId(`order-${Math.random().toString(36).slice(2, 12)}`);
   return new Order(
     {
-      items: [product],
-      price: price(10000n),
+      lines: [line],
+      price: record(10000n),
+      currency,
       channelId: channel,
       status,
-      createdAt: 1000,
-      updatedAt: 1000,
+      createdAt: Instant.fromEpochMilliseconds(1000),
+      updatedAt: Instant.fromEpochMilliseconds(1000),
     },
     orderId
   );

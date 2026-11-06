@@ -1,13 +1,7 @@
 export type { OrderAddressRole, OrderAddressSnapshot } from "./contracts/address-snapshot.js";
 export type { OrderContact } from "./contracts/contact.js";
 export type { OrderCustomerSnapshot } from "./contracts/customer-snapshot.js";
-export type {
-  OrderItem,
-  OrderProductAttribute,
-  OrderProductOption,
-  OrderProductSnapshot,
-  OrderVariantSnapshot,
-} from "./contracts/item.js";
+export type { OrderLine, OrderLineSubject } from "./contracts/line.js";
 export type {
   OrderRepository,
   OrderRepositoryContext,
@@ -17,7 +11,6 @@ export type {
 export type {
   OrderCreate,
   OrderData,
-  OrderItemInput,
   OrderSnapshot,
   OrderState,
   OrderStatus,

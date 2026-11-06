@@ -1,20 +1,21 @@
 # @comity/order — Overview
 
-`@comity/order` provides the order entity, contracts, and models for Comity commerce flows.
+`@comity/order` provides the generic order commitment aggregate, contracts and models for Comity commerce flows.
 
 ## What it includes
 
-- order entity with lifecycle transitions and item mutations
-- order, item, and product contracts with status lifecycle
+- order entity with lifecycle transitions, validating creation and the atomic `setPricedContent` operation
+- generic order, line and subject-snapshot contracts
 - order identifier value object
 - order repository contracts
-- order-specific errors
+- order-specific errors (ten reasons; four added by the Phase A extension)
 
 ## What it does not include
 
 - persistence implementations
+- commerce taxonomy, billing/fiscal buyer facts, price provenance or terms
 - checkout orchestration
-- transport-specific behavior
+- optimistic concurrency (the advisory `version` token only)
 
 ## Design
 
@@ -27,52 +28,92 @@ draft → pending → confirmed → fulfilled
   └────────┴──────────┴── cancelled
 ```
 
-Any order in `draft`, `pending`, or `confirmed` status can be cancelled.
+Any order in `draft`, `pending` or `confirmed` status can be cancelled.
 
-## Product Snapshot Boundary
+`confirmed` means the order's delivery obligations exist; `fulfilled` means every
+_delivery_ obligation created by the order's lines has been discharged —
+financial settlement never gates the status. `cancelled` terminates the
+commitment; a financial reversal is a separate payment fact.
 
-Order items embed `OrderProductSnapshot` — an owned, immutable, self-contained
-representation of the product at purchase time. It is not `ProductProjection`
-from `@comity/catalog` and not a reference to the catalog: once the order is
-created it no longer depends on the catalog. The application/checkout maps
-`ProductProjection` into the snapshot at creation time; historical order
-rendering, customer support, invoices, and returns use only this record.
-`@comity/order` does not depend on `@comity/catalog`.
+## Creation and hydration
 
-## Pricing Ownership
+`Order.create(data, id)` is the validating creation path: it checks O-1
+(integer quantity `>= 1`), O-2 (unique `lineId`), O-6 (one currency on `(code,
+exponent)`), O-7 (exact `PriceRecord` commitment equality with the record
+derived by `combine`) and O-9 (supplied payment facts), and returns
+`Result<Order, OrderError>`. A new order is `draft` with `version: 0`.
 
-`@comity/pricing` is the single owner of price composition data. Orders store
-the full immutable `Price` value (subtotal, modifiers, total) on the line item
-and at order level; there is no separate modifier storage in order contracts.
-Modifiers are accessed exclusively through `price.modifiers`.
+`OrderData.currency` and `OrderData.price` are always required. An empty order
+is accepted only with the canonical zero record: subtotal `0`, total `0`, no
+modifiers, supported `format`, current `semanticsId` and the order currency.
 
-## Persistence vs Domain
+`setPricedContent([], ...)` is rejected: clearing all priced content is not a
+supported transition.
 
-`OrderRepository` is the persistence boundary: it exposes `getById`, `search`, and `save` and returns
-`Result<T, RepositoryError>`. Not-found is `null`, never an error, and orders are not physically deleted
-(the terminal states are `cancelled` and `fulfilled`).
+The constructor is the **hydration** path (ADR-001): it performs no validation
+and restores persisted state — including `version` — verbatim.
 
-Domain behavior lives on the `Order` entity: item mutations (`setItems`, `addItem`, `removeItem`, `updateItemQuantity`)
-protect the order's invariants, and lifecycle transitions (`submit`, `confirm`, `fulfill`, `cancel`) go
-through the centralized transition rules in `domain/order-transitions.ts`. Cross-aggregate orchestration
-(pricing, coupons, inventory) belongs to application/domain services, not to this package.
+## Priced content
 
-`setItems` is retained alongside the individual mutations because only full
-replacement is atomic: it validates the entire caller-decided collection
-before mutating, so a failure leaves items, price, status, metadata, and
-timestamps untouched — a sequence of `addItem`/`removeItem`/
-`updateItemQuantity` calls cannot provide equivalent failure atomicity or
-single-`updatedAt` semantics. It performs no merging or product-equivalence
-detection; the supplied collection is the complete desired collection.
+`setPricedContent(lines, adjustments)` is the single draft-only operation that
+replaces all priced content atomically. It derives the order-level record with
+`PriceRecord.combine(lines.map(line => line.price), adjustments)`:
 
-Orders are not created through a public command boundary: a draft order is an `Order` in `"draft"` status.
+- each part is a finalized line record and contributes its `total`;
+- line-level modifiers are provenance and are never reapplied or copied;
+- order-level adjustments are applied exactly once, in the supplied order;
+- on any failure the aggregate is left completely unchanged.
 
-## Identity
+`update` only changes non-semantic metadata. There are no line mutators: the
+four former mutators and `OrderUpdate.price` are withdrawn.
 
-Every `Order` receives its valid `OrderId` at construction from the caller
-(application service or hydration path); the entity never generates its own
-aggregate ID, and reconstruction preserves the persisted ID verbatim.
-`OrderItem` stays embedded: each occurrence carries a caller-assigned stable
-technical key (`OrderItemInput.id`) that identifies the occurrence, not the
-product. The aggregate mints no item IDs, preserves supplied occurrence IDs
-verbatim, and rejects duplicate occurrence IDs on every mutation path.
+## Line subject boundary
+
+An order line embeds `subject: OrderLineSubject` — an owned, immutable,
+generic snapshot of what was bought: optional opaque `reference`, required
+`name`, optional `description`. It is renderable without the catalog, but it
+carries no commercial taxonomy, SKU, variant, option or attribute. Commerce
+specialises its own richer representation by composition and serialisation
+into `line.meta`, never by extending Comity types.
+
+## Commitment immutability
+
+Priced content may change only in `draft`. Outside `draft`,
+`setPricedContent` returns `order:commitment_immutable`. Metadata stays
+updatable in every status. `submit` re-derives the order record from the stored
+line records and the stored order-level modifiers and requires exact
+commitment equality before leaving `draft`; it never uses `verify()` and never
+constructs a record from a `Price`.
+
+## Payment facts
+
+`attachPayment` records an immutable historical fact. Facts dedupe on
+`(paymentId, status)`: an identical repeat is an idempotent no-op, the same key
+with a different amount is `order:payment_fact_conflict`, and a new status for a
+known `paymentId` is legal only from `authorized` to `captured`, `failed` or
+`cancelled` (recorded facts are terminal). A fact without a `paymentId` is
+always appended.
+
+## Pricing ownership
+
+`@comity/pricing` is the single owner of price composition. Orders store the
+immutable `PriceRecord` on each line and at order level, plus the structural
+`PriceCurrency`. Modifiers are accessed only through `price.modifiers`. Order
+maps `combine`'s `currency_mismatch` to `order:currency_mismatch` and every
+other pricing failure to `order:price_incoherent`.
+
+## Advisory version
+
+`OrderState.version` is a read-only token. A new, not-yet-persisted aggregate
+has `0`; hydration restores the persisted value verbatim. The aggregate never
+increments it — the repository does, once per successful save. It is advisory
+until ADR-029 is accepted and a conforming adapter exists.
+
+## Errors
+
+The closed reason union contains `invalid_quantity`, `invalid_item`,
+`invalid_status_transition`, `shipping_destination_immutable`,
+`ambiguous_shipping_destination`, `duplicate_item_id`, `currency_mismatch`,
+`price_incoherent`, `commitment_immutable` and `payment_fact_conflict`.
+`invalid_buyer` and O-11 are removed: buyer commercial/fiscal coherence is
+Commerce policy.

@@ -1,17 +1,17 @@
-import type { Price } from "@comity/pricing";
+import type { PriceCurrency, PriceRecord } from "@comity/pricing";
 import type { Instant } from "@comity/primitives/time";
 import type { OrderId } from "../value-objects/order-id.js";
 import type { ChannelId } from "@comity/organization";
 import type { OrderAddressSnapshot } from "./address-snapshot.js";
 import type { OrderCustomerSnapshot } from "./customer-snapshot.js";
-import type { OrderItem, OrderProductSnapshot } from "./item.js";
+import type { OrderLine } from "./line.js";
 import type { OrderPaymentSnapshot } from "./payment-snapshot.js";
 
 /**
  * Order status.
  *
- * An order starts in {@link OrderStatus."draft"} and progresses through a linear lifecycle.
- * Each transition is explicit; the status cannot move backwards.
+ * An order starts in `draft` and progresses through a linear lifecycle. Each
+ * transition is explicit; the status cannot move backwards.
  *
  * Transitions:
  * - `draft` → `pending` (submit)
@@ -20,6 +20,12 @@ import type { OrderPaymentSnapshot } from "./payment-snapshot.js";
  * - `draft | pending | confirmed` → `cancelled` (cancel)
  *
  * `fulfilled` and `cancelled` are terminal.
+ *
+ * - `draft`: terms are being assembled; nothing is owed.
+ * - `pending`: submitted for acceptance.
+ * - `confirmed`: terms accepted; delivery obligations exist.
+ * - `fulfilled`: every delivery obligation has been discharged.
+ * - `cancelled`: the commitment is terminated.
  */
 export type OrderStatus = "draft" | "pending" | "confirmed" | "fulfilled" | "cancelled";
 
@@ -27,11 +33,25 @@ export type OrderStatus = "draft" | "pending" | "confirmed" | "fulfilled" | "can
  * Business data of an order, independent of identity and lifecycle metadata.
  */
 export interface OrderData {
-  /** Order items. */
-  readonly items: ReadonlyArray<OrderItem>;
+  /** Committed lines. */
+  readonly lines: ReadonlyArray<OrderLine>;
 
-  /** Order price. `@comity/pricing` owns price composition: modifiers are accessed through `price.modifiers`. */
-  readonly price: Price;
+  /**
+   * Frozen order-level price composed by `@comity/pricing`.
+   *
+   * The aggregate derives `price.subtotal` (the sum of the line totals) and
+   * `price.total` (after order-level adjustments) through
+   * `PriceRecord.combine`; it never performs pricing arithmetic itself (O-7).
+   */
+  readonly price: PriceRecord;
+
+  /**
+   * Monetary unit of the order and of every line and amount in `price`.
+   *
+   * A structural `PriceCurrency`, recorded verbatim. O-6 compares `(code,
+   * exponent)` exactly.
+   */
+  readonly currency: PriceCurrency;
 
   /** The commercial channel through which the order was placed. */
   readonly channelId: ChannelId;
@@ -64,6 +84,15 @@ export interface OrderState extends OrderData {
 
   /** Last update timestamp. */
   readonly updatedAt: Instant;
+
+  /**
+   * Persisted-version token.
+   *
+   * `0` while the aggregate has never been persisted; restored verbatim on
+   * hydration. The aggregate NEVER increments it — the repository does, once
+   * per successful save. ADVISORY until ADR-029 is accepted.
+   */
+  readonly version: number;
 }
 
 /**
@@ -77,14 +106,13 @@ export type OrderSnapshot = Readonly<
 >;
 
 /**
- * Data required to create a new order.
+ * Data required to create or hydrate an order.
  *
- * The identifier is supplied separately as the entity constructor's `id`
- * argument: the caller (application service or hydration path) owns ID
- * generation and the Order never generates its own aggregate ID. An order
- * without a supplied status starts as {@link OrderStatus."draft"}. Lifecycle
- * timestamps are optional so the same contract supports both creation and
- * hydration from persisted state (ADR-001).
+ * The identifier is supplied separately (`Order.create(data, id)` for
+ * creation, the constructor `id` argument for hydration): the caller owns ID
+ * generation. Creation ignores the lifecycle fields and always produces a
+ * `draft` order with `version: 0`; hydration restores `status`, timestamps
+ * and `version` verbatim (ADR-001).
  */
 export type OrderCreate = OrderData & {
   /** Order lifecycle status, used to restore persisted state during hydration. */
@@ -95,50 +123,20 @@ export type OrderCreate = OrderData & {
 
   /** The timestamp when the order was last updated. */
   readonly updatedAt?: Instant;
+
+  /** Persisted-version token restored during hydration. Defaults to `0`. */
+  readonly version?: number;
 };
 
 /**
  * Partial mutation data for an order.
  *
- * Status transitions are not part of the update contract: they must pass
+ * Only non-semantic metadata is updatable here. Status transitions pass
  * through the entity's domain methods (`submit`, `confirm`, `fulfill`,
- * `cancel`). Items are mutated through `setItems`/`addItem`/`removeItem`/
- * `updateItemQuantity`, which protect the order's invariants.
+ * `cancel`); priced content is replaced atomically through
+ * `setPricedContent`.
  */
 export interface OrderUpdate {
-  /** Order price. Modifiers are updated through `price`; see `@comity/pricing`. */
-  readonly price?: Price;
-
   /** Custom metadata. */
   readonly meta?: Record<string, unknown>;
-}
-
-/**
- * Input for adding an item to the order.
- *
- * The item price is supplied by the caller as a complete `Price` value:
- * price computation belongs to `@comity/pricing` orchestration, not to the
- * Order aggregate. The product data is an owned snapshot mapped by the caller
- * from `ProductProjection`: the Order never depends on `@comity/catalog`.
- */
-export interface OrderItemInput {
-  /**
-   * Caller-assigned technical key for the new occurrence within the order.
-   *
-   * The ID identifies one occurrence, not a product: two occurrences may
-   * carry identical product/configuration data under distinct IDs. It must be
-   * unique within the order; the aggregate rejects duplicates. The ID is
-   * generated outside the Order (application service or caller); the Order
-   * never mints occurrence IDs itself.
-   */
-  readonly id: string;
-
-  /** Product snapshot to add to the order. */
-  readonly product: OrderProductSnapshot;
-
-  /** Quantity to add. */
-  readonly quantity: number;
-
-  /** Full line price (subtotal, applied modifiers, total). */
-  readonly price: Price;
 }

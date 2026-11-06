@@ -7,11 +7,11 @@ import type { OrderContact } from "./contact.js";
  * A plain, owned representation of the customer as it was at purchase time.
  * It is NOT `Customer` from `@comity/customer` and it is not a reference to
  * the customer module: once the order is created it MUST NOT depend on the
- * customer for its content. Historical order rendering, customer support, and
- * invoice generation rely exclusively on this record.
+ * customer for its content.
  *
- * Only identity and display facts are preserved. Operational customer state
- * (preferences, lifecycle metadata) is not copied.
+ * Only generic counterparty facts are preserved. Commercial, billing, legal
+ * and fiscal facts (party kind, legal name, tax identifier) belong to
+ * Commerce; they are never part of the generic Order contract.
  */
 export interface OrderCustomerSnapshot {
   /** Reference to the customer identifier, if still known. */

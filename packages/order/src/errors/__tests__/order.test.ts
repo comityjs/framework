@@ -6,7 +6,7 @@ describe("OrderError", () => {
     const error = new OrderError("invalid_quantity");
 
     expect(error.code).toBe("order:invalid_quantity");
-    expect(error.message).toBe("Invalid order item quantity");
+    expect(error.message).toBe("Invalid order line quantity");
     expect(error.meta.reason).toBe("invalid_quantity");
     expect(error.meta.httpStatus).toBe(400);
   });
@@ -15,7 +15,7 @@ describe("OrderError", () => {
     const error = new OrderError("invalid_item");
 
     expect(error.code).toBe("order:invalid_item");
-    expect(error.message).toBe("Order item not found");
+    expect(error.message).toBe("Order line not found");
     expect(error.meta.reason).toBe("invalid_item");
     expect(error.meta.httpStatus).toBe(400);
   });
@@ -52,7 +52,7 @@ describe("OrderError", () => {
     const error = new OrderError("duplicate_item_id");
 
     expect(error.code).toBe("order:duplicate_item_id");
-    expect(error.message).toBe("Duplicate order item identifier");
+    expect(error.message).toBe("Duplicate order line identifier");
     expect(error.meta.reason).toBe("duplicate_item_id");
     expect(error.meta.httpStatus).toBe(400);
   });
@@ -86,5 +86,41 @@ describe("OrderError", () => {
     const error = new OrderError("invalid_quantity");
 
     expect(error).toBeInstanceOf(Error);
+  });
+
+  describe("Phase A reasons", () => {
+    it.each([
+      ["currency_mismatch", "Order lines and price must share one currency", 409],
+      ["price_incoherent", "Order price is not coherent with its lines", 409],
+      ["commitment_immutable", "Committed lines and price cannot be changed outside draft", 409],
+      ["payment_fact_conflict", "Payment fact conflicts with the recorded payment facts", 409],
+    ] as const)("creates an error with the %s reason", (reason, message, httpStatus) => {
+      const error = new OrderError(reason);
+
+      expect(error.code).toBe(`order:${reason}`);
+      expect(error.message).toBe(message);
+      expect(error.meta.reason).toBe(reason);
+      expect(error.meta.httpStatus).toBe(httpStatus);
+    });
+
+    it("exposes exactly ten reasons and no other", () => {
+      const reasons = [
+        "invalid_quantity",
+        "invalid_item",
+        "invalid_status_transition",
+        "shipping_destination_immutable",
+        "ambiguous_shipping_destination",
+        "duplicate_item_id",
+        "currency_mismatch",
+        "price_incoherent",
+        "commitment_immutable",
+        "payment_fact_conflict",
+      ] as const;
+
+      expect(reasons).toHaveLength(10);
+      for (const reason of reasons) {
+        expect(new OrderError(reason).code).toBe(`order:${reason}`);
+      }
+    });
   });
 });

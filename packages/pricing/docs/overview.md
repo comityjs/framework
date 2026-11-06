@@ -31,13 +31,87 @@ order processing.
   `kind`
 - `PriceSnapshot` — a `Price` extended with the capture instant
   (`capturedAt: Instant`)
+- `PriceRecord` — immutable historical representation of a computed price
+  (`format`, `currency`, `subtotal`, ordered `modifiers`, `total`,
+  `semanticsId`). `Price` is transient; `PriceRecord` is what consumers
+  persist. Its operations are listed below
+- `PriceCurrency` — structural historical currency `{ code, exponent }`
+  recorded verbatim; `currentPriceCurrency(code)` is the current-currency gate
+  for a new calculation
+- `PriceModifierRecord` — persisted modifier: `code`, optional `label` /
+  `component`, `kind`, and either an integer minor-unit money amount or a
+  `Percentage` rate
+- `PlainPriceRecord` — JSON-safe wire form: integer amounts as decimal
+  strings, percentages as `(amount, scale)`
+- `PriceVerification` — `verified` | `mismatch` | `unverifiable` outcome of
+  historical verification
+- `PriceRecord.from(price)` — records a computed `Price`, stamping the current
+  `format`/`semanticsId`
+- `PriceRecord.combine(parts, adjustments)` — composes an order-level record
+  from finalized line records
+- `PriceRecord.verify(record)` — re-executes the record's own frozen semantics
+- `PriceRecord.toPlain(record)` / `PriceRecord.restore(plain)` — lossless
+  serialization and structural restoration
+- `PriceRecord.historicalInputs(record)` — recorded subtotal, ordered
+  modifiers and semantics identifier
 - `calculatePrice` — pure, deterministic calculation engine
 - `PricingError` — typed error with `pricing:<reason>` codes, from the
-  `@comity/pricing/errors` subpath
+  `@comity/pricing/errors` subpath; includes `unsupported_record_format`
+
+## Historical records and the three boundaries
+
+- **Structural restoration** — `PriceRecord.restore(plain)` validates shape,
+  types and lossless encodings only. It never consults the current ISO 4217
+  table, never calls `Currency.create`, never recomputes `total` and never
+  repairs a value, so withdrawn currencies still load.
+- **Historical verification** — `PriceRecord.verify(record)` re-executes the
+  record's own `semanticsId` pipeline. It never falls back to current
+  semantics and never answers commit eligibility.
+- **Current commitment eligibility** — `PriceRecord.combine(parts,
+adjustments)` is commit-time only: it requires current `format` and
+  `semanticsId`, coherent line records sharing one currency, sums line totals
+  exactly without reapplying line modifiers, then applies order-level
+  adjustments once, in order.
+- `format` (record schema) and `semanticsId` (calculation pipeline) are
+  independent axes. Only `from` and `combine` mint a record with the current
+  values; callers cannot choose them.
+
+## Record lifecycle example
+
+```ts
+import { Currency, Money, PriceRecord, calculatePrice } from "@comity/pricing";
+
+const eur = Currency.create("EUR");
+if (!eur.success) throw eur.error;
+
+const subtotal = Money.create(1999n, eur.value); // 19.99 EUR
+if (!subtotal.success) throw subtotal.error;
+
+const price = calculatePrice(subtotal.value, []);
+if (!price.success) throw price.error;
+
+// Persist this record, not the transient Price.
+const record = PriceRecord.from(price.value);
+if (!record.success) throw record.error;
+
+const plain = PriceRecord.toPlain(record.value); // JSON-safe
+const restored = PriceRecord.restore(plain); // structural only
+if (!restored.success) throw restored.error;
+
+const verification = PriceRecord.verify(restored.value);
+// verification.outcome: "verified" | "mismatch" | "unverifiable"
+```
+
+`PriceRecord.from` stamps the current `format` and `semanticsId`.
+`PriceRecord.restore` does not validate the currency against the current ISO
+table and does not recompute the total; `verify` is the separate historical
+check. `combine` is used for order-level composition, not for restoring a
+stored record.
 
 ## What it does not include
 
-- no repository, no entity, no persistence
+- no repository, no persistence adapter, no I/O — `PriceRecord` is plain
+  immutable data, and persistence lives outside the package
 - no generic `Decimal`/`Quantity` abstraction — money uses integer minor
   units, rates use the domain-specific `Percentage`
 - no currency conversion (`ExchangeRate`/`ExchangeRateProvider`/

@@ -38,6 +38,15 @@ describe("PricingError", () => {
     expect(new PricingError("calculation_failed").meta.httpStatus).toBe(422);
   });
 
+  it("should expose the unsupported record format reason", () => {
+    const error = new PricingError("unsupported_record_format", { details: { format: 2 } });
+
+    expect(error.code).toBe("pricing:unsupported_record_format");
+    expect(error.message).toBe("Unsupported price record format");
+    expect(error.meta.httpStatus).toBe(400);
+    expect(error.meta.details).toEqual({ format: 2 });
+  });
+
   it("should be an instance of BaseError", () => {
     const error = new PricingError("invalid_amount");
 

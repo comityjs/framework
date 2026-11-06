@@ -1,12 +1,12 @@
-import type { Price } from "@comity/pricing";
+import type { PriceCurrency, PriceModifier } from "@comity/pricing";
 import type { Result } from "@comity/primitives/result";
 import type { OrderAddressSnapshot } from "../contracts/address-snapshot.js";
 import type { OrderContact } from "../contracts/contact.js";
 import type { OrderCustomerSnapshot } from "../contracts/customer-snapshot.js";
-import type { OrderItem, OrderProductSnapshot, OrderVariantSnapshot } from "../contracts/item.js";
+import type { OrderLine, OrderLineSubject } from "../contracts/line.js";
 import type {
   OrderCreate,
-  OrderItemInput,
+  OrderData,
   OrderSnapshot,
   OrderStatus,
   OrderUpdate,
@@ -15,75 +15,85 @@ import type { OrderPaymentSnapshot } from "../contracts/payment-snapshot.js";
 import type { OrderId } from "../value-objects/order-id.js";
 import type { ChannelId } from "@comity/organization";
 
+import { PriceRecord } from "@comity/pricing";
 import { failure, success } from "@comity/primitives/result";
 import { Instant } from "@comity/primitives/time";
 import { transitionOrderStatus } from "../domain/order-transitions.js";
 import { OrderError } from "../errors/order.js";
 
 /**
- * Returns a defensive copy of a product snapshot so later mutations of the
+ * Returns a defensive copy of a line subject snapshot so later mutations of the
  * input cannot leak into the order.
  *
- * @param snapshot - The product snapshot to copy.
+ * @param subject - The subject snapshot to copy.
  *
- * @returns A defensive copy of the snapshot.
+ * @returns A defensive copy of the subject.
  */
-function copyProductSnapshot(snapshot: OrderProductSnapshot): OrderProductSnapshot {
-  /**
-   * Returns a defensive copy of a variant snapshot.
-   *
-   * @param variant - The variant snapshot to copy.
-   *
-   * @returns A defensive copy of the variant.
-   */
-  const copyVariant = (variant: OrderVariantSnapshot): OrderVariantSnapshot => ({
-    ...variant,
-    ...(variant.attributes !== undefined
-      ? { attributes: variant.attributes.map((attribute) => ({ ...attribute })) }
-      : {}),
-    ...(variant.options !== undefined
-      ? { options: variant.options.map((option) => ({ ...option })) }
-      : {}),
-  });
+function copySubject(subject: OrderLineSubject): OrderLineSubject {
+  return { ...subject };
+}
 
+/**
+ * Returns a defensive copy of one recorded modifier.
+ *
+ * @param modifier - The recorded modifier to copy.
+ *
+ * @returns A defensive copy of the modifier.
+ */
+function copyModifierRecord(
+  modifier: PriceRecord["modifiers"][number]
+): PriceRecord["modifiers"][number] {
+  const adjustment = modifier.adjustment;
+  const copiedAdjustment: PriceRecord["modifiers"][number]["adjustment"] =
+    adjustment.type === "money"
+      ? { type: "money", amount: adjustment.amount, operation: adjustment.operation }
+      : { type: "percentage", rate: adjustment.rate, operation: adjustment.operation };
+
+  return { ...modifier, adjustment: copiedAdjustment };
+}
+
+/**
+ * Returns a defensive copy of a price record so later mutations of the input
+ * cannot leak into the aggregate.
+ *
+ * @param price - The record to copy.
+ *
+ * @returns A defensive copy of the record.
+ */
+function copyPriceRecord(price: PriceRecord): PriceRecord {
   return {
-    ...snapshot,
-    ...(snapshot.attributes !== undefined
-      ? { attributes: snapshot.attributes.map((attribute) => ({ ...attribute })) }
-      : {}),
-    ...(snapshot.options !== undefined
-      ? { options: snapshot.options.map((option) => ({ ...option })) }
-      : {}),
-    ...(snapshot.variant !== undefined ? { variant: copyVariant(snapshot.variant) } : {}),
-    ...(snapshot.metadata !== undefined ? { metadata: { ...snapshot.metadata } } : {}),
+    ...price,
+    currency: { ...price.currency },
+    modifiers: price.modifiers.map(copyModifierRecord),
   };
 }
 
 /**
- * Returns a defensive copy of an order item so later mutations of the input
+ * Returns a defensive copy of a committed line so later mutations of the input
  * cannot leak into the order.
  *
- * @param item - The order item to copy.
+ * @param line - The line to copy.
  *
- * @returns A defensive copy of the item.
+ * @returns A defensive copy of the line.
  */
-function copyOrderItem(item: OrderItem): OrderItem {
+function copyLine(line: OrderLine): OrderLine {
   return {
-    ...item,
-    product: copyProductSnapshot(item.product),
-    ...(item.meta !== undefined ? { meta: { ...item.meta } } : {}),
+    ...line,
+    subject: copySubject(line.subject),
+    price: copyPriceRecord(line.price),
+    ...(line.meta !== undefined ? { meta: { ...line.meta } } : {}),
   };
 }
 
 /**
- * Returns whether a quantity is a valid order item quantity: an integer
- * greater than or equal to 1.
+ * Returns whether a quantity is a valid line quantity: an integer greater than
+ * or equal to 1.
  *
  * @param quantity - The quantity to validate.
  *
  * @returns `true` when the quantity is a positive integer, otherwise `false`.
  */
-function isValidItemQuantity(quantity: number): boolean {
+function isValidLineQuantity(quantity: number): boolean {
   return Number.isInteger(quantity) && quantity >= 1;
 }
 
@@ -157,20 +167,339 @@ function isSameShippingDestination(
 }
 
 /**
+ * Outcome of evaluating one payment fact against the recorded facts.
+ *
+ * - `append`: the fact is a new, legal fact and must be recorded.
+ * - `noop`: the fact is an identical repeat of a recorded `(paymentId, status)`
+ *   fact; the operation succeeds and nothing is recorded.
+ * - `conflict`: the fact contradicts the recorded facts.
+ */
+type PaymentFactOutcome = "append" | "noop" | "conflict";
+
+/**
+ * Evaluates one payment fact against the recorded facts (invariant O-9).
+ *
+ * The deduplication key is `(paymentId, status)`. An identical repeat is a
+ * no-op; the same key with a different amount is a conflict; a fact without a
+ * `paymentId` is always appended. A new status for a known `paymentId` is
+ * legal only from `authorized` to `captured`, `failed` or `cancelled`; recorded
+ * facts are terminal. Amounts are not compared across different statuses.
+ *
+ * @param existing - The payment facts already recorded on the order.
+ * @param fact - The candidate fact.
+ *
+ * @returns The outcome of the candidate fact.
+ */
+function evaluatePaymentFact(
+  existing: ReadonlyArray<OrderPaymentSnapshot>,
+  fact: OrderPaymentSnapshot
+): PaymentFactOutcome {
+  if (fact.paymentId === undefined) {
+    return "append";
+  }
+
+  const samePayment = existing.filter((candidate) => candidate.paymentId === fact.paymentId);
+  const sameKey = samePayment.filter((candidate) => candidate.status === fact.status);
+  const recordedForKey = sameKey[sameKey.length - 1];
+
+  if (recordedForKey !== undefined) {
+    return recordedForKey.amount.equals(fact.amount) ? "noop" : "conflict";
+  }
+
+  const previous = samePayment[samePayment.length - 1];
+
+  if (previous === undefined) {
+    return "append";
+  }
+
+  if (previous.status !== "authorized") {
+    return "conflict";
+  }
+
+  return fact.status === "authorized" ? "conflict" : "append";
+}
+
+/**
+ * Returns whether two structural currencies are equal on `(code, exponent)`.
+ *
+ * @param left - The first currency.
+ * @param right - The second currency.
+ *
+ * @returns `true` when both fields match.
+ */
+function currencyEquals(left: PriceCurrency, right: PriceCurrency): boolean {
+  return left.code === right.code && left.exponent === right.exponent;
+}
+
+/**
+ * Compares two recorded modifiers on every persisted field.
+ *
+ * @param left - The first recorded modifier.
+ * @param right - The second recorded modifier.
+ *
+ * @returns `true` when the modifiers are identical.
+ */
+function modifierRecordsEqual(
+  left: PriceRecord["modifiers"][number],
+  right: PriceRecord["modifiers"][number]
+): boolean {
+  if (
+    left.code !== right.code ||
+    left.label !== right.label ||
+    left.kind !== right.kind ||
+    left.component !== right.component
+  ) {
+    return false;
+  }
+
+  const leftAdjustment = left.adjustment;
+  const rightAdjustment = right.adjustment;
+
+  if (
+    leftAdjustment.type !== rightAdjustment.type ||
+    leftAdjustment.operation !== rightAdjustment.operation
+  ) {
+    return false;
+  }
+
+  if (leftAdjustment.type === "money" && rightAdjustment.type === "money") {
+    return leftAdjustment.amount === rightAdjustment.amount;
+  }
+
+  if (leftAdjustment.type === "percentage" && rightAdjustment.type === "percentage") {
+    return (
+      leftAdjustment.rate.amount === rightAdjustment.rate.amount &&
+      leftAdjustment.rate.scale === rightAdjustment.rate.scale
+    );
+  }
+
+  return false;
+}
+
+/**
+ * Returns whether two records are commitment-equal (ADR-014 A14-12).
+ *
+ * Compares every persisted field, including format, semantics identifier,
+ * currency, amounts and the ordered modifier list. Arithmetic equality alone
+ * is insufficient.
+ *
+ * @param left - The first record.
+ * @param right - The second record.
+ *
+ * @returns `true` when the records are commitment-equal.
+ */
+function priceRecordsEqual(left: PriceRecord, right: PriceRecord): boolean {
+  if (
+    left.format !== right.format ||
+    left.semanticsId !== right.semanticsId ||
+    !currencyEquals(left.currency, right.currency) ||
+    left.subtotal !== right.subtotal ||
+    left.total !== right.total ||
+    left.modifiers.length !== right.modifiers.length
+  ) {
+    return false;
+  }
+
+  return left.modifiers.every((modifier, index) => {
+    const other = right.modifiers[index];
+
+    return other !== undefined && modifierRecordsEqual(modifier, other);
+  });
+}
+
+/**
+ * Maps a Pricing failure to the approved Order reason (ADR-032 AM-5d).
+ *
+ * @param error - The Pricing error.
+ * @param error.meta - The Pricing error metadata.
+ * @param error.meta.reason - The Pricing failure reason.
+ * @param orderId - The order identifier, used in the error details.
+ *
+ * @returns The corresponding Order error.
+ */
+function mapPricingFailure(
+  error: {
+    /** Pricing error metadata. */
+    readonly meta: {
+      /** Pricing failure reason. */
+      readonly reason: string;
+    };
+  },
+  orderId: string
+): OrderError {
+  const reason =
+    error.meta.reason === "currency_mismatch" ? "currency_mismatch" : "price_incoherent";
+
+  return new OrderError(reason, { details: { orderId, field: "price" } });
+}
+
+/**
+ * Derives the order-level record from line records and adjustments.
+ *
+ * @param lines - The lines whose records are the parts.
+ * @param adjustments - The order-level adjustments.
+ * @param orderId - The order identifier, used in the error details.
+ *
+ * @returns The derived record, or the mapped Order error.
+ */
+function combinePricedLines(
+  lines: ReadonlyArray<OrderLine>,
+  adjustments: ReadonlyArray<PriceModifier | PriceRecord["modifiers"][number]>,
+  orderId: string
+): Result<PriceRecord, OrderError> {
+  const combined = PriceRecord.combine(
+    lines.map((line) => line.price),
+    adjustments
+  );
+
+  if (combined.success === false) {
+    return failure(mapPricingFailure(combined.error, orderId));
+  }
+
+  return success(combined.value);
+}
+
+/**
+ * Returns the first structural line violation (O-1, O-2), or `null`.
+ *
+ * @param lines - The candidate lines.
+ * @param orderId - The order identifier, used in the error details.
+ *
+ * @returns The first violation, or `null`.
+ */
+function findLineStructureViolation(
+  lines: ReadonlyArray<OrderLine>,
+  orderId: string
+): OrderError | null {
+  const seen = new Set<string>();
+
+  for (const line of lines) {
+    if (!isValidLineQuantity(line.quantity)) {
+      return new OrderError("invalid_quantity", {
+        details: { orderId, itemId: line.lineId, field: "quantity" },
+      });
+    }
+
+    if (seen.has(line.lineId)) {
+      return new OrderError("duplicate_item_id", { details: { orderId, itemId: line.lineId } });
+    }
+
+    seen.add(line.lineId);
+  }
+
+  return null;
+}
+
+/**
+ * Returns the first O-6 violation against the order currency, or `null`.
+ *
+ * @param lines - The candidate lines.
+ * @param currency - The order currency.
+ * @param orderId - The order identifier, used in the error details.
+ *
+ * @returns The violation, or `null`.
+ */
+function findLineCurrencyViolation(
+  lines: ReadonlyArray<OrderLine>,
+  currency: PriceCurrency,
+  orderId: string
+): OrderError | null {
+  for (const line of lines) {
+    if (!currencyEquals(line.price.currency, currency)) {
+      return new OrderError("currency_mismatch", {
+        details: { orderId, itemId: line.lineId, field: "price" },
+      });
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Returns the first payment-fact violation (O-9) in a supplied sequence, or
+ * `null` when the whole sequence is legal.
+ *
+ * @param payments - The candidate payment facts, in recorded order.
+ * @param orderId - The order identifier, used in the error details.
+ *
+ * @returns The violation, or `null`.
+ */
+function findPaymentViolation(
+  payments: ReadonlyArray<OrderPaymentSnapshot>,
+  orderId: string
+): OrderError | null {
+  const accepted: OrderPaymentSnapshot[] = [];
+
+  for (const fact of payments) {
+    if (evaluatePaymentFact(accepted, fact) === "conflict") {
+      return new OrderError("payment_fact_conflict", {
+        details: { orderId, field: "payments" },
+      });
+    }
+
+    accepted.push(fact);
+  }
+
+  return null;
+}
+
+/**
+ * Validates the canonical zero record of an empty order (ADR-032 AM-5a).
+ *
+ * @param price - The supplied order record.
+ * @param currency - The order currency.
+ * @param orderId - The order identifier, used in the error details.
+ *
+ * @returns The violation, or `null`.
+ */
+function findEmptyOrderPriceViolation(
+  price: PriceRecord,
+  currency: PriceCurrency,
+  orderId: string
+): OrderError | null {
+  if (!currencyEquals(price.currency, currency)) {
+    return new OrderError("currency_mismatch", { details: { orderId, field: "currency" } });
+  }
+
+  if (price.subtotal !== 0n || price.total !== 0n || price.modifiers.length !== 0) {
+    return new OrderError("price_incoherent", { details: { orderId, field: "price" } });
+  }
+
+  const combined = PriceRecord.combine([price], []);
+
+  if (combined.success === false) {
+    return mapPricingFailure(combined.error, orderId);
+  }
+
+  if (!priceRecordsEqual(combined.value, price)) {
+    return new OrderError("price_incoherent", { details: { orderId, field: "price" } });
+  }
+
+  return null;
+}
+
+/**
  * Represents an order entity in the system.
  *
  * @remark
- * An order is a lifecycle aggregate: it owns its status transitions, its line
- * items, the applied pricing result, and its historical facts (buyer,
- * addresses, payment). It does not validate coupons, does not know promotion
- * rules, and does not orchestrate external services — those concerns belong
- * to `@comity/pricing`, other Core Modules, and application/domain services.
+ * An order is a lifecycle aggregate: it owns its status transitions, its
+ * committed lines, the applied pricing result, its advisory version token, and
+ * its historical facts (buyer, addresses, payments). It does not validate
+ * coupons, does not know promotion rules, and does not orchestrate external
+ * services — those concerns belong to `@comity/pricing`, other Core Modules,
+ * and application/domain services.
+ *
+ * @remark
+ * The version token is ADVISORY: the aggregate carries it and never increments
+ * it. Optimistic concurrency belongs to the repository (Comity precondition
+ * ADR-029) and is not implemented here.
  */
 export class Order {
   readonly #id: OrderId;
   #status: OrderStatus;
-  #items: OrderItem[];
-  #price: Price;
+  #lines: OrderLine[];
+  #price: PriceRecord;
+  readonly #currency: PriceCurrency;
   #channelId: ChannelId;
   #customer: OrderCustomerSnapshot | undefined;
   #addresses: OrderAddressSnapshot[] | undefined;
@@ -178,9 +507,81 @@ export class Order {
   #meta: Record<string, unknown> | undefined;
   readonly #createdAt: Instant;
   #updatedAt: Instant;
+  readonly #version: number;
 
   /**
-   * @param fields - The fields used to create or hydrate the order.
+   * Creates a new, validated order (ADR-001, ADR-032 AM-5a).
+   *
+   * Applies the invariants decidable from creation data — O-1 (integer
+   * quantity `>= 1`), O-2 (unique line ids), O-6 (one currency on `(code,
+   * exponent)`), O-7 (exact `PriceRecord` commitment equality against
+   * `combine`) and O-9 (supplied payment facts) — before any state exists. An
+   * empty order is accepted only with the canonical zero record. A new order
+   * is `draft` with `version: 0`.
+   *
+   * @param data - The business data of the order.
+   * @param id - The unique identifier of the order, supplied by the caller.
+   *
+   * @returns The order, or `invalid_quantity` / `duplicate_item_id` /
+   * `currency_mismatch` / `price_incoherent` / `payment_fact_conflict`.
+   */
+  static create(data: OrderData, id: OrderId): Result<Order, OrderError> {
+    const orderId = id.toString();
+    const structureViolation = findLineStructureViolation(data.lines, orderId);
+
+    if (structureViolation !== null) {
+      return failure(structureViolation);
+    }
+
+    const lineCurrencyViolation = findLineCurrencyViolation(data.lines, data.currency, orderId);
+
+    if (lineCurrencyViolation !== null) {
+      return failure(lineCurrencyViolation);
+    }
+
+    if (!currencyEquals(data.price.currency, data.currency)) {
+      return failure(
+        new OrderError("currency_mismatch", { details: { orderId, field: "currency" } })
+      );
+    }
+
+    if (data.lines.length === 0) {
+      const emptyViolation = findEmptyOrderPriceViolation(data.price, data.currency, orderId);
+
+      if (emptyViolation !== null) {
+        return failure(emptyViolation);
+      }
+    } else {
+      const combined = combinePricedLines(data.lines, data.price.modifiers, orderId);
+
+      if (combined.success === false) {
+        return failure(combined.error);
+      }
+
+      if (!priceRecordsEqual(combined.value, data.price)) {
+        return failure(
+          new OrderError("price_incoherent", { details: { orderId, field: "price" } })
+        );
+      }
+    }
+
+    const paymentViolation = findPaymentViolation(data.payments ?? [], orderId);
+
+    if (paymentViolation !== null) {
+      return failure(paymentViolation);
+    }
+
+    return success(new Order({ ...data, status: "draft", version: 0 }, id));
+  }
+
+  /**
+   * Hydrates an existing order (ADR-001).
+   *
+   * The constructor performs NO validation: it restores persisted state
+   * verbatim, including `version`. Use {@link Order.create} for the validating
+   * creation path.
+   *
+   * @param fields - The persisted fields of the order.
    * @param id - The unique identifier of the order, supplied by the caller.
    * The Order never generates its own aggregate ID; hydration preserves the
    * persisted ID verbatim.
@@ -188,8 +589,9 @@ export class Order {
   constructor(fields: OrderCreate, id: OrderId) {
     this.#id = id;
     this.#status = fields.status ?? "draft";
-    this.#items = fields.items.map(copyOrderItem);
-    this.#price = fields.price;
+    this.#lines = fields.lines.map(copyLine);
+    this.#price = copyPriceRecord(fields.price);
+    this.#currency = { ...fields.currency };
     this.#channelId = fields.channelId;
     this.#customer =
       fields.customer !== undefined ? copyCustomerSnapshot(fields.customer) : undefined;
@@ -204,6 +606,7 @@ export class Order {
     this.#meta = fields.meta ? { ...fields.meta } : undefined;
     this.#createdAt = fields.createdAt ?? Instant.now();
     this.#updatedAt = fields.updatedAt ?? this.#createdAt;
+    this.#version = fields.version ?? 0;
   }
 
   /**
@@ -228,17 +631,24 @@ export class Order {
   }
 
   /**
-   * @returns The order items.
+   * @returns The committed lines.
    */
-  get items(): ReadonlyArray<OrderItem> {
-    return this.#items.map(copyOrderItem);
+  get lines(): ReadonlyArray<OrderLine> {
+    return this.#lines.map(copyLine);
   }
 
   /**
    * @returns The order price.
    */
-  get price(): Price {
-    return this.#price;
+  get price(): PriceRecord {
+    return copyPriceRecord(this.#price);
+  }
+
+  /**
+   * @returns The monetary unit of the order and of every amount it stores.
+   */
+  get currency(): PriceCurrency {
+    return { ...this.#currency };
   }
 
   /**
@@ -293,23 +703,34 @@ export class Order {
   }
 
   /**
-   * Updates the applied pricing result and metadata.
+   * Returns the persisted-version token (read-only; advisory, never
+   * incremented by the aggregate).
    *
-   * Status transitions are performed through the domain methods; items are
-   * mutated through `setItems`/`addItem`/`removeItem`/`updateItemQuantity`.
+   * @returns The version token: `0` while unpersisted.
+   */
+  get version(): number {
+    return this.#version;
+  }
+
+  /**
+   * Updates non-semantic metadata.
+   *
+   * Status transitions pass through the domain methods; priced content is
+   * replaced atomically through {@link setPricedContent}. Metadata is
+   * updatable in any status.
    *
    * @param changes - The changes to apply to the order.
+   *
+   * @returns Success.
    */
-  update(changes: OrderUpdate): void {
-    if (changes.price !== undefined) {
-      this.#price = changes.price;
-    }
-
+  update(changes: OrderUpdate): Result<void, OrderError> {
     if (changes.meta !== undefined) {
       this.#meta = { ...changes.meta };
     }
 
     this.#updatedAt = Instant.now();
+
+    return success(undefined);
   }
 
   /**
@@ -320,25 +741,52 @@ export class Order {
    * This records a historical fact only: it performs no payment logic, knows
    * no payment module, and does not coordinate, authorize, or capture.
    *
+   * Facts dedupe on `(paymentId, status)`: an identical repeat is an idempotent
+   * no-op that touches nothing; the same key with a different amount, and an
+   * illegal progression for a known `paymentId`, are conflicts. A fact without
+   * a `paymentId` is always appended.
+   *
    * @param snapshot - The payment fact to record.
+   *
+   * @returns Success (including an idempotent no-op), or
+   * `payment_fact_conflict`.
    */
-  attachPayment(snapshot: OrderPaymentSnapshot): void {
-    this.#payments = [...(this.#payments ?? []), { ...snapshot }];
+  attachPayment(snapshot: OrderPaymentSnapshot): Result<void, OrderError> {
+    const existing = this.#payments ?? [];
+    const outcome = evaluatePaymentFact(existing, snapshot);
 
+    if (outcome === "conflict") {
+      return failure(
+        new OrderError("payment_fact_conflict", {
+          details: {
+            orderId: this.#id.toString(),
+            ...(snapshot.paymentId !== undefined ? { field: "payments" } : {}),
+          },
+        })
+      );
+    }
+
+    if (outcome === "noop") {
+      return success(undefined);
+    }
+
+    this.#payments = [...existing, { ...snapshot }];
     this.#updatedAt = Instant.now();
+
+    return success(undefined);
   }
 
   /**
    * Replaces the shipping destination of the order.
    *
    * Allowed only while the order is `draft | pending`; in later statuses the
-   * shipping destination is immutable (ADR-018). The order must hold exactly
-   * one shipping address fact; a missing or ambiguous one is an error rather
-   * than a guess. A structurally identical destination is a successful no-op
-   * that leaves timestamps untouched. The operation never reaches the generic
-   * `update()` path, never touches billing, customer, item, price, or payment
-   * facts, and records no history: the aggregate retains only the current
-   * shipping destination.
+   * shipping destination is immutable. The order must hold exactly one shipping
+   * address fact; a missing or ambiguous one is an error rather than a guess. A
+   * structurally identical destination is a successful no-op that leaves
+   * timestamps untouched. The operation never reaches the generic `update()`
+   * path, never touches billing, customer, line, price, or payment facts, and
+   * records no history: the aggregate retains only the current shipping
+   * destination.
    *
    * @param destination - The replacement shipping destination. The address
    * role is owned by this operation and is always stored as `"shipping"`.
@@ -387,181 +835,61 @@ export class Order {
   }
 
   /**
-   * Replaces the entire item collection with the supplied one (ADR-030).
+   * Atomically replaces the priced content of the order.
    *
-   * The supplied collection is the complete desired collection: items omitted
-   * from it are removed, and no merging, appending, or quantity aggregation
-   * occurs. The supplied order is the resulting order and an empty collection
-   * is valid. Every entry is validated before any state changes — quantity
-   * (integer `>= 1`) first, then ID uniqueness against the IDs already seen —
-   * and the first violation rejects the whole operation, leaving the aggregate
-   * unchanged. Every successful replacement refreshes `updatedAt`, including
-   * identical replacements. Supplied item IDs are preserved verbatim and
-   * caller-owned data is defensively copied. Item mutation is not status-gated.
+   * `lines` and `adjustments` are the complete desired priced content. The
+   * order-level `PriceRecord` is derived with `PriceRecord.combine`; line
+   * modifiers are provenance and are never reapplied or copied. All validation
+   * happens before any state changes, so a failure leaves the aggregate
+   * completely unchanged. Allowed only while the order is `draft`.
    *
-   * @param items - The complete desired item collection.
+   * @param lines - The complete desired line collection; must be non-empty.
+   * @param adjustments - The order-level adjustments, in application order.
    *
-   * @returns A result indicating the success or failure of the replacement.
+   * @returns Success, or `commitment_immutable` outside `draft` /
+   * `currency_mismatch` / `price_incoherent` / `invalid_quantity` /
+   * `duplicate_item_id`.
    */
-  setItems(items: ReadonlyArray<OrderItem>): Result<void, OrderError> {
-    const seen = new Set<string>();
-
-    for (const item of items) {
-      if (!isValidItemQuantity(item.quantity)) {
-        return failure(
-          new OrderError("invalid_quantity", {
-            details: {
-              orderId: this.#id.toString(),
-              itemId: item.id,
-              field: "quantity",
-            },
-          })
-        );
-      }
-
-      if (seen.has(item.id)) {
-        return failure(
-          new OrderError("duplicate_item_id", {
-            details: {
-              orderId: this.#id.toString(),
-              itemId: item.id,
-            },
-          })
-        );
-      }
-
-      seen.add(item.id);
+  setPricedContent(
+    lines: ReadonlyArray<OrderLine>,
+    adjustments: ReadonlyArray<PriceModifier>
+  ): Result<void, OrderError> {
+    if (this.#status !== "draft") {
+      return failure(
+        new OrderError("commitment_immutable", { details: { orderId: this.#id.toString() } })
+      );
     }
 
-    this.#items = items.map(copyOrderItem);
+    const orderId = this.#id.toString();
+    if (lines.length === 0) {
+      return failure(new OrderError("price_incoherent", { details: { orderId, field: "lines" } }));
+    }
+
+    const structureViolation = findLineStructureViolation(lines, orderId);
+
+    if (structureViolation !== null) {
+      return failure(structureViolation);
+    }
+
+    const currencyViolation = findLineCurrencyViolation(lines, this.#currency, orderId);
+
+    if (currencyViolation !== null) {
+      return failure(currencyViolation);
+    }
+
+    const combined = combinePricedLines(lines, adjustments, orderId);
+
+    if (combined.success === false) {
+      return failure(combined.error);
+    }
+
+    if (!currencyEquals(combined.value.currency, this.#currency)) {
+      return failure(new OrderError("currency_mismatch", { details: { orderId, field: "price" } }));
+    }
+
+    this.#lines = lines.map(copyLine);
+    this.#price = copyPriceRecord(combined.value);
     this.#updatedAt = Instant.now();
-
-    return success(undefined);
-  }
-
-  /**
-   * Appends one item occurrence to the order.
-   *
-   * The occurrence ID is supplied by the caller in the input: the Order never
-   * mints occurrence IDs itself. The ID must be unique within the order —
-   * appending an already-used ID is rejected so the `setItems` duplicate-ID
-   * invariant cannot be bypassed through this path. Validation runs before
-   * any mutation — quantity (integer `>= 1`) first, then ID uniqueness — and
-   * failures leave the aggregate unchanged. A successful append refreshes
-   * `updatedAt`. Occurrence IDs carry no product meaning: identical
-   * product/configuration data may coexist under distinct IDs.
-   *
-   * @param input - The item data to add, including the caller-assigned
-   * occurrence ID.
-   *
-   * @returns The created item copy, an `invalid_quantity` error when the
-   * quantity is not a positive integer, or a `duplicate_item_id` error when
-   * the ID is already used within the order.
-   */
-  addItem(input: OrderItemInput): Result<OrderItem, OrderError> {
-    if (!isValidItemQuantity(input.quantity)) {
-      return failure(
-        new OrderError("invalid_quantity", {
-          details: {
-            orderId: this.#id.toString(),
-            itemId: input.id,
-            field: "quantity",
-          },
-        })
-      );
-    }
-
-    if (this.#items.some((existing) => existing.id === input.id)) {
-      return failure(
-        new OrderError("duplicate_item_id", {
-          details: {
-            orderId: this.#id.toString(),
-            itemId: input.id,
-          },
-        })
-      );
-    }
-
-    const item: OrderItem = {
-      id: input.id,
-      product: copyProductSnapshot(input.product),
-      quantity: input.quantity,
-      price: input.price,
-    };
-
-    this.#items.push(item);
-    this.#updatedAt = Instant.now();
-
-    return success(copyOrderItem(item));
-  }
-
-  /**
-   * Removes an item from the order.
-   *
-   * @param itemId - The order item ID.
-   *
-   * @returns A result indicating the success or failure of the removal.
-   */
-  removeItem(itemId: string): Result<void, OrderError> {
-    const index = this.#items.findIndex((item) => item.id === itemId);
-
-    if (index === -1) {
-      return failure(
-        new OrderError("invalid_item", {
-          details: {
-            orderId: this.#id.toString(),
-            itemId,
-          },
-        })
-      );
-    }
-
-    this.#items.splice(index, 1);
-    this.#updatedAt = Instant.now();
-
-    return success(undefined);
-  }
-
-  /**
-   * Updates the quantity of an order item.
-   *
-   * @param itemId - The order item ID.
-   * @param quantity - The new quantity.
-   *
-   * @returns A result indicating the success or failure of the update.
-   */
-  updateItemQuantity(itemId: string, quantity: number): Result<void, OrderError> {
-    if (!isValidItemQuantity(quantity)) {
-      return failure(
-        new OrderError("invalid_quantity", {
-          details: {
-            orderId: this.#id.toString(),
-            itemId,
-            field: "quantity",
-          },
-        })
-      );
-    }
-
-    const index = this.#items.findIndex((candidate) => candidate.id === itemId);
-
-    if (index === -1) {
-      return failure(
-        new OrderError("invalid_item", {
-          details: {
-            orderId: this.#id.toString(),
-            itemId,
-          },
-        })
-      );
-    }
-
-    const current = this.#items[index];
-
-    if (current !== undefined) {
-      this.#items[index] = { ...current, quantity };
-      this.#updatedAt = Instant.now();
-    }
 
     return success(undefined);
   }
@@ -569,9 +897,57 @@ export class Order {
   /**
    * Submits the order: `draft` → `pending`.
    *
+   * Before leaving `draft`, re-derives the order-level record from the stored
+   * line records and the stored order-level modifiers and requires exact
+   * commitment equality (ADR-032 AM-5c). An empty draft is validated against
+   * the canonical zero record. Reconciliation uses only `PriceRecord.combine`,
+   * never `verify()` and never an aggregate-side `PriceRecord.from()`.
+   *
    * @returns A result indicating the success or failure of the transition.
    */
   submit(): Result<void, OrderError> {
+    if (this.#status !== "draft") {
+      return this.#transition("pending");
+    }
+
+    const orderId = this.#id.toString();
+
+    if (this.#lines.length === 0) {
+      const emptyViolation = findEmptyOrderPriceViolation(this.#price, this.#currency, orderId);
+
+      if (emptyViolation !== null) {
+        return failure(emptyViolation);
+      }
+    } else {
+      if (!currencyEquals(this.#price.currency, this.#currency)) {
+        return failure(
+          new OrderError("currency_mismatch", { details: { orderId, field: "currency" } })
+        );
+      }
+
+      const lineCurrencyViolation = findLineCurrencyViolation(
+        this.#lines,
+        this.#price.currency,
+        orderId
+      );
+
+      if (lineCurrencyViolation !== null) {
+        return failure(lineCurrencyViolation);
+      }
+
+      const combined = combinePricedLines(this.#lines, this.#price.modifiers, orderId);
+
+      if (combined.success === false) {
+        return failure(combined.error);
+      }
+
+      if (!priceRecordsEqual(combined.value, this.#price)) {
+        return failure(
+          new OrderError("price_incoherent", { details: { orderId, field: "price" } })
+        );
+      }
+    }
+
     return this.#transition("pending");
   }
 
@@ -596,6 +972,9 @@ export class Order {
   /**
    * Cancels the order: `draft | pending | confirmed` → `cancelled`.
    *
+   * Takes no argument: the Order is business-model neutral and the application
+   * records why the commitment ended.
+   *
    * @returns A result indicating the success or failure of the transition.
    */
   cancel(): Result<void, OrderError> {
@@ -611,8 +990,9 @@ export class Order {
     return {
       id: this.#id,
       status: this.#status,
-      items: this.#items.map(copyOrderItem),
-      price: this.#price,
+      lines: this.#lines.map(copyLine),
+      price: copyPriceRecord(this.#price),
+      currency: { ...this.#currency },
       channelId: this.#channelId,
       ...(this.#customer !== undefined ? { customer: copyCustomerSnapshot(this.#customer) } : {}),
       ...(this.#addresses !== undefined
@@ -626,6 +1006,7 @@ export class Order {
       ...(this.#meta !== undefined ? { meta: { ...this.#meta } } : {}),
       createdAt: this.#createdAt,
       updatedAt: this.#updatedAt,
+      version: this.#version,
       capturedAt: Instant.now(),
     };
   }
