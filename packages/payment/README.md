@@ -31,6 +31,7 @@ This package does NOT:
 ## Public API
 
 - Payment contracts — request, outcome, status, and provider interfaces
+- `MemoryPaymentProvider` — in-memory provider for testing and development (root)
 - Error types (`@comity/payment/errors`)
 - Setup — module wiring and configuration (`@comity/payment/setup`)
 

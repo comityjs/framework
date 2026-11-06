@@ -1,3 +1,5 @@
+import { RepositoryError } from "@comity/primitives/errors";
+import { isFailure } from "@comity/primitives/result";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Address } from "../../entities/address.js";
 import { AddressId } from "../../value-objects/address-id.js";
@@ -71,5 +73,26 @@ describe("MemoryAddressRepository", () => {
     expect(result.success).toBe(true);
     expect(result.value?.city).toBe("Metropolis");
     expect(result.value?.lines).toEqual(["1 Test St"]);
+  });
+
+  it("rejects saving an address without an assigned id", async () => {
+    const address = new Address({
+      lines: ["1 Test St"],
+      city: "Testville",
+      administrativeArea: "TS",
+      postalCode: "12345",
+      countryCode: "US",
+      label: "Home",
+      metadata: {},
+      contacts: [],
+    });
+
+    const result = await repository.save(address);
+
+    expect(isFailure(result)).toBe(true);
+    if (isFailure(result)) {
+      expect(result.error).toBeInstanceOf(RepositoryError);
+      expect(result.error.meta.reason).toBe("invalid_data");
+    }
   });
 });

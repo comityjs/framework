@@ -1,5 +1,5 @@
 /**
- * Options for catalog repository requests, including scope, fields selection, and locale.
+ * Options for content repository requests, including fields selection, locale, and tenant information.
  */
 export interface ContentRepositoryContext<T = unknown> {
   /** Fields to include in the response. */
@@ -8,6 +8,6 @@ export interface ContentRepositoryContext<T = unknown> {
   /** Locale for the request. */
   readonly locale?: string;
 
-  /** Optional tenant ID to fetch catalog data for a specific tenant. */
+  /** Optional tenant ID to fetch content data for a specific tenant. */
   readonly tenant?: string;
 }

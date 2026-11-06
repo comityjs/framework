@@ -1,10 +1,10 @@
-import type { RepositoryError } from "@comity/primitives/errors";
 import type { Result } from "@comity/primitives/result";
 import type { AddressRepository } from "../contracts/address-repository.js";
 import type { Address } from "../entities/address.js";
 import type { AddressId } from "../value-objects/address-id.js";
 
-import { success } from "@comity/primitives/result";
+import { RepositoryError } from "@comity/primitives/errors";
+import { failure, success } from "@comity/primitives/result";
 
 /**
  * In-memory implementation of `AddressRepository` for testing and development purposes.
@@ -33,7 +33,17 @@ export class MemoryAddressRepository implements AddressRepository {
    * @inheritdoc
    */
   async save(address: Address): Promise<Result<void, RepositoryError>> {
-    this.#addresses.set(address.id!.toString(), address);
+    const id = address.id;
+
+    if (id === undefined) {
+      return failure(
+        new RepositoryError("invalid_data", {
+          details: { repository: "AddressRepository", operation: "save" },
+        })
+      );
+    }
+
+    this.#addresses.set(id.toString(), address);
 
     return success(undefined);
   }

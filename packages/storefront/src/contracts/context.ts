@@ -8,7 +8,7 @@ export interface StorefrontContext {
   /** Currency for the request. */
   readonly currency?: string;
 
-  /** Optional tenant ID to fetch catalog data for a specific tenant. */
+  /** Optional tenant identifier for the storefront request. */
   readonly tenant?: string;
 }
 

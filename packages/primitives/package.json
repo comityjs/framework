@@ -1,7 +1,7 @@
 {
   "name": "@comity/primitives",
   "version": "0.9.2",
-  "description": "Foundational primitives shared across Comity packages (events, results, cancellation, composition).",
+  "description": "Foundational primitives shared across Comity packages: dependency injection, errors, results, lifecycle, and time.",
   "type": "module",
   "private": false,
   "author": "Filippo Bovo <hello@filippobovo.com>",
@@ -22,12 +22,14 @@
   },
   "keywords": [
     "comity",
-    "abort",
-    "composition",
-    "events",
-    "infrastructure",
+    "comityjs",
+    "dependency-injection",
+    "errors",
+    "lifecycle",
     "primitives",
-    "result"
+    "result",
+    "time",
+    "typescript"
   ],
   "scripts": {
     "build": "node ../../scripts/build.mjs",
