@@ -1,5 +1,13 @@
 # @comity/content
 
+## 0.9.4
+
+### Patch Changes
+
+- fc17103: Correct published documentation and package metadata: content setup exports, storefront tenant JSDoc, organization related-package notes, payment testing-provider documentation, and primitives package description and keywords.
+- Updated dependencies [fc17103]
+  - @comity/primitives@0.9.3
+
 ## 0.9.3
 
 ### Patch Changes

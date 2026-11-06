@@ -1,5 +1,14 @@
 # @comity/customer
 
+## 0.9.4
+
+### Patch Changes
+
+- fc17103: Fix in-memory customer search to filter before pagination and report the filtered total, and reject saves for customers without an assigned ID.
+- Updated dependencies [fc17103]
+  - @comity/organization@0.9.4
+  - @comity/primitives@0.9.3
+
 ## 0.9.3
 
 ### Patch Changes

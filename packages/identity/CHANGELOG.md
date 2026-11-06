@@ -1,5 +1,13 @@
 # @comity/identity
 
+## 0.9.4
+
+### Patch Changes
+
+- fc17103: Throw `InvalidIdentifierError` from `User.snapshot()` when the user has no assigned ID instead of returning an invalid snapshot.
+- Updated dependencies [fc17103]
+  - @comity/primitives@0.9.3
+
 ## 0.9.3
 
 ### Patch Changes
