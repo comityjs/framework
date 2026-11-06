@@ -1,5 +1,13 @@
 # @comity/address
 
+## 0.9.4
+
+### Patch Changes
+
+- fc17103: Reject in-memory address saves when the address has no assigned ID instead of persisting an invalid key.
+- Updated dependencies [fc17103]
+  - @comity/primitives@0.9.3
+
 ## 0.9.3
 
 ### Patch Changes
