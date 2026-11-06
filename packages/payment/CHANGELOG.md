@@ -1,5 +1,15 @@
 # @comity/payment
 
+## 0.9.5
+
+### Patch Changes
+
+- ba1c78c: Update the internal `@comity/pricing` dependency range to `^0.10.0` so Payment
+  resolves the same Pricing release as Order. No runtime behavior or public
+  contract changes.
+- Updated dependencies [ba1c78c]
+  - @comity/pricing@0.10.0
+
 ## 0.9.4
 
 ### Patch Changes
