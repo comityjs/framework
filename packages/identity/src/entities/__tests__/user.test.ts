@@ -1,5 +1,6 @@
 import type { UserCreate, UserState } from "../../contracts/user.js";
 
+import { InvalidIdentifierError } from "@comity/primitives/errors";
 import { isFailure } from "@comity/primitives/result";
 import { Instant } from "@comity/primitives/time";
 import { beforeEach, describe, expect, it } from "vitest";
@@ -427,6 +428,12 @@ describe("User", () => {
       const user = createUser();
 
       expect(user.snapshot()).not.toBe(user.snapshot());
+    });
+
+    it("should throw an InvalidIdentifierError when the user has no assigned id", () => {
+      const user = new User(createFields);
+
+      expect(() => user.snapshot()).toThrow(InvalidIdentifierError);
     });
   });
 });

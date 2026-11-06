@@ -16,7 +16,7 @@ export interface PageRepository {
    * Retrieve a page by identifier.
    *
    * @param id - Page ID.
-   * @param ctx - Context for the repository request, including fields selection, locale, currency, and tenant information.
+   * @param ctx - Context for the repository request, including fields selection, locale, and tenant information.
    *
    * @returns Page model or null if not found.
    */
@@ -29,7 +29,7 @@ export interface PageRepository {
    * Retrieve a page by URL slug.
    *
    * @param slug - URL-friendly slug.
-   * @param ctx - Context for the repository request, including fields selection, locale, currency, and tenant information.
+   * @param ctx - Context for the repository request, including fields selection, locale, and tenant information.
    *
    * @returns Page model or null if not found.
    */

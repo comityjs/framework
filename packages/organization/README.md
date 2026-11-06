@@ -45,7 +45,7 @@ No exhaustive reference; see docs for constraints.
 
 - @comity/primitives — foundational value object patterns
 - @comity/customer — customer domain (consumes TenantId/ChannelId)
-- @comity/storefront — storefront context (consumes TenantId/ChannelId)
+- @comity/storefront — storefront context (uses string tenant identifiers)
 
 ---
 

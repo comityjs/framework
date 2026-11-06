@@ -1,5 +1,4 @@
 import type { TenantId } from "@comity/organization";
-import type { RepositoryError } from "@comity/primitives/errors";
 import type { Result } from "@comity/primitives/result";
 import type {
   CustomerRepository,
@@ -10,7 +9,8 @@ import type { CustomerState } from "../contracts/customer.js";
 import type { Customer } from "../entities/customer.js";
 import type { CustomerId } from "../value-objects/customer-id.js";
 
-import { success } from "@comity/primitives/result";
+import { RepositoryError } from "@comity/primitives/errors";
+import { failure, success } from "@comity/primitives/result";
 
 /**
  * In-memory implementation of `CustomerRepository` for testing and development purposes.
@@ -46,7 +46,17 @@ export class MemoryCustomerRepository implements CustomerRepository {
    * @inheritdoc
    */
   async save(customer: Customer, tenant: TenantId): Promise<Result<void, RepositoryError>> {
-    this.#customers.set(this.#makeKey(tenant, customer.id!), customer);
+    const id = customer.id;
+
+    if (id === undefined) {
+      return failure(
+        new RepositoryError("invalid_data", {
+          details: { repository: "CustomerRepository", operation: "save" },
+        })
+      );
+    }
+
+    this.#customers.set(this.#makeKey(tenant, id), customer);
 
     return success(undefined);
   }
@@ -84,21 +94,31 @@ export class MemoryCustomerRepository implements CustomerRepository {
       );
     }
 
-    const limit = criteria?.limit ?? all.length;
+    const limit = criteria?.limit ?? filtered.length;
     const offset = criteria?.offset ?? 0;
-    const items = all.slice(offset, offset + limit).map((c): CustomerState => ({
-      id: c.id!,
-      displayName: c.displayName,
-      givenName: c.givenName,
-      familyName: c.familyName,
-      contacts: c.contacts,
-      preferences: c.preferences,
-      createdAt: c.createdAt,
-      updatedAt: c.updatedAt,
-      deletedAt: c.deletedAt ?? null,
-    }));
+    const items = filtered.slice(offset, offset + limit).flatMap((c): CustomerState[] => {
+      const id = c.id;
 
-    const total = all.length;
+      if (id === undefined) {
+        return [];
+      }
+
+      return [
+        {
+          id,
+          displayName: c.displayName,
+          givenName: c.givenName,
+          familyName: c.familyName,
+          contacts: c.contacts,
+          preferences: c.preferences,
+          createdAt: c.createdAt,
+          updatedAt: c.updatedAt,
+          deletedAt: c.deletedAt ?? null,
+        },
+      ];
+    });
+
+    const total = filtered.length;
 
     return success({
       items,

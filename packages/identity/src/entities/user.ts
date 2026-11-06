@@ -1,6 +1,7 @@
 import type { UserCreate, UserSnapshot, UserStatus, UserUpdate } from "../contracts/user.js";
 import type { UserId } from "../value-objects/user-id.js";
 
+import { InvalidIdentifierError } from "@comity/primitives/errors";
 import { Instant } from "@comity/primitives/time";
 
 /**
@@ -108,10 +109,20 @@ export class User {
    * Requires the user to have an assigned identifier.
    *
    * @returns A snapshot representing the current state of the user.
+   *
+   * @throws InvalidIdentifierError when the user has not been assigned an identifier.
    */
   snapshot(): UserSnapshot {
+    const id = this.#id;
+
+    if (id === undefined) {
+      throw new InvalidIdentifierError("empty", {
+        details: { kind: "UserId" },
+      });
+    }
+
     return {
-      id: this.#id as UserId,
+      id,
       displayName: this.#displayName,
       givenName: this.#givenName,
       familyName: this.#familyName,

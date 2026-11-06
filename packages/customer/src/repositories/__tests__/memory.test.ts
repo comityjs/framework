@@ -1,4 +1,6 @@
 import { TenantId } from "@comity/organization";
+import { RepositoryError } from "@comity/primitives/errors";
+import { isFailure } from "@comity/primitives/result";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Customer } from "../../entities/customer.js";
 import { CustomerId } from "../../value-objects/customer-id.js";
@@ -84,6 +86,85 @@ describe("MemoryCustomerRepository", () => {
     expect(result.success).toBe(true);
     expect(result.value?.total).toBe(3);
     expect(result.value?.items).toHaveLength(3);
+  });
+
+  it("search filters by display, given, and family names", async () => {
+    await repository.save(
+      makeCustomer({ displayName: "Alice", givenName: "Alicia", familyName: "Smith" }),
+      tenantA
+    );
+    await repository.save(
+      makeCustomer({ displayName: "Bob", givenName: "Robert", familyName: "Jones" }),
+      tenantA
+    );
+
+    const byDisplayName = await repository.search({ query: "alice" }, tenantA);
+    const byGivenName = await repository.search({ query: "robert" }, tenantA);
+    const byFamilyName = await repository.search({ query: "smith" }, tenantA);
+
+    expect(byDisplayName.value?.total).toBe(1);
+    expect(byDisplayName.value?.items[0].displayName).toBe("Alice");
+    expect(byGivenName.value?.total).toBe(1);
+    expect(byGivenName.value?.items[0].displayName).toBe("Bob");
+    expect(byFamilyName.value?.total).toBe(1);
+    expect(byFamilyName.value?.items[0].displayName).toBe("Alice");
+  });
+
+  it("search returns no customers when the query does not match", async () => {
+    await repository.save(makeCustomer({ displayName: "Alice" }), tenantA);
+
+    const result = await repository.search({ query: "zzz" }, tenantA);
+
+    expect(result.success).toBe(true);
+    expect(result.value?.total).toBe(0);
+    expect(result.value?.items).toHaveLength(0);
+  });
+
+  it("search applies criteria before pagination and reports the filtered total", async () => {
+    await repository.save(makeCustomer({ displayName: "Alice" }), tenantA);
+    await repository.save(makeCustomer({ displayName: "Bob" }), tenantA);
+    await repository.save(makeCustomer({ displayName: "Charlie" }), tenantA);
+
+    const result = await repository.search({ query: "a", limit: 1, offset: 1 }, tenantA);
+
+    expect(result.success).toBe(true);
+    expect(result.value?.total).toBe(2);
+    expect(result.value?.items).toHaveLength(1);
+    expect(result.value?.items[0].displayName).toBe("Charlie");
+  });
+
+  it("search keeps tenant isolation when filtering by query", async () => {
+    await repository.save(makeCustomer({ displayName: "Alice A" }), tenantA);
+    await repository.save(makeCustomer({ displayName: "Alice B" }), tenantB);
+
+    const resultA = await repository.search({ query: "alice" }, tenantA);
+
+    expect(resultA.success).toBe(true);
+    expect(resultA.value?.total).toBe(1);
+    expect(resultA.value?.items[0].displayName).toBe("Alice A");
+  });
+
+  it("rejects saving a customer without an assigned id", async () => {
+    const customer = new Customer({
+      displayName: "Unpersisted",
+      givenName: null,
+      familyName: null,
+      contacts: [],
+      preferences: {},
+    });
+
+    const result = await repository.save(customer, tenantA);
+
+    expect(isFailure(result)).toBe(true);
+    if (isFailure(result)) {
+      expect(result.error).toBeInstanceOf(RepositoryError);
+      expect(result.error.meta.reason).toBe("invalid_data");
+    }
+
+    const searchResult = await repository.search(undefined, tenantA);
+
+    expect(searchResult.success).toBe(true);
+    expect(searchResult.value?.total).toBe(0);
   });
 
   describe("tenant isolation", () => {

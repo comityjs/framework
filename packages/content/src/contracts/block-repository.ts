@@ -16,7 +16,7 @@ export interface BlockRepository {
    * Retrieve a block by identifier.
    *
    * @param id - Block ID.
-   * @param ctx - Context for the repository request, including fields selection, locale, currency, and tenant information.
+   * @param ctx - Context for the repository request, including fields selection, locale, and tenant information.
    *
    * @returns Block model or null if not found.
    */
@@ -29,7 +29,7 @@ export interface BlockRepository {
    * Retrieve a block by URL slug.
    *
    * @param slug - URL-friendly slug.
-   * @param ctx - Context for the repository request, including fields selection, locale, currency, and tenant information.
+   * @param ctx - Context for the repository request, including fields selection, locale, and tenant information.
    *
    * @returns Block model or null if not found.
    */
