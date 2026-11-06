@@ -1,5 +1,17 @@
 # @comity/pricing
 
+## 0.10.0
+
+### Minor Changes
+
+- ba1c78c: Add the accepted `PriceRecord` historical-record contract: `PriceRecord`,
+  `PriceCurrency`, `PlainPriceRecord`, `PriceModifierRecord`,
+  `PriceVerification` and `currentPriceCurrency`, with `from`, `combine`,
+  `toPlain`, `restore` and `verify`. Records preserve currency and amount
+  provenance losslessly and separate structural restoration from historical
+  verification and current commit eligibility. Adds the
+  `unsupported_record_format` reason. Existing pricing APIs remain available.
+
 ## 0.9.3
 
 ### Patch Changes
