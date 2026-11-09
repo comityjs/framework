@@ -33,7 +33,11 @@ export interface OrderPaymentSnapshot {
   /** The payment provider identifier, if known. */
   readonly provider?: string;
 
-  /** The provider-side reference (e.g. transaction/authorization token). */
+  /**
+   * The caller reference the payment was initiated with: the application-owned payment-attempt identity (ADR-037). It
+   * attributes this fact to its attempt. It is not an order-level reference, not an idempotency key, and not a provider
+   * identifier: the provider's identity of the payment is `paymentId`.
+   */
   readonly reference?: string;
 
   /** The timestamp when the payment was authorized, if known. */

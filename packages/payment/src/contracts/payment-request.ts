@@ -10,6 +10,10 @@ export interface PaymentRequest {
   /** The amount to charge. Currency is embedded in the Money value object. */
   readonly amount: Money;
 
-  /** Opaque caller-owned reference (e.g., order ID, cart ID, idempotency key). */
+  /**
+   * Opaque caller-owned correlation reference. In the approved design (ADR-037) it is the application-owned payment-attempt
+   * identity, echoed back by the provider where it can. It is neither an idempotency key (a separate identifier, ADR-030)
+   * nor a provider identifier (`paymentId`).
+   */
   readonly reference?: string;
 }
