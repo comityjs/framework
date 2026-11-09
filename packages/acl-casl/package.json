@@ -54,15 +54,15 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "@comity/acl": "workspace:^",
-    "@casl/ability": "^7.0.0"
+    "@casl/ability": "^7.0.0",
+    "@comity/acl": "workspace:^"
   },
   "dependencies": {
     "@comity/acl": "workspace:^",
     "@comity/primitives": "workspace:^"
   },
   "devDependencies": {
-    "@casl/ability": "^7.0.2",
+    "@casl/ability": "^7.1.1",
     "@types/node": "^24.19.2",
     "typescript": "^5.9.3"
   }
