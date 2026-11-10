@@ -68,7 +68,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
-    "pg-boss": "^12.38.0",
+    "pg-boss": "^12.38.1",
     "typescript": "^5.9.3"
   }
 }
