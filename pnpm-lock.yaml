@@ -224,8 +224,8 @@ importers:
         specifier: ^0.3.1
         version: 0.3.1(eslint@9.39.5(supports-color@7.2.0))
       '@comity-dev/package-tools':
-        specifier: ^0.2.1
-        version: 0.2.1
+        specifier: ^0.2.2
+        version: 0.2.2
       '@comity-dev/schemas':
         specifier: ^0.3.0
         version: 0.3.0
@@ -1285,6 +1285,11 @@ packages:
     engines: {node: '>=24.0.0'}
     hasBin: true
 
+  '@comity-dev/package-tools@0.2.2':
+    resolution: {integrity: sha512-yjXF31rEFxFakS7igZhmGwLa5YKe13Wo5GsnrjXSCkZPo2YXlJRPPTJnzeLVkveIbya14iwxsq1mMiX1abFLXg==}
+    engines: {node: '>=24.0.0'}
+    hasBin: true
+
   '@comity-dev/schemas@0.3.0':
     resolution: {integrity: sha512-WlMc9Z8eHJ6/ktP8RVbUBjwG2wh1nyDBkW8jAgNPnFVkU682URm3vNESw/VQvKJhk9gRzIy5zkOA+b6YRiofvg==}
     engines: {node: '>=24.0.0'}
@@ -1543,8 +1548,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@rolldown/pluginutils@1.0.1':
-    resolution: {integrity: sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==}
+  '@rolldown/pluginutils@1.1.0':
+    resolution: {integrity: sha512-K+NU2HDCEem4sClgHH4ZZXwdJeNFkJo+hRk479DIwdIviAPN2hFJH1KHHwg8CxHQXvi0M5XY4deTXINfIiSG6w==}
 
   '@rtsao/scc@1.1.0':
     resolution: {integrity: sha512-zt6OdqaDoOnJ1ZYsCYGt9YmWzDXl4vQdKTyJev62gFhRGKdx7mcT54V9KIjg+d2wi9EXsPvAPKe7i7WjfVWB8g==}
@@ -3777,6 +3782,10 @@ snapshots:
     dependencies:
       typescript: 5.9.3
 
+  '@comity-dev/package-tools@0.2.2':
+    dependencies:
+      typescript: 5.9.3
+
   '@comity-dev/schemas@0.3.0':
     dependencies:
       ajv: 8.20.0
@@ -3987,7 +3996,7 @@ snapshots:
   '@rolldown/binding-win32-x64-msvc@1.2.16':
     optional: true
 
-  '@rolldown/pluginutils@1.0.1': {}
+  '@rolldown/pluginutils@1.1.0': {}
 
   '@rtsao/scc@1.1.0': {}
 
@@ -5618,7 +5627,7 @@ snapshots:
   rolldown@1.2.16:
     dependencies:
       '@oxc-project/types': 0.156.0
-      '@rolldown/pluginutils': 1.0.1
+      '@rolldown/pluginutils': 1.1.0
     optionalDependencies:
       '@rolldown/binding-android-arm-eabi': 1.2.16
       '@rolldown/binding-android-arm64': 1.2.16

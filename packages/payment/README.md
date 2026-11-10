@@ -49,8 +49,6 @@ No exhaustive reference; see docs for constraints.
 
 ## Documentation
 
-- docs/overview.md
-- docs/conventions.md
 - docs/migration.md — migration of the ADR-030 / ADR-031 / ADR-037 contract changes
 
 ---
