@@ -1,6 +1,6 @@
 import type { ModuleSetupContext } from "@comity/composition/setup";
 
-import type { PaymentProvider } from "../contracts/payment-provider.js";
+import type { PaymentProviderBinding } from "../contracts/payment-capabilities.js";
 import type { PAYMENT_PROVIDER_TOKEN } from "./constants.js";
 
 /** Hooks exposed by the module */
@@ -21,8 +21,8 @@ export type PaymentModuleEvents = {};
  * Services exposed by the module
  */
 export type PaymentModuleServices = {
-  /** Payment provider resolver token */
-  [PAYMENT_PROVIDER_TOKEN]: PaymentProvider;
+  /** Payment provider binding resolver token: the validated provider with its capability declaration */
+  [PAYMENT_PROVIDER_TOKEN]: PaymentProviderBinding;
 };
 
 /**
@@ -34,7 +34,8 @@ export interface PaymentModuleContext extends ModuleSetupContext<
   PaymentModuleHooks
 > {}
 
+/** Options of the payment module. */
 export type PaymentModuleOptions = {
-  /** The payment provider to use. Required for production. */
-  provider?: PaymentProvider;
+  /** The provider binding to use. Required for production. Validated at composition (ADR-037 §5). */
+  binding?: PaymentProviderBinding;
 };
