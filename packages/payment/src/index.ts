@@ -1,4 +1,11 @@
 export type {
+  PaymentConformancePayment,
+  PaymentConformanceRequirement,
+  PaymentConformanceResult,
+  PaymentConformanceStatus,
+  PaymentOperationConformanceHarness,
+} from "./conformance/index.js";
+export type {
   PaymentCapabilities,
   PaymentIncompleteResolution,
   PaymentProviderBinding,
@@ -32,14 +39,6 @@ export type {
   RefundRequest,
 } from "./contracts/payment-refund.js";
 export type { PaymentRequest } from "./contracts/payment-request.js";
-
-export type {
-  PaymentConformancePayment,
-  PaymentConformanceRequirement,
-  PaymentConformanceResult,
-  PaymentConformanceStatus,
-  PaymentOperationConformanceHarness,
-} from "./conformance/index.js";
 export type { MemoryPaymentProviderOptions } from "./providers/memory.js";
 export type { PaymentBindingRule, PaymentBindingViolation } from "./validation/index.js";
 
