@@ -1,13 +1,19 @@
 import type { ModuleMeta } from "@comity/composition/setup";
-import { success } from "@comity/primitives/result";
-import type { PaymentProvider } from "../contracts/payment-provider.js";
+import { failure, success } from "@comity/primitives/result";
+import type { PaymentProviderBinding } from "../contracts/payment-capabilities.js";
+import { validatePaymentProviderBinding } from "../validation/validate-binding.js";
 
 import { PAYMENT_PROVIDER_TOKEN } from "./constants.js";
 import type { PaymentModuleContext, PaymentModuleServices } from "./types.js";
 
+/** Options of the payment module. */
 export type PaymentModuleOptions = {
-  /** The payment provider to use. Required for production. */
-  provider?: PaymentProvider;
+  /**
+   * The provider binding to use: the provider with its capability declaration. Required for production.
+   * It is validated against the static rules of ADR-037 §5 when the module is configured; an invalid binding
+   * fails composition with `invalid_configuration`.
+   */
+  binding?: PaymentProviderBinding;
 };
 
 export default {
@@ -23,18 +29,22 @@ export default {
       ...(options ?? {}),
     };
 
-    let provider: PaymentModuleServices[typeof PAYMENT_PROVIDER_TOKEN] | undefined;
+    let binding: PaymentModuleServices[typeof PAYMENT_PROVIDER_TOKEN] | undefined;
 
-    ctx.services.define(PAYMENT_PROVIDER_TOKEN, () => provider!);
+    ctx.services.define(PAYMENT_PROVIDER_TOKEN, () => binding!);
 
     return success(async () => {
       const cfg = (await ctx.hooks.execute("@comity/payment:configuring", initial)) ?? initial;
 
-      if (!cfg.provider) {
-        // No provider configured; the service will throw if resolved without one.
-        // This is intentional: the Application must wire a provider.
+      if (!cfg.binding) {
+        // No binding configured: resolving PAYMENT_PROVIDER_TOKEN yields undefined (it does not throw),
+        // following the Comity convention for unconfigured optional services. The Application must wire a binding.
       } else {
-        provider = cfg.provider;
+        const validation = validatePaymentProviderBinding(cfg.binding);
+        if (!validation.success) {
+          return failure(validation.error);
+        }
+        binding = cfg.binding;
       }
 
       await ctx.hooks.execute("@comity/payment:initialized", undefined);
