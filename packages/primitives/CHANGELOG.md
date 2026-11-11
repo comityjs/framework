@@ -1,5 +1,11 @@
 # @comity/primitives
 
+## 0.9.4
+
+### Patch Changes
+
+- 352ee1b: Add the `conflict` repository error reason (HTTP 409, optional `suppliedVersion` / `storedVersion` details) and the `@comity/primitives/testing` subpath exporting the framework-agnostic versioned-repository conformance kit (ADR-029).
+
 ## 0.9.3
 
 ### Patch Changes

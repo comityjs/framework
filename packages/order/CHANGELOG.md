@@ -1,5 +1,16 @@
 # @comity/order
 
+## 0.11.0
+
+### Minor Changes
+
+- 352ee1b: Implement the ADR-029 versioned repository contract. `OrderRepository.save` is now a compare-and-set on the aggregate version and returns `repository:conflict` for stale or duplicate writes, with no retry. Add `MemoryOrderStore` for shared in-memory persistence.
+
+### Patch Changes
+
+- Updated dependencies [352ee1b]
+  - @comity/primitives@0.9.4
+
 ## 0.10.0
 
 ### Minor Changes

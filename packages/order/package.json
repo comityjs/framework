@@ -1,6 +1,6 @@
 {
   "name": "@comity/order",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Order domain contracts for Comity commerce modules.",
   "type": "module",
   "private": false,
