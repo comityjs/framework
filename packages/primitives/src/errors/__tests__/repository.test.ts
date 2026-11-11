@@ -7,6 +7,7 @@ describe("RepositoryError", () => {
     ["access_denied", "Access denied", 403],
     ["service_unavailable", "Service unavailable", 503],
     ["protocol_error", "Protocol error", 502],
+    ["conflict", "Conflict", 409],
     ["unknown", "Unknown error", 500],
   ] as const)(
     "maps %s to the expected message and default http status",
@@ -76,5 +77,19 @@ describe("RepositoryError", () => {
     expect(error.meta.reason).toBe("access_denied");
     expect(error.code).toBe("repository:access_denied");
     expect(error.message).toBe("Access denied");
+  });
+
+  it("carries conflict version details (ADR-029)", () => {
+    const error = new RepositoryError("conflict", {
+      details: { repository: "order", operation: "save", suppliedVersion: 3, storedVersion: 5 },
+    });
+
+    expect(error.code).toBe("repository:conflict");
+    expect(error.meta.details).toEqual({
+      repository: "order",
+      operation: "save",
+      suppliedVersion: 3,
+      storedVersion: 5,
+    });
   });
 });

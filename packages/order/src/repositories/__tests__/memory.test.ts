@@ -106,17 +106,43 @@ describe("MemoryOrderRepository", () => {
     expect(result).toEqual({ success: true, value: null });
   });
 
-  it("overwrites an existing order on save", async () => {
+  it("does not overwrite an existing order when saving at version 0 (ADR-029)", async () => {
     const sharedId = createId("overwrite-test");
     const order1 = createOrder("draft", sharedId);
     await repository.save(order1, { tenant: tenantA });
 
     const order2 = createOrder("pending", sharedId);
-    await repository.save(order2, { tenant: tenantA });
+    const saved = await repository.save(order2, { tenant: tenantA });
+
+    expect(saved.success).toBe(false);
+    expect(saved.success === false && saved.error.meta.reason).toBe("conflict");
 
     const result = await repository.getById(sharedId, { tenant: tenantA });
 
-    expect(result.value?.status).toBe("pending");
+    expect(result.value?.status).toBe("draft");
+    expect(result.value?.version).toBe(1);
+  });
+
+  it("returns independent copies: mutating a loaded order does not change stored state", async () => {
+    const id = createId("copy-test");
+    await repository.save(createOrder("draft", id), { tenant: tenantA });
+
+    const first = await repository.getById(id, { tenant: tenantA });
+    const second = await repository.getById(id, { tenant: tenantA });
+
+    expect(first.value).not.toBe(second.value);
+    expect(first.value?.cancel().success).toBe(true);
+
+    const third = await repository.getById(id, { tenant: tenantA });
+
+    expect(third.value?.status).toBe("draft");
+  });
+
+  it("keeps the in-memory version unchanged after a successful save", async () => {
+    const order = createOrder("draft", createId("keeps-version"));
+    await repository.save(order, { tenant: tenantA });
+
+    expect(order.version).toBe(0);
   });
 
   it("search returns all orders when no criteria", async () => {
