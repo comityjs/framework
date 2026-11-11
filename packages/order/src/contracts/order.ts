@@ -90,7 +90,7 @@ export interface OrderState extends OrderData {
    *
    * `0` while the aggregate has never been persisted; restored verbatim on
    * hydration. The aggregate NEVER increments it — the repository does, once
-   * per successful save. ADVISORY until ADR-029 is accepted.
+   * per successful save (ADR-029).
    */
   readonly version: number;
 }

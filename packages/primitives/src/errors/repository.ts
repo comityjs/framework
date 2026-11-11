@@ -6,7 +6,12 @@ import { BaseError } from "./base.js";
  * Stable repository error reasons.
  */
 export type RepositoryErrorReason =
-  "invalid_data" | "access_denied" | "service_unavailable" | "protocol_error" | "unknown";
+  | "invalid_data"
+  | "access_denied"
+  | "service_unavailable"
+  | "protocol_error"
+  | "conflict"
+  | "unknown";
 
 /**
  * Metadata attached to repository errors.
@@ -22,6 +27,12 @@ export interface RepositoryErrorMeta extends ErrorMeta {
 
     /** Optional operation name. */
     operation: string;
+
+    /** Version the caller supplied (`conflict` only, ADR-029). */
+    suppliedVersion?: number;
+
+    /** Persisted version when a conflicting record exists (`conflict` only, ADR-029). */
+    storedVersion?: number;
   }>;
 }
 
@@ -33,6 +44,7 @@ export const REPOSITORY_ERROR_MESSAGES: Record<RepositoryErrorReason, string> = 
   access_denied: "Access denied",
   service_unavailable: "Service unavailable",
   protocol_error: "Protocol error",
+  conflict: "Conflict",
   unknown: "Unknown error",
 };
 
@@ -44,6 +56,7 @@ export const REPOSITORY_ERROR_HTTP_STATUS: Record<RepositoryErrorReason, number>
   access_denied: 403,
   service_unavailable: 503,
   protocol_error: 502,
+  conflict: 409,
   unknown: 500,
 };
 

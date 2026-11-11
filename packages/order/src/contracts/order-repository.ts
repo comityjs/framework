@@ -73,9 +73,23 @@ export interface OrderRepository {
    * @param ctx - Repository context containing tenant for isolation.
    *
    * @remarks
-   * Implementations MUST treat this as upsert: if the order id already
-   * exists the stored order is overwritten, otherwise a new order is
-   * created.
+   * Versioned save (ADR-029). Let *supplied* be `order.version` and *stored* the persisted
+   * version for the same identity within the context's tenant:
+   *
+   * - no stored record, supplied `0`: insert; stored becomes `1`;
+   * - no stored record, supplied not `0`: `repository:conflict`, nothing persisted;
+   * - stored record exists, supplied `0`: `repository:conflict`, nothing persisted;
+   * - supplied equals stored: update; stored becomes supplied + 1;
+   * - supplied differs from stored: `repository:conflict`, nothing persisted.
+   *
+   * A supplied version that is not a non-negative safe integer, or that is
+   * `Number.MAX_SAFE_INTEGER` (a save could not increment it into a representable version), is
+   * `repository:invalid_data`, never a `conflict`.
+   *
+   * The check and the write are one atomic compare-and-set; a conflict is never retried inside
+   * the repository. On success the in-memory `order` keeps its pre-save version and is stale:
+   * reload with `getById` before saving again. Infrastructure failures keep their own reasons
+   * and never surface as `conflict`.
    */
   save(order: Order, ctx: OrderRepositoryContext): Promise<Result<void, RepositoryError>>;
 

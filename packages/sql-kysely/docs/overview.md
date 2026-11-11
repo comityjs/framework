@@ -31,6 +31,7 @@ Applications should depend only on `@comity/sql` contracts, never on Kysely.
 import { createKyselySqlClient } from "@comity/sql-kysely";
 
 const sql = createKyselySqlClient({
-  client: kyselyClient,
+  db: kyselyDb,
+  adapter: "postgres",
 });
 ```

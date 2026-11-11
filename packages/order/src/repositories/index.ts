@@ -1,1 +1,3 @@
-export { MemoryOrderRepository } from "./memory.js";
+export type { MemoryOrderCasResult } from "./memory.js";
+
+export { MemoryOrderRepository, MemoryOrderStore } from "./memory.js";

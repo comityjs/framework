@@ -66,6 +66,10 @@
       "types": "./dist/result/index.d.ts",
       "default": "./dist/result/index.js"
     },
+    "./testing": {
+      "types": "./dist/testing/index.d.ts",
+      "default": "./dist/testing/index.js"
+    },
     "./time": {
       "types": "./dist/time/index.d.ts",
       "default": "./dist/time/index.js"
@@ -85,6 +89,9 @@
       ],
       "result": [
         "./dist/result/index.d.ts"
+      ],
+      "testing": [
+        "./dist/testing/index.d.ts"
       ],
       "time": [
         "./dist/time/index.d.ts"

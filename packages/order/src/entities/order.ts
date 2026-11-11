@@ -490,9 +490,8 @@ function findEmptyOrderPriceViolation(
  * and application/domain services.
  *
  * @remark
- * The version token is ADVISORY: the aggregate carries it and never increments
- * it. Optimistic concurrency belongs to the repository (Comity precondition
- * ADR-029) and is not implemented here.
+ * The aggregate carries the version token and never increments it. Optimistic
+ * concurrency belongs to the repository (ADR-029).
  */
 export class Order {
   readonly #id: OrderId;
@@ -703,7 +702,7 @@ export class Order {
   }
 
   /**
-   * Returns the persisted-version token (read-only; advisory, never
+   * Returns the persisted-version token (read-only; never
    * incremented by the aggregate).
    *
    * @returns The version token: `0` while unpersisted.

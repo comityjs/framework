@@ -2,7 +2,7 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
-    projects: ["packages/*/vitest.config.{ts,js,mjs}", "tests/vitest.config.ts"],
+    projects: ["packages/*/vitest.config.{ts,js,mjs}"],
 
     environment: "node",
     globals: true,

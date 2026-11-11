@@ -49,7 +49,9 @@ source tree.
 - Error reasons: `invalid_quantity`, `invalid_item`,
   `invalid_status_transition`, `shipping_destination_immutable`,
   `ambiguous_shipping_destination`, `duplicate_item_id`.
-- `OrderRepository` already had `getById`, `save` (upsert) and `search`.
+- `OrderRepository` already had `getById`, `save` and `search`. At `0.9.3` `save` was an
+  **unconditional upsert** (last write wins). That is no longer the contract: see
+  "Repository `save` semantics" in section 3.
 
 ### `@comity/pricing@0.9.3`
 
@@ -114,7 +116,25 @@ Commercial, billing, legal and fiscal coherence belongs to Commerce.
   stored order-level modifiers and requires exact commitment equality before
   leaving `draft`.
 - `OrderState` has `lines`, `price`, `currency` and `version`; the repository
-  surface (`getById`, `save`, `search`) is otherwise unchanged.
+  method names (`getById`, `save`, `search`) are unchanged, but `save` semantics are not.
+
+### Repository `save` semantics (ADR-029)
+
+`save` is no longer an upsert; it is a versioned compare-and-set on `version`:
+
+| Persisted | Aggregate `version`      | Result                                                                      |
+| --------- | ------------------------ | --------------------------------------------------------------------------- |
+| none      | `0` (new order)          | inserted; persisted version becomes `1`                                     |
+| none      | not `0`                  | `repository:conflict`                                                       |
+| exists    | `0`                      | `repository:conflict` (the identity already exists; nothing is overwritten) |
+| exists    | equal to persisted       | updated; persisted version becomes `version + 1`                            |
+| exists    | different from persisted | `repository:conflict` (stale write); nothing is persisted                   |
+
+A successful save increments the persisted version exactly once and leaves the in-memory
+order at its old version, so reload with `getById` before saving again. Conflicts are never
+retried by the repository; reloading and reapplying is the caller's decision. A version that
+is not a non-negative safe integer, or is `Number.MAX_SAFE_INTEGER`, is `repository:invalid_data`.
+Code that relied on overwrite-on-save must now handle `conflict`.
 
 ## 4. Migration procedure
 
