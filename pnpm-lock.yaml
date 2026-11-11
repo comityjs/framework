@@ -888,40 +888,6 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
-  packages/order-sql:
-    dependencies:
-      '@comity/order':
-        specifier: workspace:^
-        version: link:../order
-      '@comity/organization':
-        specifier: workspace:^
-        version: link:../organization
-      '@comity/pricing':
-        specifier: workspace:^
-        version: link:../pricing
-      '@comity/primitives':
-        specifier: workspace:^
-        version: link:../primitives
-      '@comity/sql':
-        specifier: workspace:^
-        version: link:../sql
-    devDependencies:
-      '@comity/sql-kysely':
-        specifier: workspace:^
-        version: link:../sql-kysely
-      '@types/node':
-        specifier: ^24.19.2
-        version: 24.19.2
-      kysely:
-        specifier: ^0.28.19
-        version: 0.28.19
-      pg:
-        specifier: ^8.23.1
-        version: 8.23.1
-      typescript:
-        specifier: ^5.9.3
-        version: 5.9.3
-
   packages/organization:
     dependencies:
       '@comity/primitives':
