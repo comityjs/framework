@@ -51,3 +51,14 @@ In those cases, the concept belongs in a higher-level package.
 
 If an API needs explanation beyond its concept,
 it is not a primitive.
+
+## Repository conformance kit (`@comity/primitives/testing`)
+
+The `./testing` subpath exports `runVersionedRepositoryTests`, `ConformanceError` and the adapter interfaces of the
+shared ADR-029 conformance suite. It is framework-agnostic and depends on no SQL or Order code; the consumer supplies a
+test-framework adapter. Every adapter claiming support for versioned repository concurrency runs it (mandatory cases
+TC-1, TC-1c, TC-2a, TC-2b, TC-2c, TC-3, TC-4, TC-5; TC-6 only when multi-record atomicity is declared; an undeclared TC-6
+is reported `unsupported` in the returned `ConformanceReport`, registered through the optional `skip` of the framework
+adapter when it has one, and never as an empty passing test). The cases,
+fixture lifecycle and evidence reporting are defined in `docs/standards/repository-conformance.md` of the development
+repository; the signatures in `src/testing/types.ts` are authoritative.

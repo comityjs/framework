@@ -144,17 +144,22 @@ organizations (`kind` defaults to `individual`). Enforced in `Order.create` →
   `OrderError`. It **never** increments `version`.
 - **Repository** owns persistence and (per ADR-029) the version compare-and-set.
   `OrderRepository`'s surface (`getById`, `save`, `search`) is **unchanged** by
-  Phase A; its `save` _semantics_ become version-checked only when ADR-029 is
-  accepted and implemented.
+  Phase A; its `save` _semantics_ become version-checked through ADR-029
+  (accepted 2026-11-12; implemented by `MemoryOrderRepository`).
 
 ## Version and concurrency (contract only — no implementation claimed)
+
+> _Update 2026-11-12:_ the text below records the Phase A state. ADR-029 has since been
+> **Accepted** and `MemoryOrderRepository` implements the versioned `save`; the SQL
+> adapter lives in Commerce. Acceptance is an architectural decision, not evidence of any
+> adapter's conformance or production readiness.
 
 A newly created, not-yet-persisted aggregate has `version: 0`. Hydration restores
 the persisted value verbatim. The intended persistence semantics — insert
 establishes `1`; a compare-and-set update stores `supplied + 1` exactly once per
 successful save; a failed check persists nothing and returns
-`repository:conflict` — are owned by **Proposed ADR-029** and the eventual
-adapter, **not** by this package today. **Until ADR-029 is accepted and a
+`repository:conflict` — are owned by **ADR-029** (Proposed when this was written) and the
+adapter, **not** by this package. **Until ADR-029 is accepted and a
 conforming adapter exists, `version` is advisory**, and no production write path
 that mutates money or rights may ship. Phase A ships only the aggregate-side
 `version` shape so it is fixed once.
@@ -166,8 +171,8 @@ Not in Phase A (ADR-032 §5): `customer → buyer` rename; `OrderProfile`;
 and `BundleGroupRef`; `stale_version` / `saveWithVersion` / `VersionedRepository`;
 `origin` / `OrderOrigin` / `amendment_of`; `Order.recordReversal` and the
 reversals collection (deferred, gated on ADR-031); any offering / Commerce
-package. ADR-029/030/031 are **separate Proposed prerequisites**, not part of
-Phase A, and are neither accepted nor implemented here.
+package. ADR-029/030/031 are **separate prerequisites** (Proposed when this was written; ADR-029 since
+accepted, 2026-11-12), not part of Phase A.
 
 ## Testing expectations
 
@@ -211,6 +216,6 @@ policy requires one before merge, that sign-off remains outstanding.
 
 - **ADR-032** (Accepted 2026-11-05) — the decision this document specifies.
 - **ADR-001** (creation vs hydration), **ADR-013** (Order entity consolidation).
-- **ADR-029 / ADR-030 / ADR-031** (Proposed) — separate prerequisites gating
+- **ADR-029 / ADR-030 / ADR-031** (ADR-029 Accepted 2026-11-12; Proposed when this was written) — separate prerequisites gating
   production concurrency, charge idempotency and refunds.
 - `commerce/docs/architecture/` — the frozen Commerce Foundation v0 architecture.

@@ -6,7 +6,7 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@comity/order-sql"],
+  "ignore": [],
   "privatePackages": {
     "version": true,
     "tag": true

@@ -106,8 +106,11 @@ other pricing failure to `order:price_incoherent`.
 
 `OrderState.version` is a read-only token. A new, not-yet-persisted aggregate
 has `0`; hydration restores the persisted value verbatim. The aggregate never
-increments it — the repository does, once per successful save. It is advisory
-until ADR-029 is accepted and a conforming adapter exists.
+increments it — the repository does, once per successful save (ADR-029, accepted
+2026-11-12). `MemoryOrderRepository` implements that contract. The guarantee exists
+only through a repository that implements ADR-029 and runs its conformance suite;
+whether an adapter's evidence suffices for a production write path is decided by the
+consuming application's gate, not by this package.
 
 ## Errors
 

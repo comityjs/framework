@@ -149,11 +149,13 @@ const adapter: OrderAdapter = {
   },
 };
 
-runVersionedRepositoryTests(
+const conformanceReport = runVersionedRepositoryTests(
   adapter,
   {
     describe: (name, fn) => describe(name, fn),
     it: (name, fn) => it(name, fn),
+    // TC-6 is not declared by the in-memory store: the runner shows it as skipped, never as passed.
+    skip: (name, fn) => it.skip(name, fn),
     assert: (condition, message) => {
       if (!condition) throw new Error(message ?? "assertion failed");
     },
@@ -163,6 +165,26 @@ runVersionedRepositoryTests(
   },
   "MemoryOrderRepository conformance (ADR-029)"
 );
+
+describe("MemoryOrderRepository conformance report", () => {
+  it("TC-6 is unsupported (not executed) and every mandatory case is applicable", () => {
+    const applicability = Object.fromEntries(
+      conformanceReport.cases.map((entry) => [entry.id, entry.applicability])
+    );
+
+    expect(applicability).toEqual({
+      "TC-1": "applicable",
+      "TC-1c": "applicable",
+      "TC-2a": "applicable",
+      "TC-2b": "applicable",
+      "TC-2c": "applicable",
+      "TC-3": "applicable",
+      "TC-4": "applicable",
+      "TC-5": "applicable",
+      "TC-6": "unsupported",
+    });
+  });
+});
 
 describe("MemoryOrderRepository (ADR-029 specifics)", () => {
   it("tenant isolation: the same identity in another tenant is independent", async () => {

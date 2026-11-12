@@ -1,4 +1,11 @@
-import type { TestFixture, TestFrameworkAdapter, VersionedRepositoryTestAdapter } from "./types.js";
+import type {
+  ConformanceCaseId,
+  ConformanceCaseReport,
+  ConformanceReport,
+  TestFixture,
+  TestFrameworkAdapter,
+  VersionedRepositoryTestAdapter,
+} from "./types.js";
 
 import { ConformanceError } from "./errors.js";
 import { attemptSave, establishVersion } from "./helpers.js";
@@ -34,13 +41,42 @@ async function readRequired<A, S, C>(
  * @param adapter - Consumer-supplied adapter normalising their repository to the generic contract
  * @param framework - Consumer's test-framework adapter (describe, it, assert, assertEqual)
  * @param suiteName - Name for the test suite
+ *
+ * @returns A machine-readable report of which cases apply to the adapter. TC-6 is `unsupported`
+ * (and not executed) unless the adapter declares multi-record atomicity; an unsupported case is
+ * never registered as a passing test.
  */
 export function runVersionedRepositoryTests<Aggregate, Snapshot, Context>(
   adapter: VersionedRepositoryTestAdapter<Aggregate, Snapshot, Context>,
   framework: TestFrameworkAdapter,
   suiteName: string
-): void {
+): ConformanceReport {
   const { assert, assertEqual } = framework;
+  const multiRecordDeclared = adapter.createMultiRecordAtomicityScenario !== undefined;
+  const mandatory: readonly ConformanceCaseId[] = [
+    "TC-1",
+    "TC-1c",
+    "TC-2a",
+    "TC-2b",
+    "TC-2c",
+    "TC-3",
+    "TC-4",
+    "TC-5",
+  ];
+  const report: ConformanceReport = {
+    suite: suiteName,
+    cases: [
+      ...mandatory.map((id): ConformanceCaseReport => ({ id, applicability: "applicable" })),
+      multiRecordDeclared
+        ? { id: "TC-6", applicability: "applicable" }
+        : {
+            id: "TC-6",
+            applicability: "unsupported",
+            reason: "multi-record atomicity not declared",
+          },
+    ],
+  };
+
   framework.describe(suiteName, () => {
     framework.it("TC-1: first persistence persists version 1", async () => {
       const fixture = adapter.createFixture();
@@ -286,7 +322,9 @@ export function runVersionedRepositoryTests<Aggregate, Snapshot, Context>(
     });
 
     if (adapter.createMultiRecordAtomicityScenario === undefined) {
-      framework.it("TC-6: unsupported (multi-record atomicity not declared)", async () => {});
+      // An undeclared capability is never an executed (or passing) test: a runner that can skip
+      // reports it as skipped; otherwise nothing is registered. The report above says "unsupported".
+      framework.skip?.("TC-6: unsupported (multi-record atomicity not declared)", async () => {});
 
       return;
     }
@@ -371,4 +409,6 @@ export function runVersionedRepositoryTests<Aggregate, Snapshot, Context>(
       }
     });
   });
+
+  return report;
 }
