@@ -14,6 +14,53 @@ export interface TestFrameworkAdapter {
 
   /** Assert strict equality; throws on mismatch. */
   assertEqual<T>(actual: T, expected: T, message?: string): void;
+
+  /**
+   * Optional. Register a test that the runner reports as **skipped**: it is never run and never
+   * reported as passed (for example `it.skip`). The kit uses it for a capability-dependent case
+   * the adapter does not declare. When absent, such a case is not registered at all, so no
+   * empty test can be reported as passed; the {@link ConformanceReport} still lists it as
+   * `unsupported`.
+   */
+  skip?(name: string, fn: () => Promise<void>): void;
+}
+
+/** Identifier of a conformance case. */
+export type ConformanceCaseId =
+  "TC-1" | "TC-1c" | "TC-2a" | "TC-2b" | "TC-2c" | "TC-3" | "TC-4" | "TC-5" | "TC-6";
+
+/**
+ * Whether a case applies to the adapter, decided from the capabilities it declares.
+ *
+ * - `applicable`: the case is registered with the runner's `it`; its `passed` / `failed` outcome
+ *   is the runner's, and `passed` means its assertions ran and succeeded.
+ * - `unsupported`: the adapter does not declare the capability; the case is **not executed**.
+ */
+export type ConformanceApplicability = "applicable" | "unsupported";
+
+/** One entry of a {@link ConformanceReport}. */
+export interface ConformanceCaseReport {
+  /** Case identifier. */
+  readonly id: ConformanceCaseId;
+
+  /** Applicability of the case to this adapter. */
+  readonly applicability: ConformanceApplicability;
+
+  /** Why the case is unsupported; present only when `applicability` is `unsupported`. */
+  readonly reason?: string;
+}
+
+/**
+ * Machine-readable capability report returned by `runVersionedRepositoryTests`, available
+ * synchronously at registration time. Mandatory cases are always `applicable`; TC-6 is
+ * `unsupported` unless the adapter implements `createMultiRecordAtomicityScenario`.
+ */
+export interface ConformanceReport {
+  /** Suite name as passed to the runner. */
+  readonly suite: string;
+
+  /** One entry per case, in identifier order. */
+  readonly cases: readonly ConformanceCaseReport[];
 }
 
 /** Minimal repository interface required by the test kit. */

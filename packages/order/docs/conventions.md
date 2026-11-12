@@ -21,8 +21,8 @@
 - never perform pricing arithmetic, rounding, modifier normalization or deduplication in Order
 - keep line subjects generic: no commercial taxonomy, SKU, variant, option or attribute
 - never mint a `lineId` inside the aggregate: occurrence keys are caller-assigned and preserved verbatim
-- never imply concurrency guarantees from `version`: it is advisory until Comity precondition ADR-029 is
-  accepted and a conforming repository adapter exists
+- never imply concurrency guarantees from `version` alone: they exist only through a repository that implements ADR-029
+  (accepted 2026-11-12) and runs its conformance suite (`docs/standards/repository-conformance.md`)
 
 ## Status Lifecycle
 

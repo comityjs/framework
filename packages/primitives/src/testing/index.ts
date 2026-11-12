@@ -1,4 +1,8 @@
 export type {
+  ConformanceApplicability,
+  ConformanceCaseId,
+  ConformanceCaseReport,
+  ConformanceReport,
   FailureInjectionFixture,
   InfrastructureFailureReason,
   MultiRecordAtomicityScenario,

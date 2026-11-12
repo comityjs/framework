@@ -4,6 +4,7 @@ import { failure, success } from "../../result/index.js";
 import type { Result } from "../../result/index.js";
 import { runVersionedRepositoryTests } from "../run.js";
 import type {
+  ConformanceReport,
   TestFixture,
   TestFrameworkAdapter,
   VersionedRepositoryTestAdapter,
@@ -72,7 +73,10 @@ function makeRepo(store: Store, mode: Mode, armed: { value: boolean }) {
   };
 }
 
-function makeAdapter(mode: Mode): VersionedRepositoryTestAdapter<Doc, Doc, string> {
+function makeAdapter(
+  mode: Mode,
+  options: { readonly multiRecord?: boolean } = {}
+): VersionedRepositoryTestAdapter<Doc, Doc, string> {
   const fixtureOver = (store: Store, tenant: string, armed: { value: boolean }) => {
     const repo = makeRepo(store, mode, armed);
     const fixture: TestFixture<Doc, Doc, string> = {
@@ -125,15 +129,48 @@ function makeAdapter(mode: Mode): VersionedRepositoryTestAdapter<Doc, Doc, strin
         },
       });
     },
+    ...(options.multiRecord === true
+      ? {
+          // A single-record "scenario" is enough to exercise the kit's TC-6 flow.
+          createMultiRecordAtomicityScenario: () => {
+            const store: Store = new Map();
+            const fixture = fixtureOver(store, "t1", { value: false });
+            const identity = crypto.randomUUID();
+
+            return Promise.resolve({
+              fixture,
+              identity,
+              createInitialAggregate: () => ({ id: identity, version: 0, body: "a" }),
+              deriveAdvancingAggregate: (persisted: Doc) => ({ ...persisted, body: "advanced" }),
+              deriveStaleAggregate: (persisted: Doc) => ({ ...persisted, body: "stale" }),
+              captureFullState: () =>
+                Promise.resolve([...store.values()].map((doc) => ({ ...doc }))),
+              statesEqual: (a: Doc[], b: Doc[]) => JSON.stringify(a) === JSON.stringify(b),
+              dispose: () => undefined,
+            });
+          },
+        }
+      : {}),
   };
 }
 
+interface Collected {
+  readonly results: Map<string, string | null>;
+  readonly skipped: string[];
+  readonly report: ConformanceReport;
+}
+
 /** Run the suite and collect pass/fail per test without a real test runner. */
-async function collect(mode: Mode): Promise<Map<string, string | null>> {
+async function collect(
+  mode: Mode,
+  options: { readonly multiRecord?: boolean; readonly withSkip?: boolean } = {}
+): Promise<Collected> {
   const tests: [string, () => Promise<void>][] = [];
+  const skipped: string[] = [];
   const framework: TestFrameworkAdapter = {
     describe: (_name, fn) => fn(),
     it: (name, fn) => void tests.push([name, fn]),
+    ...(options.withSkip === true ? { skip: (name: string) => void skipped.push(name) } : {}),
     assert: (condition, message) => {
       if (!condition) throw new Error(message ?? "assertion failed");
     },
@@ -143,7 +180,11 @@ async function collect(mode: Mode): Promise<Map<string, string | null>> {
     },
   };
 
-  runVersionedRepositoryTests(makeAdapter(mode), framework, "self");
+  const report = runVersionedRepositoryTests(
+    makeAdapter(mode, options.multiRecord === true ? { multiRecord: true } : {}),
+    framework,
+    "self"
+  );
 
   const results = new Map<string, string | null>();
 
@@ -159,21 +200,66 @@ async function collect(mode: Mode): Promise<Map<string, string | null>> {
     }
   }
 
-  return results;
+  return { results, skipped, report };
 }
 
 describe("conformance kit self-test", () => {
-  it("a correct CAS repository passes every case (TC-6 reported unsupported)", async () => {
-    const results = await collect("cas");
+  it("a correct CAS repository passes every applicable case", async () => {
+    const { results } = await collect("cas");
 
     expect([...results.entries()].filter(([, failureMessage]) => failureMessage !== null)).toEqual(
       []
     );
-    expect(results.size).toBe(9);
+    // TC-1, TC-1c, TC-2a, TC-2b, TC-2c, TC-3, TC-4, TC-5: nothing is registered for TC-6.
+    expect([...results.keys()].sort()).toEqual(
+      ["TC-1", "TC-1c", "TC-2a", "TC-2b", "TC-2c", "TC-3", "TC-4", "TC-5"].sort()
+    );
+  });
+
+  it("TC-6 undeclared: reported unsupported, never registered as an executed test", async () => {
+    const { results, skipped, report } = await collect("cas");
+    const tc6 = report.cases.find((entry) => entry.id === "TC-6");
+
+    expect(tc6).toEqual({
+      id: "TC-6",
+      applicability: "unsupported",
+      reason: "multi-record atomicity not declared",
+    });
+    expect(results.has("TC-6")).toBe(false);
+    expect(skipped).toEqual([]);
+    expect(report.cases.filter((entry) => entry.applicability === "applicable")).toHaveLength(8);
+  });
+
+  it("TC-6 undeclared with a skipping runner: registered as skipped, never run", async () => {
+    const { results, skipped, report } = await collect("cas", { withSkip: true });
+
+    expect(skipped).toEqual(["TC-6: unsupported (multi-record atomicity not declared)"]);
+    expect(results.has("TC-6")).toBe(false);
+    expect(report.cases.find((entry) => entry.id === "TC-6")?.applicability).toBe("unsupported");
+  });
+
+  it("TC-6 declared: applicable, executed, and passes for a correct repository", async () => {
+    const { results, skipped, report } = await collect("cas", {
+      multiRecord: true,
+      withSkip: true,
+    });
+
+    expect(report.cases.find((entry) => entry.id === "TC-6")).toEqual({
+      id: "TC-6",
+      applicability: "applicable",
+    });
+    expect(skipped).toEqual([]);
+    expect(results.get("TC-6")).toBeNull();
+  });
+
+  it("TC-6 declared: a repository that overwrites a stale save fails it", async () => {
+    const { results } = await collect("lww", { multiRecord: true });
+
+    expect(results.get("TC-6")).not.toBeNull();
   });
 
   it("detects last-write-wins (stale update / version cases)", async () => {
-    const results = await collect("lww");
+    const { results } = await collect("lww");
 
     expect(results.get("TC-4")).not.toBeNull();
     expect(results.get("TC-2b")).not.toBeNull();
@@ -182,14 +268,14 @@ describe("conformance kit self-test", () => {
   });
 
   it("detects a read-then-write repository through the concurrency cases", async () => {
-    const results = await collect("read-then-write");
+    const { results } = await collect("read-then-write");
 
     expect(results.get("TC-1c")).not.toBeNull();
     expect(results.get("TC-5")).not.toBeNull();
   });
 
   it("detects infrastructure failures masquerading as conflict", async () => {
-    const results = await collect("masks-infra");
+    const { results } = await collect("masks-infra");
 
     expect(results.get("TC-2c")).not.toBeNull();
   });
