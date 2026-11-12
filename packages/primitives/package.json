@@ -1,6 +1,6 @@
 {
   "name": "@comity/primitives",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "description": "Foundational primitives shared across Comity packages: dependency injection, errors, results, lifecycle, and time.",
   "type": "module",
   "private": false,
