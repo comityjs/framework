@@ -1,5 +1,11 @@
 # @comity/primitives
 
+## 0.9.5
+
+### Patch Changes
+
+- 44cbf2a: TC-6 correction
+
 ## 0.9.4
 
 ### Patch Changes
