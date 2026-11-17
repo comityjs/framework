@@ -252,4 +252,72 @@ describe("PathRouter", () => {
       expect(result2).toBeNull();
     });
   });
+
+  describe("percent-encoding", () => {
+    const resolve = (router: PathRouter, path: string, method = "GET") =>
+      router.match({
+        http: { request: { method } },
+        url: new URL("http://example.com" + path),
+      } as RouteResolutionContext);
+
+    it("matches literal non-ASCII and space routes against the encoded pathname", async () => {
+      const router = new PathRouter([
+        { method: "GET", path: "/café", handler: vi.fn() },
+        { method: "GET", path: "/a b", handler: vi.fn() },
+      ]);
+
+      expect((await resolve(router, "/café"))?.route.path).toBe("/café");
+      expect((await resolve(router, "/a b"))?.route.path).toBe("/a b");
+      expect((await resolve(router, "/caf%c3%a9"))?.route.path).toBe("/café");
+    });
+
+    it("matches literals the URL parser leaves unencoded or encodes", async () => {
+      const router = new PathRouter([
+        { path: "/a|b", handler: vi.fn() },
+        { path: "/a^b", handler: vi.fn() },
+        { path: "/a\\{b\\}", handler: vi.fn() },
+      ]);
+
+      expect(await resolve(router, "/a|b")).not.toBeNull();
+      expect(await resolve(router, "/a^b")).not.toBeNull();
+      expect(await resolve(router, "/a{b}")).not.toBeNull();
+    });
+
+    it("decodes non-ASCII parameters", async () => {
+      const router = new PathRouter([{ path: "/user/:id", handler: vi.fn() }]);
+
+      expect((await resolve(router, "/user/€"))?.params).toEqual({ id: "€" });
+    });
+
+    it("decodes %2F inside a parameter without splitting the segment", async () => {
+      const router = new PathRouter([{ path: "/user/:id", handler: vi.fn() }]);
+
+      expect((await resolve(router, "/user/a%2Fb"))?.params).toEqual({ id: "a/b" });
+    });
+
+    it.each(["/user/100%", "/user/%ZZ", "/user/%E0%A4%A"])(
+      "resolves null instead of rejecting for malformed parameter %s",
+      async (path) => {
+        const router = new PathRouter([{ path: "/user/:id", handler: vi.fn() }]);
+
+        await expect(resolve(router, path)).resolves.toBeNull();
+      }
+    );
+
+    it("resolves null for a wildcard with a malformed segment", async () => {
+      const router = new PathRouter([{ path: "/files/*rest", handler: vi.fn() }]);
+
+      await expect(resolve(router, "/files/a/%ZZ")).resolves.toBeNull();
+      expect((await resolve(router, "/files/a/b"))?.params).toEqual({ rest: ["a", "b"] });
+    });
+
+    it("falls through to the next route when a decode fails", async () => {
+      const router = new PathRouter([
+        { path: "/user/:id", handler: vi.fn() },
+        { path: "/user/100%", handler: vi.fn() },
+      ]);
+
+      expect((await resolve(router, "/user/100%"))?.route.path).toBe("/user/100%");
+    });
+  });
 });
