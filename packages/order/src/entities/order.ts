@@ -12,6 +12,8 @@ import type {
   OrderUpdate,
 } from "../contracts/order.js";
 import type { OrderPaymentSnapshot } from "../contracts/payment-snapshot.js";
+import type { OrderReversal } from "../contracts/reversal.js";
+import type { OrderErrorReason } from "../errors/order.js";
 import type { OrderId } from "../value-objects/order-id.js";
 import type { ChannelId } from "@comity/organization";
 
@@ -219,6 +221,115 @@ function evaluatePaymentFact(
   return fact.status === "authorized" ? "conflict" : "append";
 }
 
+/** Largest absolute epoch-millisecond value of an ECMAScript date. */
+const MAX_DATE_MILLISECONDS = 8.64e15;
+
+/**
+ * Outcome of evaluating one reversal fact against the recorded facts: `append`
+ * (record it), `noop` (identical repeat) or the rejection reason.
+ */
+type ReversalDecision = "append" | "noop" | OrderErrorReason;
+
+/**
+ * Evaluates one reversal fact (ADR-032 Amendment 4) without side effects.
+ *
+ * Currencies are compared with `Currency.equals`; a `Money` derives its
+ * exponent from its code, so no separate exponent comparison is made and no
+ * conversion is performed.
+ *
+ * @param payments - The payment facts recorded on the order.
+ * @param reversals - The reversal facts already recorded.
+ * @param candidate - The candidate reversal fact.
+ *
+ * @returns The decision for the candidate.
+ */
+function evaluateReversal(
+  payments: ReadonlyArray<OrderPaymentSnapshot>,
+  reversals: ReadonlyArray<OrderReversal>,
+  candidate: OrderReversal
+): ReversalDecision {
+  if (candidate.reversalId.trim().length === 0) {
+    return "invalid_reversal_id";
+  }
+
+  const recorded = reversals.find((reversal) => reversal.reversalId === candidate.reversalId);
+
+  if (recorded !== undefined) {
+    const identical =
+      recorded.kind === candidate.kind &&
+      recorded.paymentId === candidate.paymentId &&
+      recorded.amount.equals(candidate.amount);
+
+    return identical ? "noop" : "reversal_conflict";
+  }
+
+  if ((candidate.kind as string) !== "refund") {
+    return "invalid_reversal_kind";
+  }
+
+  if (candidate.amount.amount <= 0n) {
+    return "invalid_reversal_amount";
+  }
+
+  const recordedAtMilliseconds = candidate.recordedAt.epochMilliseconds;
+
+  if (!(
+    Number.isFinite(recordedAtMilliseconds) &&
+    Math.abs(recordedAtMilliseconds) <= MAX_DATE_MILLISECONDS
+  )) {
+    return "invalid_reversal_timestamp";
+  }
+
+  const capturedFacts = payments.filter(
+    (fact) => fact.paymentId === candidate.paymentId && fact.status === "captured"
+  );
+
+  if (capturedFacts.length > 1) {
+    return "reversal_conflict";
+  }
+
+  const currency = candidate.amount.currency;
+  const captured = capturedFacts
+    .filter((fact) => fact.amount.currency.equals(currency))
+    .reduce((sum, fact) => sum + fact.amount.amount, 0n);
+  const reversed = reversals
+    .filter(
+      (reversal) =>
+        reversal.paymentId === candidate.paymentId && reversal.amount.currency.equals(currency)
+    )
+    .reduce((sum, reversal) => sum + reversal.amount.amount, 0n);
+
+  if (reversed + candidate.amount.amount > captured) {
+    return "reversal_exceeds_captured";
+  }
+
+  return "append";
+}
+
+/**
+ * Builds the order error for a rejected reversal.
+ *
+ * @param reason - The rejection reason.
+ * @param orderId - The order identifier, used in the error details.
+ *
+ * @returns The order error.
+ */
+function reversalError(reason: OrderErrorReason, orderId: string): OrderError {
+  const fields: Partial<Record<OrderErrorReason, string>> = {
+    invalid_reversal_id: "reversalId",
+    reversal_conflict: "reversals",
+    invalid_reversal_amount: "amount",
+    invalid_reversal_timestamp: "recordedAt",
+    invalid_reversal_kind: "kind",
+    reversal_exceeds_captured: "amount",
+  };
+  const field = fields[reason];
+
+  return new OrderError(reason, {
+    details: { orderId, ...(field !== undefined ? { field } : {}) },
+  });
+}
+
 /**
  * Returns whether two structural currencies are equal on `(code, exponent)`.
  *
@@ -419,6 +530,9 @@ function findLineCurrencyViolation(
  * Returns the first payment-fact violation (O-9) in a supplied sequence, or
  * `null` when the whole sequence is legal.
  *
+ * A second `captured` fact for the same `paymentId` is a violation even when it
+ * is identical to the first: at most one captured fact exists per `paymentId`.
+ *
  * @param payments - The candidate payment facts, in recorded order.
  * @param orderId - The order identifier, used in the error details.
  *
@@ -431,7 +545,14 @@ function findPaymentViolation(
   const accepted: OrderPaymentSnapshot[] = [];
 
   for (const fact of payments) {
-    if (evaluatePaymentFact(accepted, fact) === "conflict") {
+    const secondCapture =
+      fact.paymentId !== undefined &&
+      fact.status === "captured" &&
+      accepted.some(
+        (candidate) => candidate.paymentId === fact.paymentId && candidate.status === "captured"
+      );
+
+    if (secondCapture || evaluatePaymentFact(accepted, fact) === "conflict") {
       return new OrderError("payment_fact_conflict", {
         details: { orderId, field: "payments" },
       });
@@ -503,6 +624,7 @@ export class Order {
   #customer: OrderCustomerSnapshot | undefined;
   #addresses: OrderAddressSnapshot[] | undefined;
   #payments: OrderPaymentSnapshot[] | undefined;
+  #reversals: OrderReversal[];
   #meta: Record<string, unknown> | undefined;
   readonly #createdAt: Instant;
   #updatedAt: Instant;
@@ -514,15 +636,27 @@ export class Order {
    * Applies the invariants decidable from creation data — O-1 (integer
    * quantity `>= 1`), O-2 (unique line ids), O-6 (one currency on `(code,
    * exponent)`), O-7 (exact `PriceRecord` commitment equality against
-   * `combine`) and O-9 (supplied payment facts) — before any state exists. An
-   * empty order is accepted only with the canonical zero record. A new order
-   * is `draft` with `version: 0`.
+   * `combine`) and O-9 (supplied payment facts, including at most one
+   * `captured` fact per `paymentId`) — before any state exists. An empty order
+   * is accepted only with the canonical zero record. A new order is `draft` with
+   * `version: 0`.
+   *
+   * Supplied initial reversals (ADR-032 Amendment 4) are validated as new
+   * state, in the supplied order, with the per-fact rules of
+   * {@link Order.recordReversal}. A `reversalId` that appears more than once is
+   * rejected with `reversal_conflict` whether the entries are identical or not;
+   * nothing is deduplicated. Creation validates new initial state only: the
+   * constructor restores persisted state, historical reversals included,
+   * verbatim and without validation.
    *
    * @param data - The business data of the order.
    * @param id - The unique identifier of the order, supplied by the caller.
    *
    * @returns The order, or `invalid_quantity` / `duplicate_item_id` /
-   * `currency_mismatch` / `price_incoherent` / `payment_fact_conflict`.
+   * `currency_mismatch` / `price_incoherent` / `payment_fact_conflict` /
+   * `invalid_reversal_id` / `reversal_conflict` / `invalid_reversal_kind` /
+   * `invalid_reversal_amount` / `invalid_reversal_timestamp` /
+   * `reversal_exceeds_captured`.
    */
   static create(data: OrderData, id: OrderId): Result<Order, OrderError> {
     const orderId = id.toString();
@@ -570,7 +704,20 @@ export class Order {
       return failure(paymentViolation);
     }
 
-    return success(new Order({ ...data, status: "draft", version: 0 }, id));
+    const reversals: OrderReversal[] = [];
+
+    for (const candidate of data.reversals ?? []) {
+      const evaluated = evaluateReversal(data.payments ?? [], reversals, candidate);
+      const decision = evaluated === "noop" ? "reversal_conflict" : evaluated;
+
+      if (decision !== "append") {
+        return failure(reversalError(decision, orderId));
+      }
+
+      reversals.push({ ...candidate });
+    }
+
+    return success(new Order({ ...data, reversals, status: "draft", version: 0 }, id));
   }
 
   /**
@@ -602,6 +749,7 @@ export class Order {
       fields.payments !== undefined
         ? fields.payments.map((payment) => ({ ...payment }))
         : undefined;
+    this.#reversals = (fields.reversals ?? []).map((reversal) => ({ ...reversal }));
     this.#meta = fields.meta ? { ...fields.meta } : undefined;
     this.#createdAt = fields.createdAt ?? Instant.now();
     this.#updatedAt = fields.updatedAt ?? this.#createdAt;
@@ -678,6 +826,13 @@ export class Order {
    */
   get payments(): ReadonlyArray<OrderPaymentSnapshot> | undefined {
     return this.#payments?.map((payment) => ({ ...payment }));
+  }
+
+  /**
+   * @returns The historical refund reversal facts; empty when none were recorded.
+   */
+  get reversals(): ReadonlyArray<OrderReversal> {
+    return this.#reversals.map((reversal) => ({ ...reversal }));
   }
 
   /**
@@ -771,6 +926,50 @@ export class Order {
 
     this.#payments = [...existing, { ...snapshot }];
     this.#updatedAt = Instant.now();
+
+    return success(undefined);
+  }
+
+  /**
+   * Appends a confirmed refund reversal fact to the order (ADR-032 Amendment 4).
+   *
+   * Records a historical fact only: it performs no payment logic, executes no
+   * refund, reads no clock, and is legal in every order status. Evaluation order:
+   * `reversalId` validity (non-empty after `trim()`), then identity (an identical
+   * repeat on `kind`, `paymentId` and `amount` is a no-op; the same `reversalId`
+   * with different content is a conflict), then, for a new reversal only, the
+   * runtime `kind` (only `"refund"`; checked after identity so an existing id
+   * keeps its no-op or conflict result), the amount, `recordedAt` validity, the
+   * captured-fact uniqueness guard, and invariant R-1 (per `(paymentId,
+   * currency)`, cumulative reversals never exceed the captured amount; no
+   * captured fact means zero). `recordedAt` is excluded from content equality and
+   * is neither read nor validated on a no-op.
+   *
+   * The uniqueness guard exists because hydration restores history verbatim: if
+   * the order holds more than one `captured` fact for the `paymentId`, the
+   * reversal is refused with `reversal_conflict`; the captured facts are never
+   * summed and none is selected. On append `updatedAt` becomes `recordedAt`; it
+   * may move backwards. A rejection or a no-op changes nothing.
+   *
+   * @param reversal - The reversal fact to record.
+   *
+   * @returns Success (including an idempotent no-op), or `invalid_reversal_id` /
+   * `reversal_conflict` / `invalid_reversal_kind` / `invalid_reversal_amount` /
+   * `invalid_reversal_timestamp` / `reversal_exceeds_captured`.
+   */
+  recordReversal(reversal: OrderReversal): Result<void, OrderError> {
+    const decision = evaluateReversal(this.#payments ?? [], this.#reversals, reversal);
+
+    if (decision !== "append" && decision !== "noop") {
+      return failure(reversalError(decision, this.#id.toString()));
+    }
+
+    if (decision === "noop") {
+      return success(undefined);
+    }
+
+    this.#reversals = [...this.#reversals, { ...reversal }];
+    this.#updatedAt = reversal.recordedAt;
 
     return success(undefined);
   }
@@ -1001,6 +1200,9 @@ export class Order {
         ? {
             payments: this.#payments.map((payment) => ({ ...payment })),
           }
+        : {}),
+      ...(this.#reversals.length > 0
+        ? { reversals: this.#reversals.map((reversal) => ({ ...reversal })) }
         : {}),
       ...(this.#meta !== undefined ? { meta: { ...this.#meta } } : {}),
       createdAt: this.#createdAt,

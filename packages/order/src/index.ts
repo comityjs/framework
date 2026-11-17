@@ -17,6 +17,7 @@ export type {
   OrderUpdate,
 } from "./contracts/order.js";
 export type { OrderPaymentSnapshot, OrderPaymentStatus } from "./contracts/payment-snapshot.js";
+export type { OrderReversal, OrderReversalKind } from "./contracts/reversal.js";
 
 export { Order } from "./entities/order.js";
 export { OrderId } from "./value-objects/order-id.js";

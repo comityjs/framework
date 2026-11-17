@@ -6,6 +6,7 @@ import type { OrderAddressSnapshot } from "./address-snapshot.js";
 import type { OrderCustomerSnapshot } from "./customer-snapshot.js";
 import type { OrderLine } from "./line.js";
 import type { OrderPaymentSnapshot } from "./payment-snapshot.js";
+import type { OrderReversal } from "./reversal.js";
 
 /**
  * Order status.
@@ -64,6 +65,15 @@ export interface OrderData {
 
   /** Historical payment facts, attached after processing. */
   readonly payments?: ReadonlyArray<OrderPaymentSnapshot>;
+
+  /**
+   * Historical refund reversal facts (ADR-032 Amendment 4).
+   *
+   * Absent and empty are equivalent. Hydration restores them verbatim; the
+   * validating `Order.create` path applies the reversal rules to supplied
+   * facts.
+   */
+  readonly reversals?: ReadonlyArray<OrderReversal>;
 
   /** Custom metadata. */
   readonly meta?: Record<string, unknown>;

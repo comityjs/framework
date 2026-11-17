@@ -4,6 +4,8 @@ import type { OrderCustomerSnapshot } from "../../contracts/customer-snapshot.js
 import type { OrderLine, OrderLineSubject } from "../../contracts/line.js";
 import type { OrderCreate, OrderData } from "../../contracts/order.js";
 import type { OrderPaymentSnapshot } from "../../contracts/payment-snapshot.js";
+import type { OrderReversal } from "../../contracts/reversal.js";
+import type { OrderStatus } from "../../contracts/order.js";
 
 import { ChannelId } from "@comity/organization";
 import { Currency, Money, Percentage, Price, PriceRecord } from "@comity/pricing";
@@ -786,6 +788,657 @@ describe("Order", () => {
       fact.status = "captured";
 
       expect(order.payments?.[0]?.status).toBe("authorized");
+    });
+  });
+
+  describe("recordReversal (ADR-032 Amendment 4)", () => {
+    const at = (ms: number): Instant => Instant.fromEpochMilliseconds(ms);
+
+    function reversal(
+      reversalId: string,
+      amount: bigint,
+      overrides: Partial<OrderReversal> = {}
+    ): OrderReversal {
+      return {
+        reversalId,
+        kind: "refund",
+        amount: money(amount),
+        paymentId: "pay-1",
+        recordedAt: at(5000),
+        ...overrides,
+      };
+    }
+
+    function capturedOrder(total = 10000n, overrides: Partial<OrderCreate> = {}): Order {
+      return hydrate({
+        updatedAt: at(1000),
+        payments: [receipt("pay-1", "authorized", total), receipt("pay-1", "captured", total)],
+        ...overrides,
+      });
+    }
+
+    function reason(result: ReturnType<Order["recordReversal"]>): string | undefined {
+      return isFailure(result) ? result.error.meta.reason : undefined;
+    }
+
+    function details(result: ReturnType<Order["recordReversal"]>): unknown {
+      return isFailure(result) ? result.error.meta.details : undefined;
+    }
+
+    describe("recording", () => {
+      it("appends a refund reversal and preserves it exactly", () => {
+        const order = capturedOrder();
+        const fact = reversal(" r-1 ", 2500n);
+
+        expect(isSuccess(order.recordReversal(fact))).toBe(true);
+        expect(order.reversals).toEqual([fact]);
+        expect(order.reversals[0]?.reversalId).toBe(" r-1 ");
+      });
+
+      it.each(["draft", "pending", "confirmed", "fulfilled", "cancelled"] as OrderStatus[])(
+        "records in %s status without changing it",
+        (status) => {
+          const order = capturedOrder(10000n, { status });
+
+          expect(isSuccess(order.recordReversal(reversal("r-1", 100n)))).toBe(true);
+          expect(order.status).toBe(status);
+          expect(order.reversals).toHaveLength(1);
+        }
+      );
+
+      it("sets updatedAt to recordedAt, even when that moves it backwards", () => {
+        const order = capturedOrder();
+
+        order.recordReversal(reversal("r-1", 100n, { recordedAt: at(9000) }));
+        expect(order.updatedAt.epochMilliseconds).toBe(9000);
+
+        order.recordReversal(reversal("r-2", 100n, { recordedAt: at(2000) }));
+        expect(order.updatedAt.epochMilliseconds).toBe(2000);
+      });
+
+      it("preserves unrelated order data and the version", () => {
+        const order = capturedOrder();
+        const before = order.snapshot();
+
+        order.recordReversal(reversal("r-1", 100n));
+
+        const after = order.snapshot();
+        expect(after.lines).toEqual(before.lines);
+        expect(after.price).toEqual(before.price);
+        expect(after.payments).toEqual(before.payments);
+        expect(after.status).toBe(before.status);
+        expect(after.version).toBe(before.version);
+      });
+
+      it("does not deduplicate different reversal ids", () => {
+        const order = capturedOrder();
+
+        order.recordReversal(reversal("r-1", 100n));
+        order.recordReversal(reversal("r-2", 100n));
+
+        expect(order.reversals.map((fact) => fact.reversalId)).toEqual(["r-1", "r-2"]);
+      });
+    });
+
+    describe("reversalId validation (P-3)", () => {
+      it.each(["", "   ", "\t\n"])("rejects %j", (reversalId) => {
+        const order = capturedOrder();
+        const result = order.recordReversal(reversal(reversalId, 100n));
+
+        expect(reason(result)).toBe("invalid_reversal_id");
+        expect(details(result)).toEqual({ orderId: "order-1", field: "reversalId" });
+        expect(order.reversals).toEqual([]);
+      });
+
+      it("validates before identity lookup", () => {
+        const historical = reversal("", 100n);
+        const order = capturedOrder(10000n, { reversals: [historical] });
+
+        expect(reason(order.recordReversal(historical))).toBe("invalid_reversal_id");
+        expect(order.reversals).toEqual([historical]);
+      });
+
+      it("does not retroactively reject hydrated historical reversals", () => {
+        const historical = reversal("  ", 100n);
+        const order = capturedOrder(10000n, { reversals: [historical] });
+
+        expect(order.reversals).toEqual([historical]);
+        expect(isSuccess(order.recordReversal(reversal("r-2", 100n)))).toBe(true);
+      });
+
+      it("adds no empty-string rule for paymentId", () => {
+        const order = hydrate({
+          payments: [receipt("", "captured", 500n)],
+        });
+
+        expect(isSuccess(order.recordReversal(reversal("r-1", 100n, { paymentId: "" })))).toBe(
+          true
+        );
+      });
+    });
+
+    describe("amount validation and R-1 (P-1, D4-2)", () => {
+      it("rejects a zero amount", () => {
+        const order = capturedOrder();
+        const result = order.recordReversal(reversal("r-1", 0n));
+
+        expect(reason(result)).toBe("invalid_reversal_amount");
+        expect(details(result)).toEqual({ orderId: "order-1", field: "amount" });
+      });
+
+      it("cannot receive a negative amount: Money cannot represent one", () => {
+        expect(isFailure(Money.create(-1n, eur))).toBe(true);
+      });
+
+      it("treats a payment without a captured fact as zero captured", () => {
+        const none = hydrate();
+        const authorizedOnly = hydrate({ payments: [receipt("pay-1", "authorized")] });
+
+        expect(reason(none.recordReversal(reversal("r-1", 1n)))).toBe("reversal_exceeds_captured");
+        expect(reason(authorizedOnly.recordReversal(reversal("r-1", 1n)))).toBe(
+          "reversal_exceeds_captured"
+        );
+      });
+
+      it("allows up to the captured amount and rejects beyond it", () => {
+        const order = capturedOrder(1000n);
+
+        expect(isSuccess(order.recordReversal(reversal("r-1", 1000n)))).toBe(true);
+        expect(reason(order.recordReversal(reversal("r-2", 1n)))).toBe("reversal_exceeds_captured");
+        expect(order.reversals).toHaveLength(1);
+      });
+
+      it("rejects a single reversal above the captured amount with details", () => {
+        const order = capturedOrder(1000n);
+        const result = order.recordReversal(reversal("r-1", 1001n));
+
+        expect(reason(result)).toBe("reversal_exceeds_captured");
+        expect(details(result)).toEqual({ orderId: "order-1", field: "amount" });
+      });
+
+      it("accumulates multiple reversals", () => {
+        const order = capturedOrder(1000n);
+
+        expect(isSuccess(order.recordReversal(reversal("r-1", 400n)))).toBe(true);
+        expect(isSuccess(order.recordReversal(reversal("r-2", 400n)))).toBe(true);
+        expect(reason(order.recordReversal(reversal("r-3", 201n)))).toBe(
+          "reversal_exceeds_captured"
+        );
+        expect(isSuccess(order.recordReversal(reversal("r-3", 200n)))).toBe(true);
+      });
+
+      it("accounts for different payments independently", () => {
+        const order = hydrate({
+          payments: [receipt("pay-1", "captured", 1000n), receipt("pay-2", "captured", 500n)],
+        });
+
+        expect(isSuccess(order.recordReversal(reversal("r-1", 1000n)))).toBe(true);
+        expect(isSuccess(order.recordReversal(reversal("r-2", 500n, { paymentId: "pay-2" })))).toBe(
+          true
+        );
+        expect(reason(order.recordReversal(reversal("r-3", 1n, { paymentId: "pay-2" })))).toBe(
+          "reversal_exceeds_captured"
+        );
+      });
+
+      it("accounts for different currencies independently, without conversion", () => {
+        const order = capturedOrder(1000n);
+        const usdReversal = reversal("r-1", 1n, { amount: money(1n, usd) });
+
+        expect(reason(order.recordReversal(usdReversal))).toBe("reversal_exceeds_captured");
+      });
+
+      it("compares currency by the Money currency, which carries its code and derived exponent", () => {
+        const jpy = unwrap(Currency.create("JPY"));
+        const kwd = unwrap(Currency.create("KWD"));
+        const order = hydrate({
+          payments: [
+            { paymentId: "pay-1", amount: money(100n, jpy), status: "captured" },
+            { paymentId: "pay-2", amount: money(100n, kwd), status: "captured" },
+          ],
+        });
+
+        expect(
+          isSuccess(order.recordReversal(reversal("r-1", 100n, { amount: money(100n, jpy) })))
+        ).toBe(true);
+        expect(
+          reason(
+            order.recordReversal(
+              reversal("r-2", 1n, { paymentId: "pay-2", amount: money(1n, jpy) })
+            )
+          )
+        ).toBe("reversal_exceeds_captured");
+      });
+
+      it("keeps the one-captured-fact-per-paymentId contract of attachPayment", () => {
+        const order = createOrder();
+
+        order.attachPayment(receipt("pay-1", "captured", 1000n));
+
+        expect(reason(order.attachPayment(receipt("pay-1", "captured", 2000n)))).toBe(
+          "payment_fact_conflict"
+        );
+        expect(reason(order.recordReversal(reversal("r-1", 1001n)))).toBe(
+          "reversal_exceeds_captured"
+        );
+      });
+    });
+
+    describe("idempotency and conflict (D4-3)", () => {
+      it("treats an identical repeat as a no-op that leaves the aggregate untouched", () => {
+        const order = capturedOrder();
+
+        order.recordReversal(reversal("r-1", 100n, { recordedAt: at(5000) }));
+        const updatedAt = order.updatedAt.epochMilliseconds;
+
+        expect(
+          isSuccess(order.recordReversal(reversal("r-1", 100n, { recordedAt: at(7000) })))
+        ).toBe(true);
+        expect(order.reversals).toHaveLength(1);
+        expect(order.reversals[0]?.recordedAt.epochMilliseconds).toBe(5000);
+        expect(order.updatedAt.epochMilliseconds).toBe(updatedAt);
+      });
+
+      it("neither reads nor validates recordedAt on a no-op", () => {
+        const order = capturedOrder();
+
+        order.recordReversal(reversal("r-1", 100n));
+
+        for (const unusable of [NaN, Infinity, -Infinity, 8.64e15 + 1]) {
+          const repeat = reversal("r-1", 100n, { recordedAt: at(unusable) });
+
+          expect(isSuccess(order.recordReversal(repeat))).toBe(true);
+        }
+        expect(order.updatedAt.epochMilliseconds).toBe(5000);
+      });
+
+      it("reports a conflict for the same id with different amount, paymentId or kind", () => {
+        const order = hydrate({
+          payments: [receipt("pay-1", "captured", 1000n), receipt("pay-2", "captured", 1000n)],
+        });
+
+        order.recordReversal(reversal("r-1", 100n));
+
+        const different = [
+          reversal("r-1", 101n),
+          reversal("r-1", 100n, { paymentId: "pay-2" }),
+          reversal("r-1", 100n, { kind: "credit" as unknown as "refund" }),
+        ];
+
+        for (const candidate of different) {
+          const result = order.recordReversal(candidate);
+
+          expect(reason(result)).toBe("reversal_conflict");
+          expect(details(result)).toEqual({ orderId: "order-1", field: "reversals" });
+        }
+        expect(order.reversals).toHaveLength(1);
+      });
+
+      it("retries a recorded reversal as a no-op even when R-1 would now reject it", () => {
+        const order = capturedOrder(1000n);
+
+        order.recordReversal(reversal("r-1", 1000n));
+
+        expect(isSuccess(order.recordReversal(reversal("r-1", 1000n)))).toBe(true);
+      });
+    });
+
+    describe("recordedAt validation (P-4)", () => {
+      it.each([NaN, Infinity, -Infinity, 8.64e15 + 1, -8.64e15 - 1])(
+        "rejects %s on append",
+        (ms) => {
+          const order = capturedOrder();
+          const result = order.recordReversal(reversal("r-1", 100n, { recordedAt: at(ms) }));
+
+          expect(reason(result)).toBe("invalid_reversal_timestamp");
+          expect(details(result)).toEqual({ orderId: "order-1", field: "recordedAt" });
+          expect(order.reversals).toEqual([]);
+          expect(order.updatedAt.epochMilliseconds).toBe(1000);
+        }
+      );
+
+      it("accepts both Date-range boundaries and fractional milliseconds", () => {
+        const order = capturedOrder();
+
+        for (const [index, ms] of [8.64e15, -8.64e15, 1.5].entries()) {
+          const result = order.recordReversal(reversal(`r-${index}`, 1n, { recordedAt: at(ms) }));
+
+          expect(isSuccess(result)).toBe(true);
+          expect(order.updatedAt.epochMilliseconds).toBe(ms);
+        }
+      });
+
+      it("imposes no chronology against the capture", () => {
+        const order = capturedOrder(10000n, {
+          payments: [
+            {
+              paymentId: "pay-1",
+              amount: money(1000n),
+              status: "captured",
+              capturedAt: at(900000),
+            },
+          ],
+        });
+
+        expect(isSuccess(order.recordReversal(reversal("r-1", 1n, { recordedAt: at(1) })))).toBe(
+          true
+        );
+      });
+    });
+
+    describe("immutability and failure atomicity", () => {
+      it("leaves the aggregate unchanged on every rejection", () => {
+        const order = capturedOrder(1000n);
+        order.recordReversal(reversal("r-1", 100n));
+        const before = { ...order.snapshot(), capturedAt: undefined };
+
+        order.recordReversal(reversal("", 1n));
+        order.recordReversal(reversal("r-1", 999n));
+        order.recordReversal(reversal("r-2", 0n));
+        order.recordReversal(reversal("r-2", 1n, { recordedAt: at(NaN) }));
+        order.recordReversal(reversal("r-2", 5000n));
+
+        expect({ ...order.snapshot(), capturedAt: undefined }).toEqual(before);
+      });
+
+      it("does not expose internal state through its accessors", () => {
+        const order = capturedOrder();
+        order.recordReversal(reversal("r-1", 100n));
+
+        (order.reversals as OrderReversal[]).pop();
+        (order.reversals[0] as { reversalId: string }).reversalId = "mutated";
+
+        expect(order.reversals.map((fact) => fact.reversalId)).toEqual(["r-1"]);
+      });
+    });
+
+    describe("hydration, creation and snapshots (D4-5)", () => {
+      it("treats absent and empty reversals alike and omits them from the snapshot", () => {
+        const absent = hydrate();
+        const empty = hydrate({ reversals: [] });
+
+        expect(absent.reversals).toEqual([]);
+        expect(empty.reversals).toEqual([]);
+        expect("reversals" in absent.snapshot()).toBe(false);
+        expect("reversals" in empty.snapshot()).toBe(false);
+      });
+
+      it("round-trips reversals through snapshot and hydration verbatim", () => {
+        const order = capturedOrder();
+        order.recordReversal(reversal("r-1", 100n, { recordedAt: at(7000) }));
+
+        const { capturedAt: _captured, ...state } = order.snapshot();
+        const restored = new Order(state, state.id);
+
+        expect(restored.reversals).toEqual(order.reversals);
+        expect(restored.updatedAt.epochMilliseconds).toBe(7000);
+      });
+
+      it("applies the reversal rules to facts supplied to Order.create", () => {
+        const payments = [receipt("pay-1", "captured", 1000n)];
+
+        const created = unwrap(
+          Order.create(data({ payments, reversals: [reversal("r-1", 1000n)] }), id)
+        );
+        expect(created.reversals).toHaveLength(1);
+
+        const exceeding = Order.create(data({ payments, reversals: [reversal("r-1", 1001n)] }), id);
+        expect(isFailure(exceeding) && exceeding.error.meta.reason).toBe(
+          "reversal_exceeds_captured"
+        );
+
+        const empty = Order.create(data({ payments, reversals: [reversal(" ", 1n)] }), id);
+        expect(isFailure(empty) && empty.error.meta.reason).toBe("invalid_reversal_id");
+      });
+    });
+
+    describe("initial reversals in Order.create (Decision 1)", () => {
+      const payments = [receipt("pay-1", "captured", 1000n)];
+      const create = (reversals: OrderReversal[]) =>
+        Order.create(data({ payments, reversals }), id);
+
+      it("accepts valid unique initial reversals and preserves their order", () => {
+        const created = unwrap(
+          create([reversal("r-2", 100n), reversal("r-1", 200n), reversal("r-3", 300n)])
+        );
+
+        expect(created.reversals.map((fact) => fact.reversalId)).toEqual(["r-2", "r-1", "r-3"]);
+      });
+
+      it.each([
+        ["identical", reversal("r-1", 100n)],
+        ["different", reversal("r-1", 200n)],
+      ])("rejects a %s duplicate reversalId instead of deduplicating", (_label, second) => {
+        const result = create([reversal("r-1", 100n), second]);
+
+        expect(isFailure(result) && result.error.meta.reason).toBe("reversal_conflict");
+        expect(isFailure(result) && result.error.meta.details).toEqual({
+          orderId: "order-1",
+          field: "reversals",
+        });
+      });
+
+      it("still validates an empty id before reporting a duplicate", () => {
+        const result = create([reversal("", 100n), reversal("", 100n)]);
+
+        expect(isFailure(result) && result.error.meta.reason).toBe("invalid_reversal_id");
+      });
+
+      it("rejects a zero amount in initial reversals", () => {
+        const result = create([reversal("r-1", 0n)]);
+
+        expect(isFailure(result) && result.error.meta.reason).toBe("invalid_reversal_amount");
+        expect(isFailure(result) && result.error.meta.details).toEqual({
+          orderId: "order-1",
+          field: "amount",
+        });
+      });
+
+      it.each([NaN, Infinity, 8.64e15 + 1])(
+        "rejects an invalid timestamp (%s) in initial reversals",
+        (ms) => {
+          const result = create([reversal("r-1", 100n, { recordedAt: at(ms) })]);
+
+          expect(isFailure(result) && result.error.meta.reason).toBe("invalid_reversal_timestamp");
+          expect(isFailure(result) && result.error.meta.details).toEqual({
+            orderId: "order-1",
+            field: "recordedAt",
+          });
+        }
+      );
+
+      it("rejects an invalid runtime kind in initial reversals", () => {
+        const result = create([reversal("r-1", 100n, { kind: "credit" as unknown as "refund" })]);
+
+        expect(isFailure(result) && result.error.meta.reason).toBe("invalid_reversal_kind");
+      });
+
+      it("keeps hydration verbatim, historical duplicate ids included", () => {
+        const duplicate = reversal("r-1", 100n);
+        const order = hydrate({ payments, reversals: [duplicate, duplicate] });
+
+        expect(order.reversals).toEqual([duplicate, duplicate]);
+      });
+    });
+
+    describe("at most one captured fact per paymentId (Decision 2)", () => {
+      it.each([
+        ["identical", receipt("pay-1", "captured", 1000n)],
+        ["different", receipt("pay-1", "captured", 2000n)],
+      ])("Order.create rejects a second %s captured fact", (_label, second) => {
+        const result = Order.create(
+          data({ payments: [receipt("pay-1", "captured", 1000n), second] }),
+          id
+        );
+
+        expect(isFailure(result) && result.error.meta.reason).toBe("payment_fact_conflict");
+        expect(isFailure(result) && result.error.meta.details).toEqual({
+          orderId: "order-1",
+          field: "payments",
+        });
+      });
+
+      it("Order.create still accepts captured facts for different payment ids", () => {
+        const result = Order.create(
+          data({
+            payments: [
+              receipt("pay-1", "authorized"),
+              receipt("pay-1", "captured"),
+              receipt("pay-2", "captured"),
+            ],
+          }),
+          id
+        );
+
+        expect(isSuccess(result)).toBe(true);
+      });
+
+      it("recordReversal fails conservatively on hydrated duplicate captured facts", () => {
+        for (const second of [
+          receipt("pay-1", "captured", 1000n),
+          receipt("pay-1", "captured", 5000n),
+        ]) {
+          const order = hydrate({
+            updatedAt: at(1000),
+            payments: [receipt("pay-1", "captured", 1000n), second],
+          });
+          const result = order.recordReversal(reversal("r-1", 1n));
+
+          expect(reason(result)).toBe("reversal_conflict");
+          expect(details(result)).toEqual({ orderId: "order-1", field: "reversals" });
+          expect(order.reversals).toEqual([]);
+          expect(order.updatedAt.epochMilliseconds).toBe(1000);
+        }
+      });
+
+      it("recordReversal works normally with exactly one captured fact", () => {
+        const order = capturedOrder(1000n);
+
+        expect(isSuccess(order.recordReversal(reversal("r-1", 1000n)))).toBe(true);
+      });
+
+      it("runs the guard only for a new append, not for a no-op", () => {
+        const order = hydrate({
+          payments: [receipt("pay-1", "captured", 1000n), receipt("pay-1", "captured", 1000n)],
+          reversals: [reversal("r-1", 100n)],
+        });
+
+        expect(isSuccess(order.recordReversal(reversal("r-1", 100n)))).toBe(true);
+      });
+    });
+
+    describe("runtime reversal kind (Decision 3)", () => {
+      const invalidKind = (reversalId = "r-1"): OrderReversal =>
+        reversal(reversalId, 100n, { kind: "credit" as unknown as "refund" });
+
+      it("accepts kind refund when every other rule passes", () => {
+        expect(isSuccess(capturedOrder().recordReversal(reversal("r-1", 100n)))).toBe(true);
+      });
+
+      it("rejects an invalid kind on a new reversal without mutating state", () => {
+        const order = capturedOrder();
+        const result = order.recordReversal(invalidKind());
+
+        expect(reason(result)).toBe("invalid_reversal_kind");
+        expect(details(result)).toEqual({ orderId: "order-1", field: "kind" });
+        expect(isFailure(result) && result.error.meta.httpStatus).toBe(400);
+        expect(order.reversals).toEqual([]);
+        expect(order.updatedAt.epochMilliseconds).toBe(1000);
+      });
+
+      it("keeps identity first: an existing id yields conflict, never invalid kind", () => {
+        const order = capturedOrder();
+        order.recordReversal(reversal("r-1", 100n));
+
+        expect(reason(order.recordReversal(invalidKind("r-1")))).toBe("reversal_conflict");
+      });
+
+      it("does not validate the kind of hydrated reversals; an identical retry stays a no-op", () => {
+        const historical = invalidKind("r-1");
+        const order = capturedOrder(10000n, { reversals: [historical] });
+
+        expect(order.reversals).toEqual([historical]);
+        expect(isSuccess(order.recordReversal(historical))).toBe(true);
+        expect(order.reversals).toHaveLength(1);
+      });
+
+      it("reports an invalid kind before the amount and timestamp checks", () => {
+        const order = capturedOrder();
+        const bad = reversal("r-1", 0n, {
+          kind: "credit" as unknown as "refund",
+          recordedAt: at(NaN),
+        });
+
+        expect(reason(order.recordReversal(bad))).toBe("invalid_reversal_kind");
+      });
+    });
+
+    describe("validation precedence (Decision 4)", () => {
+      it("reports an empty id before an invalid amount and timestamp", () => {
+        const result = capturedOrder().recordReversal(reversal("", 0n, { recordedAt: at(NaN) }));
+
+        expect(reason(result)).toBe("invalid_reversal_id");
+      });
+
+      it("reports a conflict before validating the retry's amount or timestamp", () => {
+        const order = capturedOrder();
+        order.recordReversal(reversal("r-1", 100n));
+
+        expect(reason(order.recordReversal(reversal("r-1", 0n)))).toBe("reversal_conflict");
+        expect(reason(order.recordReversal(reversal("r-1", 200n, { recordedAt: at(NaN) })))).toBe(
+          "reversal_conflict"
+        );
+      });
+
+      it("reports the amount before the timestamp, and the timestamp before R-1", () => {
+        const order = capturedOrder(100n);
+
+        expect(reason(order.recordReversal(reversal("r-1", 0n, { recordedAt: at(NaN) })))).toBe(
+          "invalid_reversal_amount"
+        );
+        expect(reason(order.recordReversal(reversal("r-2", 5000n, { recordedAt: at(NaN) })))).toBe(
+          "invalid_reversal_timestamp"
+        );
+      });
+
+      it("evaluates R-1 only for a genuinely new append", () => {
+        const order = capturedOrder(100n, { reversals: [reversal("r-1", 500n)] });
+
+        expect(isSuccess(order.recordReversal(reversal("r-1", 500n)))).toBe(true);
+        expect(reason(order.recordReversal(reversal("r-2", 1n)))).toBe("reversal_exceeds_captured");
+      });
+
+      it("an identical retry with an invalid timestamp stays a no-op", () => {
+        const order = capturedOrder();
+        order.recordReversal(reversal("r-1", 100n));
+
+        expect(
+          isSuccess(order.recordReversal(reversal("r-1", 100n, { recordedAt: at(Infinity) })))
+        ).toBe(true);
+        expect(order.reversals).toHaveLength(1);
+      });
+
+      it("leaves reversals and updatedAt unchanged on every rejection path", () => {
+        const order = capturedOrder(1000n, {
+          payments: [receipt("pay-1", "captured", 1000n), receipt("pay-1", "captured", 1000n)],
+        });
+        const before = {
+          reversals: order.reversals,
+          updatedAt: order.updatedAt.epochMilliseconds,
+        };
+
+        for (const candidate of [
+          reversal("", 1n),
+          reversal("r-1", 1n, { kind: "credit" as unknown as "refund" }),
+          reversal("r-1", 0n),
+          reversal("r-1", 1n, { recordedAt: at(NaN) }),
+          reversal("r-1", 1n),
+        ]) {
+          expect(isFailure(order.recordReversal(candidate))).toBe(true);
+        }
+        expect(order.reversals).toEqual(before.reversals);
+        expect(order.updatedAt.epochMilliseconds).toBe(before.updatedAt);
+      });
     });
   });
 

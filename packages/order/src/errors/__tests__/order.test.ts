@@ -94,6 +94,16 @@ describe("OrderError", () => {
       ["price_incoherent", "Order price is not coherent with its lines", 409],
       ["commitment_immutable", "Committed lines and price cannot be changed outside draft", 409],
       ["payment_fact_conflict", "Payment fact conflicts with the recorded payment facts", 409],
+      ["reversal_exceeds_captured", "Reversals exceed the captured payment amount", 409],
+      ["reversal_conflict", "Reversal conflicts with the recorded reversal", 409],
+      ["invalid_reversal_amount", "Reversal amount must be positive", 400],
+      ["invalid_reversal_id", "Reversal identifier must not be empty", 400],
+      [
+        "invalid_reversal_timestamp",
+        "Reversal timestamp must be a finite, serializable instant",
+        400,
+      ],
+      ["invalid_reversal_kind", "Reversal kind must be refund", 400],
     ] as const)("creates an error with the %s reason", (reason, message, httpStatus) => {
       const error = new OrderError(reason);
 
@@ -103,7 +113,7 @@ describe("OrderError", () => {
       expect(error.meta.httpStatus).toBe(httpStatus);
     });
 
-    it("exposes exactly ten reasons and no other", () => {
+    it("exposes exactly sixteen reasons and no other", () => {
       const reasons = [
         "invalid_quantity",
         "invalid_item",
@@ -115,9 +125,15 @@ describe("OrderError", () => {
         "price_incoherent",
         "commitment_immutable",
         "payment_fact_conflict",
+        "reversal_exceeds_captured",
+        "reversal_conflict",
+        "invalid_reversal_amount",
+        "invalid_reversal_id",
+        "invalid_reversal_timestamp",
+        "invalid_reversal_kind",
       ] as const;
 
-      expect(reasons).toHaveLength(10);
+      expect(reasons).toHaveLength(16);
       for (const reason of reasons) {
         expect(new OrderError(reason).code).toBe(`order:${reason}`);
       }

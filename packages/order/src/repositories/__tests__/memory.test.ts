@@ -97,6 +97,26 @@ describe("MemoryOrderRepository", () => {
     expect(result.value?.status).toBe("draft");
   });
 
+  it("persists reversal facts and restores them verbatim", async () => {
+    const order = createOrder("confirmed");
+    const recordedAt = Instant.fromEpochMilliseconds(3000);
+
+    order.attachPayment({ paymentId: "pay-1", amount: money(10000n), status: "captured" });
+    order.recordReversal({
+      reversalId: "r-1",
+      kind: "refund",
+      amount: money(2500n),
+      paymentId: "pay-1",
+      recordedAt,
+    });
+    await repository.save(order, { tenant: tenantA });
+
+    const loaded = await repository.getById(order.id, { tenant: tenantA });
+
+    expect(loaded.success && loaded.value?.reversals).toEqual(order.reversals);
+    expect(loaded.success && loaded.value?.updatedAt.epochMilliseconds).toBe(3000);
+  });
+
   it("returns null for a different id", async () => {
     const otherId = createId("order-2");
     await repository.save(createOrder("draft"), { tenant: tenantA });

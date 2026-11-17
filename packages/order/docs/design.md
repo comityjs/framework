@@ -120,7 +120,8 @@ coherent price with `update({ price })`. See `docs/migration.md` §10.
 (O-8), `payment_fact_conflict` (O-9), `invalid_buyer` (O-11). Existing reasons
 keep their meaning; `duplicate_item_id` is retained for a duplicate `lineId`.
 `stale_version`, `bundle_allocation_incoherent`, `invalid_line_term` do not
-exist.
+exist. ADR-032 Amendment 4 later added six reversal reasons, listed in "Refund
+reversal facts" below.
 
 ### Payment facts (owner decision D-1)
 
@@ -131,6 +132,65 @@ same key, different amount = `order:payment_fact_conflict`. Progression per
 cancelled}`; `captured`/`failed`/`cancelled` are terminal. Any other transition
 = `order:payment_fact_conflict`. A fact without `paymentId` is always appended
 and is never reversible through the Order.
+
+### Refund reversal facts (ADR-032 Amendment 4)
+
+`Order.recordReversal(reversal): Result<void, OrderError>` appends an immutable
+refund fact to the `reversals` collection. It records a fact only: it executes
+and confirms no refund, reads no clock, changes neither the order status nor the
+order total, and is legal in every order status. A reversal is not a payment
+status and never mutates a payment snapshot.
+
+`OrderReversal` is `{ reversalId, kind: "refund", amount: Money, paymentId,
+recordedAt: Instant }`. `reversalId` is the application `RefundAttemptId`, a plain
+string stored exactly as supplied. Only `kind: "refund"` exists in version 1 and
+there is no `reference` field. `recordedAt` is supplied by the caller and is
+excluded from idempotency.
+
+Evaluation order of `recordReversal`:
+
+1. an empty or whitespace-only `reversalId` (`trim().length === 0`) →
+   `order:invalid_reversal_id`;
+2. identity: an identical existing reversal (`kind`, `paymentId`, `amount`) is a
+   no-op that touches nothing and does not read `recordedAt`; the same
+   `reversalId` with different content → `order:reversal_conflict`;
+3. for a new reversal only: `kind` other than `"refund"` at runtime →
+   `order:invalid_reversal_kind`;
+4. amount not strictly positive → `order:invalid_reversal_amount`;
+5. `recordedAt` not finite, or with an absolute value above `8.64e15` ms →
+   `order:invalid_reversal_timestamp` (fractional milliseconds are accepted);
+6. more than one `captured` fact for the `paymentId` in the aggregate (possible
+   only in hydrated history) → `order:reversal_conflict`; the facts are never
+   summed and none is selected;
+7. R-1: the cumulative reversals for the `(paymentId, currency)` including this
+   one must not exceed the captured amount (zero when there is no captured fact)
+   → `order:reversal_exceeds_captured`; no currency conversion is performed;
+8. append, and `updatedAt = recordedAt` (it may move backwards).
+
+A rejection or a no-op changes nothing, including `updatedAt`.
+
+`Order.create` validates supplied initial `reversals` as new state with the same
+per-fact rules, in the supplied order. A `reversalId` appearing more than once is
+rejected with `order:reversal_conflict` (`details.field: "reversals"`), identical
+or not; nothing is deduplicated. `create` also rejects more than one `captured`
+fact for the same `paymentId` with `order:payment_fact_conflict`. The constructor
+(hydration) restores persisted reversals verbatim and validates nothing; an
+absent and an empty collection are equivalent, and `snapshot()` omits the
+collection when it is empty.
+
+| Reason                             | `details.field` | HTTP |
+| ---------------------------------- | --------------- | ---: |
+| `order:reversal_exceeds_captured`  | `amount`        |  409 |
+| `order:reversal_conflict`          | `reversals`     |  409 |
+| `order:invalid_reversal_amount`    | `amount`        |  400 |
+| `order:invalid_reversal_id`        | `reversalId`    |  400 |
+| `order:invalid_reversal_timestamp` | `recordedAt`    |  400 |
+| `order:invalid_reversal_kind`      | `kind`          |  400 |
+
+Currencies are compared with `Currency.equals` (the code); a `Money` derives its
+exponent from its code, and the historical exponent is not preserved. The
+application must supply a valid `Instant`; `Instant` itself does not guarantee
+finiteness.
 
 ### Buyer validation (owner decision D-2)
 
@@ -169,9 +229,10 @@ that mutates money or rights may ship. Phase A ships only the aggregate-side
 Not in Phase A (ADR-032 §5): `customer → buyer` rename; `OrderProfile`;
 `cancel(reason)` / reason enum (`cancel()` stays argument-free); `bundle` subject
 and `BundleGroupRef`; `stale_version` / `saveWithVersion` / `VersionedRepository`;
-`origin` / `OrderOrigin` / `amendment_of`; `Order.recordReversal` and the
-reversals collection (deferred, gated on ADR-031); any offering / Commerce
-package. ADR-029/030/031 are **separate prerequisites** (Proposed when this was written; ADR-029 since
+`origin` / `OrderOrigin` / `amendment_of`; any offering / Commerce
+package. `Order.recordReversal` and the reversals collection, excluded from
+Phase A, are specified by ADR-032 Amendment 4 (§2C, accepted 2026-11-17) and
+described in "Refund reversal facts" above. ADR-029/030/031 are **separate prerequisites** (Proposed when this was written; ADR-029 since
 accepted, 2026-11-12), not part of Phase A.
 
 ## Testing expectations
