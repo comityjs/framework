@@ -8,7 +8,7 @@
 - generic order, line and subject-snapshot contracts
 - order identifier value object
 - order repository contracts
-- order-specific errors (ten reasons; four added by the Phase A extension)
+- order-specific errors (sixteen reasons; four added by the Phase A extension and six by the reversal extension)
 
 ## What it does not include
 
@@ -92,7 +92,21 @@ constructs a record from a `Price`.
 with a different amount is `order:payment_fact_conflict`, and a new status for a
 known `paymentId` is legal only from `authorized` to `captured`, `failed` or
 `cancelled` (recorded facts are terminal). A fact without a `paymentId` is
-always appended.
+always appended. At most one `captured` fact may exist per `paymentId`:
+`Order.create` rejects a second one, identical or not, with
+`order:payment_fact_conflict`.
+
+## Refund reversal facts
+
+`recordReversal` appends an immutable refund reversal fact (ADR-032 Amendment 4)
+to a separate `reversals` collection; it never changes a payment fact, the order
+status or the order total. The fact is `{ reversalId, kind: "refund", amount,
+paymentId, recordedAt }`, with `recordedAt` supplied by the caller. It dedupes on
+`reversalId`: an identical repeat (`kind`, `paymentId`, `amount`) is a no-op, and
+the same `reversalId` with different content is `order:reversal_conflict`. The
+cumulative reversed amount per `(paymentId, currency)` never exceeds the captured
+amount (`order:reversal_exceeds_captured`). See `design.md` for the complete
+contract.
 
 ## Pricing ownership
 
@@ -117,6 +131,8 @@ consuming application's gate, not by this package.
 The closed reason union contains `invalid_quantity`, `invalid_item`,
 `invalid_status_transition`, `shipping_destination_immutable`,
 `ambiguous_shipping_destination`, `duplicate_item_id`, `currency_mismatch`,
-`price_incoherent`, `commitment_immutable` and `payment_fact_conflict`.
+`price_incoherent`, `commitment_immutable`, `payment_fact_conflict`,
+`reversal_exceeds_captured`, `reversal_conflict`, `invalid_reversal_amount`,
+`invalid_reversal_id`, `invalid_reversal_timestamp` and `invalid_reversal_kind`.
 `invalid_buyer` and O-11 are removed: buyer commercial/fiscal coherence is
 Commerce policy.

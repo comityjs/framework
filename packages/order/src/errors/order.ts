@@ -11,8 +11,12 @@ import { BaseError } from "@comity/primitives/errors";
  * `product_not_available`, coupon validation) belong to other layers/modules.
  *
  * The four `currency_mismatch`, `price_incoherent`, `commitment_immutable` and
- * `payment_fact_conflict` reasons are additive (errors.md §10): no existing
- * reason changed its meaning, and no other reason exists. The former
+ * `payment_fact_conflict` reasons, and the six reversal reasons
+ * (`reversal_exceeds_captured`, `reversal_conflict`, `invalid_reversal_amount`,
+ * `invalid_reversal_id`, `invalid_reversal_timestamp`, `invalid_reversal_kind`;
+ * ADR-032 Amendment 4),
+ * are additive (errors.md §10): no existing reason changed its meaning, and no
+ * other reason exists. The former
  * `invalid_buyer` reason is removed with O-11, whose commercial/fiscal buyer
  * coherence belongs to Commerce.
  */
@@ -26,7 +30,13 @@ export type OrderErrorReason =
   | "currency_mismatch"
   | "price_incoherent"
   | "commitment_immutable"
-  | "payment_fact_conflict";
+  | "payment_fact_conflict"
+  | "reversal_exceeds_captured"
+  | "reversal_conflict"
+  | "invalid_reversal_amount"
+  | "invalid_reversal_id"
+  | "invalid_reversal_timestamp"
+  | "invalid_reversal_kind";
 
 /**
  * Order error metadata.
@@ -66,6 +76,12 @@ const REASON_MESSAGES: Record<OrderErrorReason, string> = {
   price_incoherent: "Order price is not coherent with its lines",
   commitment_immutable: "Committed lines and price cannot be changed outside draft",
   payment_fact_conflict: "Payment fact conflicts with the recorded payment facts",
+  reversal_exceeds_captured: "Reversals exceed the captured payment amount",
+  reversal_conflict: "Reversal conflicts with the recorded reversal",
+  invalid_reversal_amount: "Reversal amount must be positive",
+  invalid_reversal_id: "Reversal identifier must not be empty",
+  invalid_reversal_timestamp: "Reversal timestamp must be a finite, serializable instant",
+  invalid_reversal_kind: "Reversal kind must be refund",
 };
 
 const REASON_HTTP_STATUS: Record<OrderErrorReason, number> = {
@@ -79,6 +95,12 @@ const REASON_HTTP_STATUS: Record<OrderErrorReason, number> = {
   price_incoherent: 409,
   commitment_immutable: 409,
   payment_fact_conflict: 409,
+  reversal_exceeds_captured: 409,
+  reversal_conflict: 409,
+  invalid_reversal_amount: 400,
+  invalid_reversal_id: 400,
+  invalid_reversal_timestamp: 400,
+  invalid_reversal_kind: 400,
 };
 
 /**
