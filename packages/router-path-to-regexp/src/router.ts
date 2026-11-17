@@ -2,6 +2,7 @@ import type { Route, RouteMatch, Router, RouteResolutionContext } from "@comity/
 import type { CompiledRoute } from "./types.js";
 
 import { match } from "path-to-regexp";
+import { encodePath } from "./encode-path.js";
 
 /**
  * PathRouter is a router implementation that matches incoming HTTP requests based on their URL path and HTTP method. It supports static paths and can be extended to support dynamic path parameters in the future.
@@ -44,7 +45,7 @@ export class PathRouter<
         // Route<State, Services>; storage and dispatch are the router's
         // intentional erased boundary (see class JSDoc).
         route: r as Route,
-        match: match(r.path!, { decode: decodeURIComponent }),
+        match: match(r.path!, { decode: decodeURIComponent, encodePath }),
       }));
   }
 
@@ -54,6 +55,13 @@ export class PathRouter<
    * @param ctx - The context of the incoming HTTP request.
    *
    * @returns A promise that resolves to a RouteMatch object if a matching route is found, or null if no match is found.
+   *
+   * @remarks
+   * Never rejects because of a malformed request path: a parameter that is not
+   * valid percent-encoding (e.g. `/user/100%`) makes that route not match, and
+   * resolution continues with the next route. Literal route text is compared
+   * in the percent-encoded form of `URL.pathname`, so routes may contain
+   * non-ASCII characters or spaces (`/café`, `/a b`).
    */
   async match(ctx: RouteResolutionContext): Promise<RouteMatch | null> {
     const method = ctx.http.request.method;
@@ -64,7 +72,16 @@ export class PathRouter<
         continue;
       }
 
-      const m = r.match(pathname);
+      let m;
+
+      try {
+        m = r.match(pathname);
+      } catch (error) {
+        // A parameter that cannot be percent-decoded is client input, not a
+        // server fault: treat the route as not matching.
+        if (error instanceof URIError) continue;
+        throw error;
+      }
 
       if (!m) continue;
 
