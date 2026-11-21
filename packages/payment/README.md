@@ -18,6 +18,7 @@ This package:
 - ✅ defines the provider ports: `PaymentProvider` (initiation), payment lookup, capture, cancel, operation lookup, notification verification, and the refund port `PaymentRefundProvider` with `RefundRequest` / `RefundOutcome` (ADR-031)
 - ✅ defines the capability descriptor and `PaymentProviderBinding`, with `validatePaymentProviderBinding` (static rules C-1 to C-9 and C-11, ADR-037)
 - ✅ exports the C-10 adapter conformance runner `runPaymentOperationConformance`, which validates the binding statically first and then exercises the binding's real command and lookup ports against an adapter's deterministic provider seam; passing proves nothing about a real PSP's guarantees
+- ✅ exports the verifier conformance runner `runPaymentNotificationVerifierConformance` (VC-1 to VC-5, VC-7 to VC-10, VC-12 to VC-19), which calls the binding's real `verify` on deliveries an adapter's deterministic provider seam issues
 - ✅ provides `PaymentError` with typed reasons and details, including `idempotency_conflict` and `unrepresentable_success`
 - ✅ supplies module setup tokens and metadata for kernel integration: the module composes a validated binding
 - ✅ provides `MemoryPaymentProvider`, a deterministic test double implementing every port, ADR-030 replay rules and scripted asynchronous transitions
@@ -39,6 +40,7 @@ This package does NOT:
 
 - Payment contracts — request, outcome, status, provider ports, capabilities and binding
 - `validatePaymentProviderBinding` and `runPaymentOperationConformance` — static validation and adapter conformance (distinct)
+- `runPaymentNotificationVerifierConformance` — verifier conformance for notification classification
 - `MemoryPaymentProvider` — in-memory provider for testing and development (root)
 - Error types (`@comity/payment/errors`)
 - Setup — module wiring and configuration (`@comity/payment/setup`)

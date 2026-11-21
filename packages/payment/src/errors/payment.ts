@@ -12,7 +12,9 @@ import { BaseError } from "@comity/primitives/errors";
  * - `invalid_request`: caller defect or undeclared option. Never retried as is.
  * - `internal_error`: from a command, the **outcome is unknown**, never "failed".
  * - `idempotency_conflict`: same key, different request or still in flight (ADR-030 §5).
- * - `invalid_notification`: a rejected delivery. Reject and alert; never retried.
+ * - `invalid_notification`: a delivery that is not processed. Cause `signature`: authenticity not positively
+ *   established, so the delivery is rejected. Cause `malformed`: an authentic delivery whose events cannot be
+ *   determined, retained for review. Never reprocessed automatically; never a statement about money.
  * - `invalid_configuration`: the binding or adapter configuration is unusable; composition fails.
  * - `unrepresentable_success`: a provider-confirmed success whose financial data cannot be
  *   represented (ADR-037 §8b, case B). Never an unknown outcome and never a normal outcome.
@@ -34,7 +36,10 @@ export type PaymentInvalidRequestCause = "malformed" | "unsupported";
  */
 export type PaymentIdempotencyConflictCause = "request_mismatch" | "in_progress";
 
-/** Discriminator of `invalid_notification`: failed authenticity verification, or an unparseable delivery. */
+/**
+ * Discriminator of `invalid_notification`. `signature`: authenticity not positively established. `malformed`:
+ * authentic, but its event boundaries or types cannot be determined.
+ */
 export type PaymentInvalidNotificationCause = "signature" | "malformed";
 
 /** One violated static binding rule reported with `invalid_configuration` (ADR-037 §5). */
@@ -57,7 +62,7 @@ type UnrepresentableSuccessCommon = Readonly<{
   /** Echoed `PaymentAttemptId` or `RefundAttemptId`: a fallback only, never a substitute for an available identifier. */
   reference?: string;
 
-  /** The provider event identifier. Mandatory when the anomaly comes from a verified notification. */
+  /** The provider event identifier, when the provider supplied one. */
   eventId?: string;
 }>;
 
@@ -164,7 +169,7 @@ type IdempotencyConflictDetails = Readonly<{
 
 /** Details of `invalid_notification`: the cause is required. */
 type InvalidNotificationDetails = Readonly<{
-  /** Failed authenticity, or an unparseable delivery. */
+  /** `signature`: authenticity not positively established. `malformed`: authentic, but its event boundaries or types cannot be determined. */
   cause: PaymentInvalidNotificationCause;
 }>;
 

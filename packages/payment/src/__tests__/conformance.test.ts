@@ -339,7 +339,7 @@ describe("runPaymentOperationConformance: defects are attributed to the requirem
     const binding = alterNotifications(provider.binding, (n) => ({
       kind: "other",
       provider: n.provider,
-      eventId: n.eventId,
+      ...(n.eventId === undefined ? {} : { eventId: n.eventId }),
       providerEventType: "operation",
     }));
     const results = await runPaymentOperationConformance(harnessFor(provider, binding));
