@@ -35,6 +35,7 @@ import type { PaymentRequest } from "../contracts/payment-request.js";
 import { failure, success } from "@comity/primitives/result";
 import { Instant } from "@comity/primitives/time";
 import { PaymentError } from "../errors/payment.js";
+import { classifyMemoryDelivery } from "./memory-events.js";
 
 /** Header carrying the identity of a delivery issued by {@link MemoryPaymentProvider}. */
 const DELIVERY_HEADER = "x-memory-delivery";
@@ -168,13 +169,30 @@ type IdempotencyEntry =
       readonly result: RefundOutcome;
     };
 
-/** A delivery issued by the test double, with the notifications it stands for. */
+/**
+ * One row of the verification result matrix (assessment AP11.12, "Final consolidated specification", rows 1 to 13),
+ * for {@link MemoryPaymentProvider.issueMatrixRow}.
+ */
+export type MemoryPaymentMatrixRow = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13;
+
+/** A delivery issued by the test double. */
 interface IssuedDelivery {
   /** The exact bytes issued. */
   readonly body: Uint8Array;
 
-  /** The normalized notifications of the delivery. */
-  readonly notifications: ReadonlyArray<PaymentNotification>;
+  /** The normalized notifications of the delivery, when issued by a scripted transition; otherwise the body is classified. */
+  readonly notifications?: ReadonlyArray<PaymentNotification>;
+}
+
+/**
+ * The JSON body of a raw memory delivery.
+ *
+ * @param list - The wire events, in delivery order.
+ *
+ * @returns The body text.
+ */
+function wireBody(...list: ReadonlyArray<Readonly<Record<string, unknown>>>): string {
+  return JSON.stringify({ events: list });
 }
 
 /**
@@ -288,6 +306,9 @@ function mismatch(reference?: string): PaymentError {
  *   double plays the provider and reports the requested amount as the provider-confirmed amount. Every non-settled
  *   outcome (`pending`, `requires_action`, `failed`, `cancelled`, pending refunds and captures) carries no amount: the
  *   requested amount is never echoed as provider-reported (ADR-037 §3).
+ * - **Event mapping:** {@link MemoryPaymentProvider.issueRaw} and {@link MemoryPaymentProvider.issueMatrixRow} issue
+ *   deliveries that `verify` classifies through the documented mapping of `memory-events.ts` (assessment AP11.12,
+ *   VR-10). Such notifications carry an `eventId` only when the event supplies one.
  * - Identifiers are deterministic per instance: `mem_pay_n`, `mem_op_n`, `mem_re_n`, `mem_evt_n`.
  * - Capture is of the full authorized amount only (v1); another amount is `unsupported`. Over-refunds are `failed`
  *   outcomes, as a provider would decline them.
@@ -573,7 +594,9 @@ export class MemoryPaymentProvider
 
   /**
    * Accepts only deliveries issued by this instance, byte for byte. Anything else is `invalid_notification` with
-   * cause `signature`: the double stands in for the adapter's authenticity check.
+   * cause `signature`: the double stands in for the adapter's authenticity check. Deliveries issued through
+   * {@link MemoryPaymentProvider.issueRaw} are classified by the documented event mapping (`memory-events.ts`),
+   * which yields `malformed`, `unrepresentable_success` or the notifications in delivery order.
    *
    * @param input - The raw delivery.
    *
@@ -587,7 +610,95 @@ export class MemoryPaymentProvider
     if (!issued || !sameBytes(issued.body, input.body)) {
       return failure(new PaymentError("invalid_notification", { details: { cause: "signature" } }));
     }
-    return success(issued.notifications);
+    return issued.notifications
+      ? success(issued.notifications)
+      : classifyMemoryDelivery(this.#id, issued.body);
+  }
+
+  /**
+   * Test control: issues a delivery with exactly these bytes as an authentic delivery of this instance. {@link
+   * MemoryPaymentProvider.verify} classifies it through the documented event mapping (see `memory-events.ts`):
+   * the body is JSON `{ "events": [ { "type": ..., ... } ] }`.
+   *
+   * @param body - The raw delivery body.
+   *
+   * @returns The raw delivery.
+   */
+  issueRaw(body: string): PaymentNotificationDelivery {
+    return this.#issueBody(encoder.encode(body));
+  }
+
+  /**
+   * Test control: issues the delivery of one row of the verification result matrix, so that `verify` returns the
+   * result that row specifies. Rows 1 to 11 are issued through the documented event mapping:
+   * 1 authenticity not established; 2 authentic, undeterminable events; 3 a state event with only optional fields
+   * missing; 4 a confirmed failure with an unusable amount; 5 a signal event with a subject; 6 an unmapped event
+   * type; 7 a settled payment success missing `paymentId`; 8 a signal event whose identifier may be an operation (no
+   * subject); 9 a settled success whose amount is absent; 10 several representable events; 11 a representable
+   * event and a row 9 event.
+   *
+   * Rows 12 and 13 concern the application's ingress, not the verifier's classification. Row 12 issues a delivery
+   * that verifies to a notification whose `provider` is not this binding (a deliberate fault). Row 13 issues an
+   * ordinary representable delivery, whose persistence the application's store then fails.
+   *
+   * @param row - The matrix row.
+   *
+   * @returns The raw delivery.
+   */
+  issueMatrixRow(row: MemoryPaymentMatrixRow): PaymentNotificationDelivery {
+    const amount = { minor: "10000", currency: "EUR" };
+    const captured = { type: "payment", paymentId: "mem_pay_row", state: "captured", amount };
+    const unrepresentable = { type: "payment", paymentId: "mem_pay_row", state: "authorized" };
+
+    switch (row) {
+      case 1:
+        return {
+          ...this.issueRaw(wireBody(captured)),
+          headers: { [DELIVERY_HEADER]: "mem_dlv_unissued" },
+        };
+      case 2:
+        return this.issueRaw(JSON.stringify({ events: "undeterminable" }));
+      case 3:
+      case 13:
+        return this.issueRaw(wireBody(captured));
+      case 4:
+        return this.issueRaw(
+          wireBody({
+            type: "payment",
+            paymentId: "mem_pay_row",
+            state: "failed",
+            amount: { minor: "-1", currency: "EUR" },
+          })
+        );
+      case 5:
+        return this.issueRaw(
+          wireBody({ type: "notice", objectId: "mem_obj_row", reference: "att-row" })
+        );
+      case 6:
+        return this.issueRaw(wireBody({ type: "memory.unmapped" }));
+      case 7:
+        return this.issueRaw(wireBody({ type: "payment", state: "captured", amount }));
+      case 8:
+        return this.issueRaw(wireBody({ type: "operation_notice", objectId: "mem_obj_row" }));
+      case 9:
+        return this.issueRaw(wireBody(unrepresentable));
+      case 10:
+        return this.issueRaw(
+          wireBody(captured, {
+            type: "refund",
+            refundId: "mem_re_row",
+            paymentId: "mem_pay_row",
+            status: "succeeded",
+            amount,
+          })
+        );
+      case 11:
+        return this.issueRaw(wireBody(captured, unrepresentable));
+      case 12:
+        return this.#issue([
+          { kind: "other", provider: "mem_foreign", providerEventType: "foreign" },
+        ]);
+    }
   }
 
   /**
@@ -902,6 +1013,19 @@ export class MemoryPaymentProvider
       })
     );
     this.#deliveries.set(deliveryId, { body, notifications });
+    return { body, headers: { [DELIVERY_HEADER]: deliveryId } };
+  }
+
+  /**
+   * Issues a delivery of exact bytes, classified by {@link MemoryPaymentProvider.verify}.
+   *
+   * @param body - The raw bytes.
+   *
+   * @returns The raw delivery.
+   */
+  #issueBody(body: Uint8Array): PaymentNotificationDelivery {
+    const deliveryId = `mem_dlv_${++this.#counters.delivery}`;
+    this.#deliveries.set(deliveryId, { body });
     return { body, headers: { [DELIVERY_HEADER]: deliveryId } };
   }
 

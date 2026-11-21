@@ -75,3 +75,91 @@ Call `binding.provider.initiate(...)` where you previously called `provider.init
 - The `capture:` reference prefix is removed: the capture mode decides between `captured` and `authorized`.
   `fail:` and `cancel:` remain; `pending:` and `action:` are new.
 - `failed`, `cancelled`, `pending` and `requires_action` outcomes no longer carry the requested amount.
+
+---
+
+# Migration: 0.10.0 → next minor (optional `eventId`, `subject`, notification classification)
+
+> **Target release:** the next minor of `@comity/payment` (a breaking-class change under 0.x, delivered through the
+> repository's changeset release process). Source: ADR-037 §3 and §7 as amended by AMD-ID and AMD-SIG, and the
+> closing specification of the Revolut evidence assessment (AP11.12). No reason, cause, method or `verify` signature
+> is added or removed.
+
+## 1. Optional `eventId` (source-breaking for consumers)
+
+- `PaymentNotification.eventId` is now `eventId?: string` on every notification kind. It is present only when the
+  provider's delivery carries an identifier of the event, copied unchanged. An adapter never synthesizes one (no
+  digest of the body, no delivery id, no counter).
+- Consumers that read `eventId` as a `string` must handle `undefined`. Under `exactOptionalPropertyTypes`, copying
+  `n.eventId` into an optional property needs a conditional spread: `...(n.eventId === undefined ? {} : { eventId: n.eventId })`.
+- Deduplication keyed on `(provider, eventId)` applies only when `eventId` is present. A delivery without one needs
+  another identity, owned by the application (for example a per-delivery id); a per-delivery id does not deduplicate
+  provider retries.
+- Producers are unaffected. `MemoryPaymentProvider` still sets `eventId` on every delivery its scripted transitions
+  issue.
+- `UnrepresentableSuccessDetails.eventId` was already optional; its documentation now reads "when the provider
+  supplied one".
+
+## 2. `PaymentNotificationSubject` and `OtherNotification.subject` (additive)
+
+- New exported type `PaymentNotificationSubject`: `{ kind: "payment"; paymentId; reference? }`,
+  `{ kind: "refund"; refundId; paymentId?; reference? }` or `{ kind: "payment_or_refund"; providerId; reference? }`.
+- `OtherNotification` gains `subject?: PaymentNotificationSubject`. A `subject` names what to look up, never what
+  happened: `other` reports no state and no amount. The adapter uses the narrowest variant the delivery itself
+  establishes and never guesses the kind. `reference` is the echoed application reference, a correlation fallback only.
+
+## 3. Narrowed `malformed`, broadened `signature` (behavioural)
+
+`invalid_notification` keeps its two causes. Only their meanings change:
+
+| Cause       | Before                                     | Now                                                                                                          |
+| ----------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `signature` | Failed authenticity verification           | Authenticity not positively established: failed, missing, expired or not evaluable, for the delivery         |
+| `malformed` | Any unparseable or unnormalizable delivery | Only **after** authenticity is established, and only when the event boundaries or types cannot be determined |
+
+An identifiable event is never `malformed`, whatever fields it lacks. `verify` returns no reason other than
+`invalid_notification` and `unrepresentable_success`.
+
+## 4. Classification rules (VR-10 summary)
+
+Applied once per delivery, in this order:
+
+1. Authenticity not established: `invalid_notification` / `signature`.
+2. Event boundaries or types undeterminable: `invalid_notification` / `malformed`.
+3. Each event is classified through the adapter's documented event mapping, pinned to the provider API version. A
+   type may be mapped as a **state event** only if its documented payload schema carries every field its state kind
+   requires (for a settled success, including the amount). Every other documented type is a **signal event**.
+4. If any event is a state event for a settled success whose mandatory identifiers are present and whose
+   schema-declared financial data is absent or unusable: `unrepresentable_success` for the first such event
+   (`provider` equal to the binding), and the delivery fails as a whole.
+5. Otherwise success, with every event in delivery order.
+
+Per event:
+
+- an unmapped event type is `other` without `subject`;
+- a signal event is `other`, with a `subject` only if its source field is present and valid;
+- a state event with every required field valid is its state kind; a confirmed failure, or a pending refund, with an
+  unusable amount carries `providerAmountUnusable: true`;
+- any other state event is `other` with the narrowest truthful `subject`: a missing or invalid required field, an
+  unmapped state value, or a settled success missing its mandatory identifier (a refund missing `refundId` names its
+  payment). A settled success missing its identifier is `other` even when its amount is also unusable;
+- fields absent from the pinned schema are ignored.
+
+## 5. Adapters
+
+- Publish the event mapping (state events versus signal events, per provider API version) in the adapter's
+  documentation.
+- Verify with `runPaymentNotificationVerifierConformance`, the verifier conformance runner (VC-1 to VC-5, VC-7 to
+  VC-10 and VC-12 to VC-19). Scenarios the mapping cannot express are reported `not_applicable`; a mapping without
+  state events passes with those requirements `not_applicable`. The runner denies the global `fetch` while verifying;
+  other transports are outside what it can deny.
+- Re-release against this minor; no adapter written for 0.10.0 changes its `verify` signature.
+
+## 6. `MemoryPaymentProvider`
+
+- `verify` now classifies deliveries issued through `issueRaw(body)` with a documented event mapping (`memory/1`,
+  `providers/memory-events.ts`); deliveries issued by `settlePayment`, `settleOperation` and `settleRefund` are
+  unchanged.
+- `issueMatrixRow(row)` issues the delivery of each row (1 to 13) of the verification result matrix; rows 12 and 13
+  concern the application's ingress and are issued as documented in its JSDoc.
+- Exported type `MemoryPaymentMatrixRow`.

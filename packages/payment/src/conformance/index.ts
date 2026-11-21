@@ -1,4 +1,11 @@
 export type {
+  PaymentVerifierConformanceHarness,
+  PaymentVerifierConformanceRequirement,
+  PaymentVerifierConformanceResult,
+  PaymentVerifierFixture,
+  PaymentVerifierScenario,
+} from "./notifications.js";
+export type {
   PaymentConformancePayment,
   PaymentConformanceRequirement,
   PaymentConformanceResult,
@@ -6,4 +13,8 @@ export type {
   PaymentOperationConformanceHarness,
 } from "./operations.js";
 
+export {
+  isPaymentNotificationVerifierConformant,
+  runPaymentNotificationVerifierConformance,
+} from "./notifications.js";
 export { isPaymentOperationConformant, runPaymentOperationConformance } from "./operations.js";

@@ -5,13 +5,56 @@ import type { Money } from "@comity/pricing";
 import type { PaymentError } from "../errors/payment.js";
 import type { ReportedAmount } from "./payment-outcome.js";
 
+/**
+ * What a verified `other` notification concerns (ADR-037 §3, AMD-SIG). Identifies what to look up; never a state.
+ *
+ * An adapter uses the narrowest variant the delivery itself establishes and never guesses the kind.
+ */
+export type PaymentNotificationSubject =
+  | {
+      /** The delivery identifies a provider payment. */
+      readonly kind: "payment";
+
+      /** Provider payment identifier. */
+      readonly paymentId: string;
+
+      /** The application reference the provider echoed, copied as supplied: a correlation fallback only. */
+      readonly reference?: string;
+    }
+  | {
+      /** The delivery identifies a provider refund. */
+      readonly kind: "refund";
+
+      /** Provider refund identifier. */
+      readonly refundId: string;
+
+      /** The refunded payment, when the delivery states it. */
+      readonly paymentId?: string;
+
+      /** The application reference the provider echoed, copied as supplied: a correlation fallback only. */
+      readonly reference?: string;
+    }
+  | {
+      /** The delivery identifies a provider object of the binding that is a payment or a refund, without saying which. */
+      readonly kind: "payment_or_refund";
+
+      /** Provider identifier of that object. */
+      readonly providerId: string;
+
+      /** The application reference the provider echoed, copied as supplied: a correlation fallback only. */
+      readonly reference?: string;
+    };
+
 /** Fields common to every {@link PaymentNotification}. */
 interface NotificationBase {
   /** Binding identifier the delivery arrived on. */
   readonly provider: string;
 
-  /** Provider event identifier. Identifies a delivery event, never a payment, operation or refund. */
-  readonly eventId: string;
+  /**
+   * Provider event identifier, present only when the provider's delivery carries one (ADR-037 §4 rule 5).
+   * Never synthesized by an adapter. Identifies a provider event, never a payment, operation, refund or delivery.
+   */
+  readonly eventId?: string;
 
   /** Informational only: ordering is never derived from timestamps. */
   readonly occurredAt?: Instant;
@@ -116,6 +159,9 @@ type OtherNotification = NotificationBase & {
 
   /** The provider's own event type. */
   readonly providerEventType: string;
+
+  /** What the event concerns, when the delivery identifies it; a lookup trigger with no authority. */
+  readonly subject?: PaymentNotificationSubject;
 };
 
 /**
@@ -144,9 +190,16 @@ export interface PaymentNotificationDelivery {
 /**
  * Verifies a raw provider delivery and translates it into normalized notifications (ADR-037 §7).
  *
- * Signature verification, secrets and parsing belong to the adapter. One `Result` per delivery: a delivery that
- * fails authenticity is `invalid_notification` (cause `signature`), an unparseable one `invalid_notification`
- * (cause `malformed`).
+ * Authenticity is established before any content is trusted, without any network call; events are classified through
+ * the adapter's documented event mapping. One `Result` per delivery:
+ * - success: authentic, with every event in delivery order. An unknown event type, a signal event, or an event that
+ *   cannot be normalized into a state kind is `other`;
+ * - `invalid_notification` cause `signature`: authenticity not positively established;
+ * - `invalid_notification` cause `malformed`: authentic, but its event boundaries or types cannot be determined;
+ * - `unrepresentable_success`: authentic, with a settled success whose identifiers are present and whose
+ *   schema-declared financial data is absent or unusable; the delivery fails as a whole.
+ *
+ * No other reason is returned.
  */
 export interface PaymentNotificationVerifier {
   /**
